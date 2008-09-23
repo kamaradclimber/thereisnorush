@@ -1,6 +1,7 @@
 class Circuit:
-    def __init__(self,roads_list):
-      self.roads = roads_list
+   def __init__(self, newNodes, newRoads):
+      self.nodes = newNodes
+      self.roads = newRoads
 
 class Road:
     "Porte tres bien son nom"
@@ -19,9 +20,10 @@ class Road:
 
 
 class Node:
-    def __init__(self, coord):
+    def __init__(self, newCoordinates):
         self.roads = []
-        self.coordinates= coord
+        self.x= newCoordinates[0]
+        self.y= newCoordinates[1]
 
     def setFire(road, state):
         if (id(road.begin) == id(self)):
@@ -47,10 +49,11 @@ class Car:
             print "" #gerer le cas du feu rouge
 
 
-r1=Road((1,1),(1,2),3)
-r2=Road((1,2),(2,2),3)
-r3=Road((2,2),(1,1),3)
-c1=Node((1,1))
-c2=Node((1,2))
-c3=Node((2,2))
-circuit=Circuit([r1,r2,r3])
+
+c1=Node((10, 10))
+c2=Node((50,10))
+c3=Node((10,50))
+r1=Road(c1,c2,3)
+r2=Road(c2,c3,3)
+r3=Road(c3,c1,3)
+circuit=Circuit([c1, c2, c3], [r1, r2, r3])

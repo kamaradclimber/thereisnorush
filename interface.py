@@ -1,15 +1,4 @@
-import sys, pygame
-
-class Circuit
-   def __init__(self, newCrossroads, newRoads)
-      self.roads  = newRoads
-      self.nodes  = newNodes
-   
-   def addNode(newX, newY):
-      nodes += [newX, newY]
-   
-   def addRoad(newX, newY):
-      nodes += [newX, newY]
+import sys, pygame, main
 
 pygame.init()
 
@@ -44,16 +33,21 @@ while True:
    
 #  Drawing screen ##############################################################
    
-   #for node in nodes:
-   position1 = (10-2, 10-2)
-   position2 = (4, 4)
-   rectangle = pygame.Rect(position1, position2)
-      
-      
-   
-   
    screen.fill(black)
+   
+   for node in main.circuit.nodes:
+      position1 = (node.x-2, node.y-2)
+      position2 = (4, 4)
+      rectangle = pygame.Rect(position1, position2)
+      pygame.draw.rect(screen, red, rectangle, 0)
+   
+   for road in main.circuit.roads:
+      position1 = (road.begin.x, road.begin.y)
+      position2 = (road.end.x, road.end.y)
+      rectangle = pygame.Rect(position1, position2)
+      pygame.draw.line(screen, white, position1, position2, 1)
+   
    #screen.blit(ball, ballrect)
-   #pygame.draw.line(screen, white, position1, position2, 1)
-   pygame.draw.rect(screen, red, rectangle, 0)
+   
+   
    pygame.display.flip()
