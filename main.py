@@ -1,21 +1,23 @@
 class Track:
    "City model"
    
-   def __init__(self, newNodes = [], newRoads = []): # TODO : check if the default arguments are given by copy or by reference
-      self.nodes = newNodes
-      self.roads = newRoads
+    def __init__(self, newNodes = [], newRoads = []): # TODO : check if the default arguments are given by copy or by reference
+        self.nodes = newNodes
+        self.roads = newRoads
    
-   def addNode(self, newCoordinates):
-      if (not len(self.nodes)):
-         self.nodes = []
+    def addNode(self, newCoordinates):
+        if (not len(self.nodes)):
+            self.nodes = []
       
-      self.nodes += [Node(newCoordinates)]
-   
+        self.nodes += [Node(newCoordinates)]
+    
    def addRoad(self, newBegin, newEnd, newLength):
-      if (not len(self.roads)):
-         self.roads = []
+        if (not len(self.roads)):
+            self.roads = []
       
-      self.roads += [Road(newBegin, newEnd, newLength)]
+        self.roads += [Road(newBegin, newEnd, newLength)]
+        newBegin.add_road_leaving(self)
+        newEnd.add_road_arriving(self)
 
 class Road:
     "Connection between 2 nodes ; has a unique direction"
@@ -32,13 +34,17 @@ class Road:
         for car in self.cars:
             plus_proche_obstacle = min(car.pos,plus_proche_obstacle)
 
-
 class Node:
     def __init__(self, newCoordinates):
         self.roads = []
         self.x= newCoordinates[0]
         self.y= newCoordinates[1]
-
+        self.roads_arriving = []
+        self.roads_leaving = []
+    def add_road_ariving(self,road):
+        self.roads_arriving += [road]
+    def add_road_leaving(self,road):
+        self.roads_leaving += [road]
     def setFire(road, state):
         if (id(road.begin) == id(self)):
             road.fires[0] = state
@@ -47,6 +53,13 @@ class Node:
    
 class Car:
     ""
+    def path_generate():
+        from random import randint
+        nb_etapes= randint(5,18)
+        path = []
+        for i in range(nb_etapes):
+            path += [randint(1,100)]
+        return path
     def __init__(self,path,departure_road):
         "definie par la liste de ces directions successives, pour le moment cette liste est fixe "
         self.path = path
