@@ -1,10 +1,24 @@
-class Circuit:
-   def __init__(self, newNodes, newRoads):
+class Track:
+   "City model"
+   
+   def __init__(self, newNodes = [], newRoads = []): # TODO : check if the default arguments are given by copy or by reference
       self.nodes = newNodes
       self.roads = newRoads
+   
+   def addNode(self, newCoordinates):
+      if (not len(self.nodes)):
+         self.nodes = []
+      
+      self.nodes += [Node(newCoordinates)]
+   
+   def addRoad(self, newBegin, newEnd, newLength):
+      if (not len(self.roads)):
+         self.roads = []
+      
+      self.roads += [Road(newBegin, newEnd, newLength)]
 
 class Road:
-    "Porte tres bien son nom"
+    "Connection between 2 nodes ; has a unique direction"
     
     def __init__(self, newBegin, newEnd, length):
         "donner les deux points de coordonnees des carrefours de depart et d'arrivee"
@@ -48,12 +62,12 @@ class Car:
         else:
             print "" #gerer le cas du feu rouge
 
+circuit=Track()
 
+circuit.addNode((10, 10))
+circuit.addNode((50, 10))
+circuit.addNode((10, 50))
 
-c1=Node((10, 10))
-c2=Node((50,10))
-c3=Node((10,50))
-r1=Road(c1,c2,3)
-r2=Road(c2,c3,3)
-r3=Road(c3,c1,3)
-circuit=Circuit([c1, c2, c3], [r1, r2, r3])
+circuit.addRoad(circuit.nodes[0], circuit.nodes[1], 150)
+circuit.addRoad(circuit.nodes[1], circuit.nodes[2], 150)
+circuit.addRoad(circuit.nodes[2], circuit.nodes[0], 150)
