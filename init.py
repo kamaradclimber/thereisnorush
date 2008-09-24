@@ -1,8 +1,5 @@
 #  TODO  #######################################################################
 #
-#  Comment on the code
-#  Choose an indent scheme (I'd rather a 3 whitespaces tab)
-#  I think we should rename "fires" or "lights" into "gates" (quite more semantic)
 #
 ################################################################################
 
@@ -13,6 +10,10 @@ class Track:
    
     def __init__(self, newNodes = [], newRoads = []):
         """
+        Constructor method: creates a track given the nodes and roads.
+            self            : 
+            newNodes (list) : 
+            newRoads (list) :
         """ 
         # The arguments are cloned
         self.nodes = newNodes.copy()
@@ -22,14 +23,21 @@ class Track:
    
     def addNode(self, newCoordinates):
         """
+        Adds a node to the track.
+            self                  :
+            newCoordinates (list) :
         """
-        if (not len(self.nodes)):
-            self.nodes = []
+        if (not len(self.nodes)): self.nodes = []
       
         self.nodes += [Node(newCoordinates)]
     
    def addRoad(self, newBegin, newEnd, newLength):
         """
+        Adds a road to the track.
+            self             :
+            newBegin  (node) : starting point for the road
+            newEnd    (node) : ending point for the road
+            newLength (int)  : road length
         """
         if (not len(self.roads)):
             self.roads = []
@@ -47,6 +55,11 @@ class Road:
     
     def __init__(self, newBegin, newEnd, length):
         """
+        Constructor method: creates a new road.
+            self             :
+            newBegin  (node) : starting point for the road
+            newEnd    (node) : ending point for the road
+            newLength (int)  : road length
         """
         self.begin   = newBegin
         self.end     = newEnd
@@ -70,6 +83,9 @@ class Node:
    
     def __init__(self, newCoordinates):
         """
+        Constructor method: creates a new node.
+            self                  :
+            newCoordinates (list) :
         """
         self.roads         = []
         self.x             = newCoordinates[0]
@@ -81,16 +97,25 @@ class Node:
    
     def add_road_arriving(self, road):
         """
+        Adds a road that whose endpoint is this node.
+            self        :
+            road (road) :
         """
         self.roadsComing += [road]
     
     def add_road_leaving(self, road):
         """
+        Adds a road that departs from this node.
+            self        :
+            road (road) :
         """
         self.roadsLeaving += [road]
     
     def setGate(road, state):
         """
+        Sets the state of the gates on the road.
+            road  (road) :
+            state (int)  :
         """
         if (id(road.begin) == id(self)):
             road.gates[0] = state
@@ -106,23 +131,26 @@ class Car:
     
     def generatePath():
         """
+        Assembles random waypoints into a the "path" list
         """
         from random import randint
         
         totalWaypoints  = randint(5, 18)
         path            = []
         
-        for i in range(totalWaypoints):
-            path += [randint(1, 100)]
+        for i in range(totalWaypoints): path += [randint(1, 100)]
         return path
     
 #  Constructor #################################################################
     
     def __init__(self, path, departure_road):
         """
-        Car constructor class: a car is provided a (for now unmutable) sequence of directions.
+        Constructor method: a car is provided a (for now unmutable) sequence of directions.
+            self                  :
+            path (list)           :
+            departure_road (road) :
         
-        definie par la liste de ces directions successives, pour le moment cette liste est fixe
+        Définie par la liste de ces directions successives, pour le moment cette liste est fixe.
         """
         self.path = path
         # For now, the cars' speed is either 0 or 100
@@ -132,6 +160,7 @@ class Car:
         
     def update(self):
         """
+        Updates the car speed and position, manages blocked pathways and queues.
         """
         next_object = self.road.next(self.pos)
         if self.pos + self.speed < next_object:
