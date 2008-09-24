@@ -150,7 +150,7 @@ class Car:
             path (list)           :
             departure_road (road) :
         
-        Définie par la liste de ces directions successives, pour le moment cette liste est fixe.
+        DÃ©finie par la liste de ces directions successives, pour le moment cette liste est fixe.
         """
         self.path = path
         # For now, the cars' speed is either 0 or 100

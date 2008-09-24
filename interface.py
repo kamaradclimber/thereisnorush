@@ -1,4 +1,4 @@
-import sys, pygame, main
+import sys, pygame, init
 
 # Pygame initialization 
 pygame.init()
@@ -15,6 +15,9 @@ size        = width, height = (320, 240)     # Screen resolution
 screen      = pygame.display.set_mode(size)  # Screen object
 sim_running = True                           # Indicates whether the simulation is running
 
+node_width  = 4
+node_height = 4
+
 # Main loop
 
 while sim_running:
@@ -28,17 +31,19 @@ while sim_running:
     
     # First, draw the nodes
     for node in main.circuit.nodes:
-        position1 = (node.x - 2, node.y - 2)
-        position2 = (4, 4)
-        rectangle = pygame.Rect(position1, position2)
+        pt_topleft     = (node.x - node_width/2 , node.y - node_height/2)
+        pt_bottomright = (node_width,             node_height)
+        rectangle = pygame.Rect(pt_topleft, pt_bottomright)
+        
         pygame.draw.rect(screen, red, rectangle, 0)
    
     # Them, draw the roads
     for road in main.circuit.roads:
-        position1 = (road.begin.x, road.begin.y)
-        position2 = (road.end.x, road.end.y)
-        rectangle = pygame.Rect(position1, position2)
-        pygame.draw.line(screen, white, position1, position2, 1)
+        pt_topleft     = (road.begin.x, road.begin.y)
+        pt_bottomright = (road.end.x,   road.end.y)
+        rectangle = pygame.Rect(pt_topleft, pt_bottomright)
+        
+        pygame.draw.line(screen, white, pt_topleft, pt_bottomright, 1)
    
     # Saves and displays
     pygame.display.flip()
