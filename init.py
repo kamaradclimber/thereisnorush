@@ -1,31 +1,36 @@
-#  TODO  #######################################################################
+################################################################################
 #
+# File        : init.py
+# Description : defines the classes that represent elements of the simulation
 #
+# ToDo        : …
 ################################################################################
 
 class Track:
-   "Our city model : a mathematical graph made of nodes linked to each other by roads"
+   """
+   Our city model: a mathematical graph made of nodes, linked to each other by roads.
+   """
    
-#  Constructor #################################################################
+# Constructor
    
     def __init__(self, newNodes = [], newRoads = []):
         """
         Constructor method: creates a track given the nodes and roads.
             self            : 
-            newNodes (list) : 
-            newRoads (list) :
+            newNodes (list) : a list of the nodes
+            newRoads (list) : a list of the roads
         """ 
         # The arguments are cloned
         self.nodes = newNodes.copy()
         self.roads = newRoads.copy()
    
-#  Mutators ####################################################################
+#  Mutators
    
     def addNode(self, newCoordinates):
         """
         Adds a node to the track.
             self                  :
-            newCoordinates (list) :
+            newCoordinates (list) : coordinates (x, y) for the node
         """
         if (not len(self.nodes)): self.nodes = []
       
@@ -51,7 +56,7 @@ class Track:
 class Road:
     "Connection between 2 nodes ; one-way only"
 
-#  Constructor #################################################################
+# Constructor
     
     def __init__(self, newBegin, newEnd, length):
         """
@@ -67,8 +72,6 @@ class Road:
         self.length  = length
         self.gates  = [False, False]
     
-################################################################################
-    
     def next(self, pos): # Please comment on this method, I can't understand it
         """
         """
@@ -76,16 +79,20 @@ class Road:
         for car in self.cars:
             nearest_object = min(car.pos, nearest_object)
 
+################################################################################
+
 class Node:
-   "Crossroads of our city ; may host several roads"
+   """
+   Crossroads of our city ; may host several roads
+   """
    
-#  Constructor #################################################################
+# Constructor
    
     def __init__(self, newCoordinates):
         """
         Constructor method: creates a new node.
             self                  :
-            newCoordinates (list) :
+            newCoordinates (list) : the coordinates (x, y) for the node
         """
         self.roads         = []
         self.x             = newCoordinates[0]
@@ -93,13 +100,13 @@ class Node:
         self.roadsComing   = []
         self.roadsLeaving  = []
      
-#  Mutators ####################################################################
+# Mutators
    
     def add_road_arriving(self, road):
         """
         Adds a road that whose endpoint is this node.
             self        :
-            road (road) :
+            road (road) : the road object that ends here
         """
         self.roadsComing += [road]
     
@@ -107,15 +114,15 @@ class Node:
         """
         Adds a road that departs from this node.
             self        :
-            road (road) :
+            road (road) : the road object that goes from here
         """
         self.roadsLeaving += [road]
     
     def setGate(road, state):
         """
         Sets the state of the gates on the road.
-            road  (road) :
-            state (int)  :
+            road  (road) : the road whose gates are affected
+            state (int)  : the state (0-1) of the gate
         """
         if (id(road.begin) == id(self)):
             road.gates[0] = state
@@ -125,11 +132,13 @@ class Node:
 ################################################################################
    
 class Car:
-    "Those which will crowd our city >_<"
+    """
+    Those which will crowd our city >_<
+    """
     
-#  Path generation   ###########################################################
+# Path generation
     
-    def generatePath():
+    def generatePath(self):
         """
         Assembles random waypoints into a the "path" list
         """
@@ -141,20 +150,21 @@ class Car:
         for i in range(totalWaypoints): path += [randint(1, 100)]
         return path
     
-#  Constructor #################################################################
+# Constructor
     
     def __init__(self, path, departure_road):
         """
         Constructor method: a car is provided a (for now unmutable) sequence of directions.
             self                  :
-            path (list)           :
-            departure_road (road) :
+            path (list)           : a list of waypoints
+            departure_road (road) : the road where the car originates
         
         Définie par la liste de ces directions successives, pour le moment cette liste est fixe.
         """
         self.path = path
         # For now, the cars' speed is either 0 or 100
-        self.speed = 0 # cette 'vitesse' est pour le moment 0 ou 100, ce sont des 'point de deplacements'
+        # Cette « vitesse » est pour le moment 0 ou 100, ce sont des « point de deplacements »
+        self.speed = 0 
         self.pos = 0
         self.road = departure_road
         
@@ -170,6 +180,8 @@ class Car:
         else:
             # Manage the "closed gate" event
             print "" #gerer le cas du feu rouge
+
+################################################################################
 
 circuit=Track()
 

@@ -1,0 +1,82 @@
+                     ----------------------
+                     | Coding conventions |
+                     |     Revision 0     |
+                     ----------------------      
+
+This documents aims at providing the basic rules to apply when co-
+ding on the project, so that each and every one can read, use and
+write the code easily, with no need to worry about inter-operabi-
+lity, Linux/Windows compatibility, Python compiling errors…
+
+Please read and apply these recommendations, and if those rules be
+ill-adapted, rewrite them, so that they better meet your needs.
+
+0. Notations
+------------
+
+* "Do *NOT*" means : as much as you can, avoid to do what follows.
+* "Do" means       : whenever possible, please do what follows.
+* "You may" means  : there is no harm in doing what follows.
+
+I. Comments & language
+----------------------
+
+* Do *NOT* fill commentary lines with "#####" nor "*****" : use
+  spaces instead.
+* Do *NOT* comment code that you don't want removed, unless you
+  explicitely state that you don't want it to be removed, and
+  explain why.
+
+* Do comment *EXTENSIVELY* so that everyone can run through the 
+  code knowing what it means.
+* Use either *ENGLISH* (preffered) or *FRENCH*, or both.
+* Do comment within classes or functions.
+* Do comment the goal and use of constants and variables.
+* Do comment your commits, however small.
+
+* You may comment within procedures.
+
+II. Indentation & spacing
+-------------------------
+
+* Do *NOT* use the Tab key : hit 2 spaces instead. (3, 4 ?)
+* Do *NOT* break lines unless sematically useful.
+* Do *NOT* break multiple lines (more than three).
+
+* Do break a line between functions.
+* Do space your expressions (e.g. x = x + 1 instead of x=x+1)
+
+* You may use standard Python idents or use inline blocks
+  (e.g. if (x == 0) : do_something += 1)
+* You may use extra spacing to align code lines (e.g. equal
+  signs, commentaries…)
+  
+III. Files & encoding
+---------------------
+
+* Do *NOT* put different filetypes in a same directory
+  (e.g. pictures, sounds, code…). Create subfolders instead.
+
+* Do use the ".py" file extension with your files.
+* Do use lowercase names (e.g. hello.py instead of HeLlO.pY)
+* Do use UTF-8 encoding when possible, to ensure compatibility.
+* Do use *MEANINGFUL* names, in relationship with the contents.
+* Do explicit the library you import, whenever they aren't bun-
+  dled with the default Python install (e.g. pygame…)
+
+IV. Constants & variables, naming
+---------------------------------
+
+* Do *NOT* use hungarian notation (e.g. strPlus, lpszDot…) as
+  Python may switch between different data types dynamically.
+* Do *NOT* begin any name by an underscore, unless Python req-
+  uires you to (e.g. __init__).
+
+* Do use *MEANINGFUL* names, (e.g. wait_longer instead of tmp).
+* Do use immutable types as much as possible (e.g. strings ins-
+  tead of lists).
+* Do use constants or variables wherever you can, and group
+  them together (e.g. at the beggining of the file)
+
+* You may use underscores in naming.
+* You may use CamelCase notation in naming.
