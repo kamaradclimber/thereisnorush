@@ -1,3 +1,6 @@
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
+
 ################################################################################
 #
 # File        : init.py
@@ -7,9 +10,9 @@
 ################################################################################
 
 class Track:
-   """
-   Our city model: a mathematical graph made of nodes, linked to each other by roads.
-   """
+    """
+    Our city model: a mathematical graph made of nodes, linked to each other by roads.
+    """
    
 # Constructor
    
@@ -20,9 +23,9 @@ class Track:
             newNodes (list) : a list of the nodes
             newRoads (list) : a list of the roads
         """ 
-        # The arguments are cloned
-        self.nodes = newNodes.copy()
-        self.roads = newRoads.copy()
+        # if possible, let's try to avoid copies
+        self.nodes = newNodes
+        self.roads = newRoads
    
 #  Mutators
    
@@ -33,10 +36,10 @@ class Track:
             newCoordinates (list) : coordinates (x, y) for the node
         """
         if (not len(self.nodes)): self.nodes = []
-      
+        
         self.nodes += [Node(newCoordinates)]
     
-   def addRoad(self, newBegin, newEnd, newLength):
+    def addRoad(self, newBegin, newEnd, newLength):
         """
         Adds a road to the track.
             self             :
@@ -68,23 +71,35 @@ class Road:
         """
         self.begin   = newBegin
         self.end     = newEnd
-        self.cars    = []
+        self.cars    = [] # this list *has* to be  permanently orderer, i think, further reading on issue1 (see http://code.google.com/p/thereisnorush/issues)
         self.length  = length
         self.gates  = [False, False]
     
-    def next(self, pos): # Please comment on this method, I can't understand it
+    def next(self, pos): #on est francais remi ! tu peux parler dans ce langage, je le comprendrais :-)
         """
+            this function returns the next object on the current road
+            initialized at the end of the road (position of the node), it browses the list of cars to see if one of them blocks the way
+            but actually there was a mistake, fixed. it would be more understandable now ;-)
         """
         nearest_object = self.length - 1
         for car in self.cars:
-            nearest_object = min(car.pos, nearest_object)
+            if car.pos > pos: nearest_object = min( car.pos , nearest_object)
 
+    def addCar(self, arrivingcar, pos):
+        """
+        insert the arrivingcar at given position in the _ordered_ list of cars
+        """
+        for (i,car) in enumerate(self.cars):
+            if car.pos > pos :
+                self.cars.insert(i, car)
+                car.pos = (pos)
+                break
 ################################################################################
 
 class Node:
-   """
-   Crossroads of our city ; may host several roads
-   """
+    """
+    Crossroads of our city ; may host several roads
+    """
    
 # Constructor
    

@@ -1,4 +1,4 @@
-                     ----------------------
+﻿                     ----------------------
                      | Coding conventions |
                      |     Revision 0     |
                      ----------------------      
@@ -29,7 +29,7 @@ I. Comments & language
 
 * Do comment *EXTENSIVELY* so that everyone can run through the 
   code knowing what it means.
-* Use either *ENGLISH* (preffered) or *FRENCH*, or both.
+* Use either *ENGLISH* (preffered) or *FRENCH* , or both.
 * Do comment within classes or functions.
 * Do comment the goal and use of constants and variables.
 * Do comment your commits, however small.
@@ -39,7 +39,7 @@ I. Comments & language
 II. Indentation & spacing
 -------------------------
 
-* Do *NOT* use the Tab key : hit 2 spaces instead. (3, 4 ?)
+* Do *NOT* use the Tab key : hit 4 spaces instead.
 * Do *NOT* break lines unless sematically useful.
 * Do *NOT* break multiple lines (more than three).
 

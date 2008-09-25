@@ -1,3 +1,6 @@
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
+
 import pygame   # http://www.pygame.org
 import init     # ./init.py
 
@@ -57,8 +60,8 @@ def draw_scene():
     screen.fill(black)
 
     # First, draw the nodes, then draw the roads
-    for node in main.circuit.nodes: draw_node(node)
-    for road in main.circuit.roads: draw_road(road)
+    for node in init.circuit.nodes: draw_node(node)
+    for road in init.circuit.roads: draw_road(road)
     
     # Saves and displays
     pygame.display.flip()
@@ -70,6 +73,7 @@ def main_loop():
     """
     # Main loop
 
+    global sim_running
     while sim_running:
         # Check the users' actions
         event = pygame.event.poll()
