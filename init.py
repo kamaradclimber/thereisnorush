@@ -89,11 +89,16 @@ class Road:
         """
         insert the arrivingcar at given position in the _ordered_ list of cars
         """
-        for (i,car) in enumerate(self.cars):
-            if car.pos > pos :
-                self.cars.insert(i, car)
-                car.pos = (pos)
-                break
+        if len(self.cars)==0:
+            self.cars = [arrivingcar]
+        else:
+            for (i,car) in enumerate(self.cars):
+                if car.pos < pos :
+                    self.cars.insert(i, car)
+                    break
+        arrivingcar.pos = (pos)
+        arrivingcar.road = self
+
 ################################################################################
 
 class Node:
@@ -114,6 +119,9 @@ class Node:
         self.y             = newCoordinates[1]
         self.roadsComing   = []
         self.roadsLeaving  = []
+
+    def coords(self):
+        return (self.x, self.y)
      
 # Mutators
    
@@ -203,6 +211,18 @@ circuit=Track()
 circuit.addNode((10, 10))
 circuit.addNode((50, 10))
 circuit.addNode((10, 50))
+circuit.addNode((50, 50))
+circuit.addNode((100, 50))
+circuit.addNode((10, 100))
 circuit.addRoad(circuit.nodes[0], circuit.nodes[1], 150)
 circuit.addRoad(circuit.nodes[1], circuit.nodes[2], 150)
 circuit.addRoad(circuit.nodes[2], circuit.nodes[0], 150)
+circuit.addRoad(circuit.nodes[4], circuit.nodes[0], 150)
+circuit.addRoad(circuit.nodes[3], circuit.nodes[5], 150)
+circuit.addRoad(circuit.nodes[3], circuit.nodes[0], 150)
+car1 = Car([], circuit.roads[2])
+#circuit.roads[2].addCar(car1,30)
+car2 = Car([], circuit.roads[1])
+circuit.roads[1].addCar(car1,80)
+car3 = Car([], circuit.roads[1])
+circuit.roads[1].addCar(car3,130)

@@ -29,6 +29,10 @@ node_width  = 4
 node_height = 4
 node_color = red
 
+car_width  = 4
+car_height = 4
+car_color = green
+
 road_color = white
 
 
@@ -42,15 +46,31 @@ def draw_node(node):
     rectangle      = pygame.Rect(pt_topleft, pt_bottomright)
     pygame.draw.rect(screen, node_color, rectangle, 0)
 
+def draw_car(car):
+    """
+    Draws a given care on the screen.
+        car (car) : the aforementioned car.
+    """
+    xd, yd = car.road.begin.coords() # i like this OO call !
+    xa, ya = car.road.end.coords()
+    length_covered = car.pos * 100 / car.road.length
+    x_position = xd + (xa - xd ) * length_covered / 100
+    y_position = yd + (ya - yd ) * length_covered / 100
+    pt_topleft     = (x_position - car_width / 2 , y_position - car_height / 2 )
+    pt_bottomright = (car_width, car_height)
+    rectangle      = pygame.Rect(pt_topleft, pt_bottomright)
+    pygame.draw.rect(screen, car_color, rectangle, 0)
+
 def draw_road(road):
     """
-    Draws a given road on the screen.
+    Draws a given road on the screen and all the cars contained in it.
         road (road) : the aforementioned road.
     """
     pt_topleft     = (road.begin.x, road.begin.y)
     pt_bottomright = (road.end.x,   road.end.y)
     rectangle      = pygame.Rect(pt_topleft, pt_bottomright)
     pygame.draw.line(screen, road_color, pt_topleft, pt_bottomright, 1)
+    for car in road.cars: draw_car(car)
     
 def draw_scene():
     """
@@ -62,7 +82,6 @@ def draw_scene():
     # First, draw the nodes, then draw the roads
     for node in init.circuit.nodes: draw_node(node)
     for road in init.circuit.roads: draw_road(road)
-    
     # Saves and displays
     pygame.display.flip()
 
