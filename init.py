@@ -10,6 +10,8 @@
 #              
 ################################################################################
 
+import tinr_io # ./tinr.io.py (IO operations)
+
 class Track:
     """
     Our city model: a mathematical graph made of nodes, linked to each other by roads.
@@ -220,9 +222,10 @@ class Car:
             print "" 
 
 ################################################################################
+#
+#  TESTING ZONE
 
 circuit=Track()
-
 circuit.addNode((10, 10))
 circuit.addNode((50, 10))
 circuit.addNode((10, 50))
