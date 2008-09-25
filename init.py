@@ -6,7 +6,8 @@
 # File        : init.py
 # Description : defines the classes that represent elements of the simulation
 #
-# ToDo        : …
+# ToDo        : · Rewrite update() to account for tunnelling
+#              
 ################################################################################
 
 class Track:
@@ -47,8 +48,7 @@ class Track:
             newEnd    (node) : ending point for the road
             newLength (int)  : road length
         """
-        if (not len(self.roads)):
-            self.roads = []
+        if (not len(self.roads)): self.roads = []
       
         self.roads += [Road(newBegin, newEnd, newLength)]
         newBegin.add_road_leaving(self)
@@ -71,33 +71,41 @@ class Road:
         """
         self.begin   = newBegin
         self.end     = newEnd
-        self.cars    = [] # this list *has* to be  permanently orderer, i think, further reading on issue1 (see http://code.google.com/p/thereisnorush/issues)
+        self.cars    = [] 
+        # this list *has* to be  permanently orderer, i think, further reading on issue1 (see http://code.google.com/p/thereisnorush/issues)
+        # I think not, see Issue1/Comment1 -- Sharayanan
+        
         self.length  = length
         self.gates  = [False, False]
     
-    def next(self, pos): #on est francais remi ! tu peux parler dans ce langage, je le comprendrais :-)
+    def next(self, pos): 
+        #on est francais remi ! tu peux parler dans ce langage, je le comprendrais :-)
+        # It wasn't me… 
+        
+        # Bugged ? This function does not return anything, nor does it acts in any way
+        # Planté ? Cette fonction ne retourne rien, ni n'agit d'une manière ou d'une autre
         """
-            this function returns the next object on the current road
-            initialized at the end of the road (position of the node), it browses the list of cars to see if one of them blocks the way
-            but actually there was a mistake, fixed. it would be more understandable now ;-)
+            Returns the next object on the current road
+            
+            Beginning from the end of the road (position of the node), it browses the list of cars
+            to see whether one of them blocks the way. 
+            
+            Actually there was a mistake, fixed. it should be more understandable now ;-)
         """
         nearest_object = self.length - 1
         for car in self.cars:
             if car.pos > pos: nearest_object = min( car.pos , nearest_object)
 
-    def addCar(self, arrivingcar, pos):
+    def addCar(self, car_arriving, pos):
         """
-        insert the arrivingcar at given position in the _ordered_ list of cars
+            Inserts the arrivingcar at given position in the _ordered_ list of cars
         """
-        if len(self.cars)==0:
-            self.cars = [arrivingcar]
-        else:
-            for (i,car) in enumerate(self.cars):
-                if car.pos < pos :
-                    self.cars.insert(i, car)
-                    break
-        arrivingcar.pos = (pos)
-        arrivingcar.road = self
+
+        if (len(self.cars)==0): self.cars = [] # If there's no list, create one!
+        
+        self.cars += [car_arriving] # Adds a new car to the list
+        car_arriving.pos = (pos)    # Sets its position
+        car_arriving.road = self    # Tells it it's on the road !
 
 ################################################################################
 
@@ -121,6 +129,9 @@ class Node:
         self.roadsLeaving  = []
 
     def coords(self):
+        """
+            Returns the current node's coordinates.
+        """
         return (self.x, self.y)
      
 # Mutators
@@ -195,6 +206,9 @@ class Car:
         """
         Updates the car speed and position, manages blocked pathways and queues.
         """
+        
+        # Needs to be rewritten to account for tunnelling, see Issue1 -- Sharayanan
+        
         next_object = self.road.next(self.pos)
         if self.pos + self.speed < next_object:
             self.pos += self.speed
@@ -202,7 +216,8 @@ class Car:
             self.pos = next_object -1
         else:
             # Manage the "closed gate" event
-            print "" #gerer le cas du feu rouge
+            # Gérer le cas du feu rouge
+            print "" 
 
 ################################################################################
 
@@ -220,9 +235,7 @@ circuit.addRoad(circuit.nodes[2], circuit.nodes[0], 150)
 circuit.addRoad(circuit.nodes[4], circuit.nodes[0], 150)
 circuit.addRoad(circuit.nodes[3], circuit.nodes[5], 150)
 circuit.addRoad(circuit.nodes[3], circuit.nodes[0], 150)
-car1 = Car([], circuit.roads[2])
-#circuit.roads[2].addCar(car1,30)
-car2 = Car([], circuit.roads[1])
-circuit.roads[1].addCar(car1,80)
-car3 = Car([], circuit.roads[1])
-circuit.roads[1].addCar(car3,130)
+
+circuit.roads[1].addCar(Car([], circuit.roads[2]),80)
+circuit.roads[1].addCar(Car([], circuit.roads[1]),30)
+circuit.roads[1].addCar(Car([], circuit.roads[1]),130)

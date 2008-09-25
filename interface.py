@@ -4,9 +4,6 @@
 import pygame   # http://www.pygame.org
 import init     # ./init.py
 
-# Pygame initialization 
-pygame.init()
-
 # Colors
 
 black = (  0,   0,   0)
@@ -21,20 +18,31 @@ light_blue  = ( 64,  64, 255)
 
 # Settings
 
-size        = width, height = (320, 240)     # Screen resolution
-screen      = pygame.display.set_mode(size)  # Screen object
-sim_running = True                           # Indicates whether the simulation is running
+size = width, height = (320, 240)            # Screen resolution
 
+global screen                                # Screen object
+global sim_running                           # Indicates whether the simulation is running
+global debug                                 # Indicates whether debugging messages are displayed
+
+screen = pygame.display.set_mode(size)       # Sets drawing surface
+debug = True
+
+# Node general properties
 node_width  = 4
 node_height = 4
 node_color = red
 
+# Car general properties
 car_width  = 4
 car_height = 4
 car_color = green
 
+# Road general properties
 road_color = white
 
+def init_display():
+    pygame.init()                                             # Pygame initialization 
+    pygame.display.set_caption("Thereisnorush (unstable)")    # Sets window caption
 
 def draw_node(node):
     """
@@ -48,11 +56,13 @@ def draw_node(node):
 
 def draw_car(car):
     """
-    Draws a given care on the screen.
+    Draws a given car on the screen.
         car (car) : the aforementioned car.
     """
+    
     xd, yd = car.road.begin.coords() # i like this OO call !
     xa, ya = car.road.end.coords()
+
     length_covered = car.pos * 100 / car.road.length
     x_position = xd + (xa - xd ) * length_covered / 100
     y_position = yd + (ya - yd ) * length_covered / 100
@@ -63,13 +73,14 @@ def draw_car(car):
 
 def draw_road(road):
     """
-    Draws a given road on the screen and all the cars contained in it.
+    Draws a given road on the screen and all the cars on it.
         road (road) : the aforementioned road.
     """
     pt_topleft     = (road.begin.x, road.begin.y)
     pt_bottomright = (road.end.x,   road.end.y)
     rectangle      = pygame.Rect(pt_topleft, pt_bottomright)
     pygame.draw.line(screen, road_color, pt_topleft, pt_bottomright, 1)
+    
     for car in road.cars: draw_car(car)
     
 def draw_scene():
@@ -79,7 +90,7 @@ def draw_scene():
     # Clear background  
     screen.fill(black)
 
-    # First, draw the nodes, then draw the roads
+    # First, draw the nodes, then draw the roads, with the cars on them
     for node in init.circuit.nodes: draw_node(node)
     for road in init.circuit.roads: draw_road(road)
     # Saves and displays
@@ -92,12 +103,12 @@ def main_loop():
     """
     # Main loop
 
-    global sim_running
+    sim_running = True
+
     while sim_running:
         # Check the users' actions
-        event = pygame.event.poll()
-   
-        if event.type == pygame.QUIT: sim_running = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: sim_running = False
         
         # Draw the scene
         draw_scene()
@@ -110,6 +121,7 @@ def main_loop():
 if (__name__ == "__main__"):
     # Before simulation instructions
     pass
+    init_display()
     # Main loop
     main_loop()
 
