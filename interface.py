@@ -19,36 +19,43 @@ light_blue  = ( 64,  64, 255)
 
 # Settings
 
-size = width, height = (320, 240)            # Screen resolution
+size = width, height = (320, 240)            # Screen resolution - Résolution de l'affichage
 
-global screen                                # Screen object
-global sim_running                           # Indicates whether the simulation is running
-global debug                                 # Indicates whether debugging messages are displayed
+global screen                                # Screen object - Objet écran
+global sim_running                           # Indicates whether the simulation is running - Indique si la simulation tourne
+global debug                                 # Indicates whether debugging messages are displayed - Indique si les messages de débogage sont affichés
 
-screen = pygame.display.set_mode(size)       # Sets drawing surface
-debug = True
+clock  = pygame.time.Clock()                 # Clock object to control fps - Objet horloge pour controler les fps
+screen = pygame.display.set_mode(size)       # Sets drawing surface - Met en place la surface de dessin
+debug  = True
 
 # Node general properties
+# Propriétés générales d'un carrefour
 node_width  = 4
 node_height = 4
 node_color = red
 
 # Car general properties
+# Propriétés générales d'une voiture
 car_width  = 4
 car_height = 4
 car_color = green
 
 # Road general properties
+# Propriétés générales d'une route
 road_color = white
 
 def init_display():
-    pygame.init()                                             # Pygame initialization 
-    pygame.display.set_caption("Thereisnorush (unstable)")    # Sets window caption
+    pygame.init()                                             # Pygame initialization - Initialisation de pygame
+    pygame.display.set_caption("Thereisnorush (unstable)")    # Sets window caption - Définit le titre de la fenêtre
 
 def draw_node(node):
     """
     Draws a given node on the screen.
         node (node) : the aforementioned node.
+
+    Dessine un carrefour donné à l'écran.
+        node (node) : le carrefour sus-cité.
     """
     pt_topleft     = (node.x - node_width / 2 , node.y - node_height / 2 )
     pt_bottomright = (node_width, node_height)
@@ -59,6 +66,9 @@ def draw_car(car):
     """
     Draws a given car on the screen.
         car (car) : the aforementioned car.
+
+    Dessine une voiture donnée à l'écran.
+        car (car) : la voiture sus-citée.
     """
     
     xd, yd = car.road.begin.coords() # i like this OO call !
@@ -76,6 +86,9 @@ def draw_road(road):
     """
     Draws a given road on the screen and all the cars on it.
         road (road) : the aforementioned road.
+
+    Dessine une route donnée à l'écran et toutes les voitures dessus.
+        road (road) : la route sus-citée.
     """
     pt_topleft     = (road.begin.x, road.begin.y)
     pt_bottomright = (road.end.x,   road.end.y)
@@ -86,29 +99,44 @@ def draw_road(road):
     
 def draw_scene():
     """
-    Draws the complete scene on the screen
+    Draws the complete scene on the screen.
+    Dessine la scène entière à l'écran.
     """
-    # Clear background  
+    # Clear background - Nettoie l'arrière-plan
     screen.fill(black)
 
     # First, draw the nodes, then draw the roads, with the cars on them
+    # D'abord, dessine les carrefours, puis les routes avec les voitures dessus
     for node in init.circuit.nodes: draw_node(node)
     for road in init.circuit.roads: draw_road(road)
     # Saves and displays
+    # Valide et affiche
     pygame.display.flip()
+    pygame.display.update()
     
+def exit_program():
+    """
+    Closes properly the simulation.
+    Quitte correctement la simulation.
+    """
+    sim_running = False
+    pygame.quit()
+    #sys.exit()  
+  
 def event_manager():
     """
-    Checks for users' actions and call appropriate methods
+    Checks for users' actions and call appropriate methods.
+    Vérifie les actions de l'utilisateur et réagit en conséquence.
     """
     
     for event in pygame.event.get():
         if (event.type == pygame.QUIT):
             # The user wants to leave
-            sim_running = False
-            sys.exit()
+            # L'utilisateur veut quitter
+            exit_program()
         elif (event.type == pygame.MOUSEBUTTONDOWN):
             # The user is clicking somewhere or using the mousewheel
+            # L'utilisateur clique ou utilise la molette
             left_button, right_button, middle_button = pygame.mouse.get_pressed()
             x, y = pygame.mouse.get_pos()
             
@@ -129,6 +157,7 @@ def event_manager():
             # call tinr_gui.mouse_up(x, y, [left_button, right_button, middle_button]
         elif (event.type == pygame.KEYDOWN):
             # The user pressed a key
+            # L'utilisateur a appuyé sur une touche
             keyb_state = pygame.key.get_pressed()
 
             #debugging code
@@ -136,37 +165,51 @@ def event_manager():
 
             if keyb_state[pygame.K_ESCAPE]:
                 # The user wants to escape!
-                sim_running = False
-                sys.exit()
+                # L'utilisateur veut s'échapper !
+                exit_program()
         else:
             pass
-
-    return leaving
 
 def main_loop():
     """
     Main loop : keeps updating and displaying the scene forever,
                 unless somebody hits Esc.
+
+    Boucle principale : met à jour et affiche la scène pour toujours,
+                        jusqu'à ce que quelqu'un appuye sur Esc.
     """
     # Main loop
 
     sim_running = True
 
     while sim_running:
+        # Ensure that we won't update more often than 60 times per second
+        # S'assure qu'on ne dépassera pas 60 images par secondes
+        clock.tick(60)
         
         # Check the users' actions
+        # Vérifie les actions de l'utilisateur
         event_manager()
 
         pass
         
         # Draw the scene
-        draw_scene()
+        # Dessine la scène
+        try:
+            # Snafu
+            # Situation normale
+            draw_scene()
+        except:
+            # There some error: stop everything
+            # Il y a une erreur quelconque : on arrête tout
+            sim_running = False
 
         pass
-        
+
     # End of simulation instructions
+    # Instructions de fin de simulation
     pass
-    sys.exit()
+    exit_program()
     
 # Bootstrap
 
