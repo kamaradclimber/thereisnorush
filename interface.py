@@ -95,7 +95,36 @@ def draw_scene():
     for road in init.circuit.roads: draw_road(road)
     # Saves and displays
     pygame.display.flip()
-
+    
+def event_manager():
+    """
+    Checks for users' actions and call appropriate methods
+    """
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            # The user wants to leave
+            sim_running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # The user is clicking somewhere or using the mousewheel
+            left_button, right_button, middle_button = pygame.mouse.get_pressed()
+            x, y = pygame.mouse.get_pos()
+            
+            #debugging code
+            print "MD", x, y, left_button, right_button, middle_button
+            
+            # The next line will be implemented when the GUI code is written : do not delete please
+            # call tinr_gui.mouse_down(x, y, [left_button, right_button, middle_button]
+        if event.type == pygame.MOUSEBUTTONUP:
+            # The user is releasing the buttons
+            left_button, right_button, middle_button = pygame.mouse.get_pressed()
+            x, y = pygame.mouse.get_pos()
+            
+            #debugging code
+            print "MU", x, y, left_button, right_button, middle_button
+            
+            # The next line will be implemented when the GUI code is written : do not delete please
+            # call tinr_gui.mouse_up(x, y, [left_button, right_button, middle_button]
 def main_loop():
     """
     Main loop : keeps updating and displaying the scene forever,
@@ -107,8 +136,7 @@ def main_loop():
 
     while sim_running:
         # Check the users' actions
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT: sim_running = False
+        event_manager()
         
         # Draw the scene
         draw_scene()

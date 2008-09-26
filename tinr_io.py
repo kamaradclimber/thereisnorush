@@ -104,5 +104,5 @@ def load_track(circuit, filename):
 #
 #   TESTING ZONE
 
-circuit = init.Track()
-load_track(circuit, "track_default.txt")
+# circuit = init.Track()
+# load_track(circuit, "track_default.txt")
