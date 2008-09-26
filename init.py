@@ -10,7 +10,7 @@
 #              
 ################################################################################
 
-import tinr_io # ./tinr.io.py (IO operations)
+import tinr_io # ./tinr_io.py (IO operations)
 
 class Track:
     """
@@ -225,20 +225,9 @@ class Car:
 #
 #  TESTING ZONE
 
-circuit=Track()
-circuit.addNode((10, 10))
-circuit.addNode((50, 10))
-circuit.addNode((10, 50))
-circuit.addNode((50, 50))
-circuit.addNode((100, 50))
-circuit.addNode((10, 100))
-circuit.addRoad(circuit.nodes[0], circuit.nodes[1], 150)
-circuit.addRoad(circuit.nodes[1], circuit.nodes[2], 150)
-circuit.addRoad(circuit.nodes[2], circuit.nodes[0], 150)
-circuit.addRoad(circuit.nodes[4], circuit.nodes[0], 150)
-circuit.addRoad(circuit.nodes[3], circuit.nodes[5], 150)
-circuit.addRoad(circuit.nodes[3], circuit.nodes[0], 150)
 
+circuit=Track()
+tinr_io.load_track(circuit, "track_default.txt")
 circuit.roads[1].addCar(Car([], circuit.roads[2]),80)
 circuit.roads[1].addCar(Car([], circuit.roads[1]),30)
 circuit.roads[1].addCar(Car([], circuit.roads[1]),130)

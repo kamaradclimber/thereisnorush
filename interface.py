@@ -3,6 +3,7 @@
 
 import pygame   # http://www.pygame.org
 import init     # ./init.py
+import sys      # standard python library
 
 # Colors
 
@@ -102,10 +103,11 @@ def event_manager():
     """
     
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if (event.type == pygame.QUIT):
             # The user wants to leave
             sim_running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
+            sys.exit()
+        elif (event.type == pygame.MOUSEBUTTONDOWN):
             # The user is clicking somewhere or using the mousewheel
             left_button, right_button, middle_button = pygame.mouse.get_pressed()
             x, y = pygame.mouse.get_pos()
@@ -115,7 +117,7 @@ def event_manager():
             
             # The next line will be implemented when the GUI code is written : do not delete please
             # call tinr_gui.mouse_down(x, y, [left_button, right_button, middle_button]
-        if event.type == pygame.MOUSEBUTTONUP:
+        elif (event.type == pygame.MOUSEBUTTONUP):
             # The user is releasing the buttons
             left_button, right_button, middle_button = pygame.mouse.get_pressed()
             x, y = pygame.mouse.get_pos()
@@ -125,6 +127,22 @@ def event_manager():
             
             # The next line will be implemented when the GUI code is written : do not delete please
             # call tinr_gui.mouse_up(x, y, [left_button, right_button, middle_button]
+        elif (event.type == pygame.KEYDOWN):
+            # The user pressed a key
+            keyb_state = pygame.key.get_pressed()
+
+            #debugging code
+            print "KEY", keyb_state
+
+            if keyb_state[pygame.K_ESCAPE]:
+                # The user wants to escape!
+                sim_running = False
+                sys.exit()
+        else:
+            pass
+
+    return leaving
+
 def main_loop():
     """
     Main loop : keeps updating and displaying the scene forever,
@@ -135,14 +153,20 @@ def main_loop():
     sim_running = True
 
     while sim_running:
+        
         # Check the users' actions
         event_manager()
+
+        pass
         
         # Draw the scene
         draw_scene()
+
+        pass
         
     # End of simulation instructions
     pass
+    sys.exit()
     
 # Bootstrap
 
