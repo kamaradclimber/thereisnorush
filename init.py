@@ -4,7 +4,7 @@
 ################################################################################
 #
 # File          :   init.py
-# Description   :   defines the classes that represent elements of the simulation
+# Description   :   defines the classes and constants needed for the simulation
 #
 # ToDo          :   · Rewrite update() to account for tunnelling and crossing a node
 #              
@@ -241,11 +241,35 @@ class Car:
 
 ################################################################################
 
+#   Useful constants
+
+BLACK       = (  0,   0,   0)
+RED         = (255,   0,   0)
+GREEN       = (  0, 255,   0)
+BLUE        = (  0,   0, 255)
+WHITE       = (255, 255, 255)
+
+LIGHT_RED   = (255,  64,  64)
+LIGHT_GREEN = ( 64, 255,  64)
+LIGHT_BLUE  = ( 64,  64, 255)
+
+RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (500, 500)
+
+NODE_WIDTH  = 4
+NODE_HEIGHT = 4
+NODE_COLOR  = RED
+
+CAR_WIDTH   = 4
+CAR_HEIGHT  = 4
+CAR_COLOR   = GREEN
+
+ROAD_COLOR  = WHITE
+
 #   TESTING ZONE
 
-circuit = Track()
-tinr_io.load_track(circuit, "track_default.txt")
+track = Track()
+tinr_io.load_track(track, "track_default.txt")
 
-circuit.roads[1].addCar(Car([], circuit.roads[2]), 80)
-circuit.roads[1].addCar(Car([], circuit.roads[1]), 30)
-circuit.roads[1].addCar(Car([], circuit.roads[1]), 130)
+track.roads[1].addCar(Car([], track.roads[2]), 80)
+track.roads[1].addCar(Car([], track.roads[1]), 30)
+track.roads[1].addCar(Car([], track.roads[1]), 130)
