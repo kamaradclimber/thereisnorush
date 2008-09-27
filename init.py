@@ -3,10 +3,10 @@
 
 ################################################################################
 #
-# File        : init.py
-# Description : defines the classes that represent elements of the simulation
+# File          :   init.py
+# Description   :   defines the classes that represent elements of the simulation
 #
-# ToDo        : · Rewrite update() to account for tunnelling
+# ToDo          :   · Rewrite update() to account for tunnelling and crossing a node
 #              
 ################################################################################
 
@@ -14,78 +14,78 @@ import tinr_io # ./tinr_io.py (IO operations)
 
 class Track:
     """
-    Our city model: a mathematical graph made of nodes, linked to each other by roads.
+        Our city model : a mathematical graph made of nodes, linked to each other by roads.
     """
    
-# Constructor
+#   Constructor
    
     def __init__(self, newNodes = [], newRoads = []):
         """
-        Constructor method: creates a track given the nodes and roads.
-            self            : 
-            newNodes (list) : a list of the nodes
-            newRoads (list) : a list of the roads
+            Constructor method : creates a track given the nodes and roads.
+                newNodes (list) :   a list of the nodes
+                newRoads (list) :   a list of the roads
         """ 
+        
         # if possible, let's try to avoid copies
         self.nodes = newNodes
         self.roads = newRoads
    
-#  Mutators
+#   Mutators
    
     def addNode(self, newCoordinates):
         """
-        Adds a node to the track.
-            self                  :
-            newCoordinates (list) : coordinates (x, y) for the node
+            Adds a node to the track.
+                newCoordinates (list)   :   coordinates [x, y] for the node
         """
+        
         if (not len(self.nodes)): self.nodes = []
         
         self.nodes += [Node(newCoordinates)]
     
     def addRoad(self, newBegin, newEnd, newLength):
         """
-        Adds a road to the track.
-            self             :
-            newBegin  (node) : starting point for the road
-            newEnd    (node) : ending point for the road
-            newLength (int)  : road length
+            Adds a road to the track.
+                newBegin  (Node)    :   starting point for the road
+                newEnd    (Node)    :   ending point for the road
+                newLength (int)     :   road length
         """
+        
         if (not len(self.roads)): self.roads = []
       
         self.roads += [Road(newBegin, newEnd, newLength)]
-        newBegin.add_road_leaving(self)
-        newEnd.add_road_arriving(self)
+        newBegin.addRoad(self, False)
+        newEnd.addRoad(self, True)
 
 ################################################################################
 
 class Road:
-    "Connection between 2 nodes ; one-way only"
+    """
+        Connection between 2 nodes ; one-way only.
+    """
 
-# Constructor
+#   Constructor
     
     def __init__(self, newBegin, newEnd, length):
         """
-        Constructor method: creates a new road.
-            self             :
-            newBegin  (node) : starting point for the road
-            newEnd    (node) : ending point for the road
-            newLength (int)  : road length
+            Constructor method : creates a new road.
+                newBegin  (Node)    : starting point for the road
+                newEnd    (Node)    : ending point for the road
+                newLength (int)     : road length
         """
-        self.begin   = newBegin
-        self.end     = newEnd
-        self.cars    = [] 
+        
+        self.begin  = newBegin
+        self.end    = newEnd
+        self.cars   = [] 
         # this list *has* to be  permanently orderer, i think, further reading on issue1 (see http://code.google.com/p/thereisnorush/issues)
         # I think not, see Issue1/Comment1 -- Sharayanan
         
-        self.length  = length
+        self.length = length
         self.gates  = [False, False]
     
-    def next(self, pos): 
-        #on est francais remi ! tu peux parler dans ce langage, je le comprendrais :-)
-        # It wasn't me… 
-        
+    def nextObstacle(self, position):
         # Bugged ? This function does not return anything, nor does it acts in any way
         # Planté ? Cette fonction ne retourne rien, ni n'agit d'une manière ou d'une autre
+        #   I've added the return value -- Ch@hine
         """
             Returns the next object on the current road
             
@@ -93,36 +93,42 @@ class Road:
             to see whether one of them blocks the way. 
             
             Actually there was a mistake, fixed. it should be more understandable now ;-)
+                position  ()    :   
         """
-        nearest_object = self.length - 1
-        for car in self.cars:
-            if car.pos > pos: nearest_object = min( car.pos , nearest_object)
-
-    def addCar(self, car_arriving, pos):
-        """
-            Inserts the arrivingcar at given position in the _ordered_ list of cars
-        """
-
-        if (len(self.cars)==0): self.cars = [] # If there's no list, create one!
         
-        self.cars += [car_arriving] # Adds a new car to the list
-        car_arriving.pos = (pos)    # Sets its position
-        car_arriving.road = self    # Tells it it's on the road !
+        nearestObject = self.length - 1
+        for car in self.cars:
+            if car.position > position: nearestObject = min(car.position , nearestObject)
+        
+        return nearestObject
+
+    def addCar(self, newCar, newPosition):
+        """
+            Inserts a car at given position in the _ordered_ list of cars.
+                newCar      (Car)   :   car to be added
+                newPosition (float) :   curvilinear abscissa for the car
+        """
+        #   "newCar" should really be a pointer ; I've read that almost all functions parameters are taken by Python by reference ; is that true ? Or should I specify something in the code ? -- Ch@hine
+
+        if (not len(self.cars)): self.cars = []
+        
+        self.cars       +=  [newCar]
+        newCar.position =   newPosition
+        newCar.road     =   self
 
 ################################################################################
 
 class Node:
     """
-    Crossroads of our city ; may host several roads
+        Crossroads of our city ; may host several roads.
     """
    
 # Constructor
    
     def __init__(self, newCoordinates):
         """
-        Constructor method: creates a new node.
-            self                  :
-            newCoordinates (list) : the coordinates (x, y) for the node
+            Constructor method : creates a new node.
+                newCoordinates (list) : the coordinates [x, y] for the node
         """
         self.roads         = []
         self.x             = newCoordinates[0]
@@ -130,104 +136,116 @@ class Node:
         self.roadsComing   = []
         self.roadsLeaving  = []
 
-    def coords(self):
+#   Accessors
+
+    def getX(self):
+        """
+            Returns the current node's abscissa.
+        """
+        return (self.x)
+    
+    def getY(self):
+        """
+            Returns the current node's ordinate.
+        """
+        return (self.y)
+    
+    def getCoordinates(self):
         """
             Returns the current node's coordinates.
         """
         return (self.x, self.y)
-     
-# Mutators
+    
+#   Mutators
    
-    def add_road_arriving(self, road):
+    def addRoad(self, road, isComing):
         """
-        Adds a road that whose endpoint is this node.
-            self        :
-            road (road) : the road object that ends here
+            Connect a road to this node.
+                road        (Road)  :   the road object to be connected
+                isComing    (bool)  :   True if the roads comes to this node, False otherwise
         """
-        self.roadsComing += [road]
+        
+        if isComing:
+            self.roadsComing    += [road]
+        else:
+            self.roadsLeaving   += [road]
     
-    def add_road_leaving(self, road):
+    def setGate(self, road, state):
         """
-        Adds a road that departs from this node.
-            self        :
-            road (road) : the road object that goes from here
+            Sets the state of the gates on the road.
+                road    (Road)  :   the road whose gates are affected
+                state   (int)   :   the state (0 = closed, 1 = opened) of the gate
         """
-        self.roadsLeaving += [road]
-    
-    def setGate(road, state):
-        """
-        Sets the state of the gates on the road.
-            road  (road) : the road whose gates are affected
-            state (int)  : the state (0-1) of the gate
-        """
+        
         if (id(road.begin) == id(self)):
             road.gates[0] = state
         else:
             road.gates[1] = state
 
 ################################################################################
-   
+
 class Car:
     """
-    Those which will crowd our city >_<
+        Those which will crowd our city >_< .
     """
     
-# Path generation
+#   Path generation
     
     def generatePath(self):
         """
-        Assembles random waypoints into a the "path" list
+            Assembles random waypoints into a "path" list
         """
+        
         from random import randint
         
         totalWaypoints  = randint(5, 18)
         path            = []
         
-        for i in range(totalWaypoints): path += [randint(1, 100)]
+        for i in range(totalWaypoints):
+            path += [randint(1, 100)]
+        
         return path
     
-# Constructor
+#   Constructor
     
-    def __init__(self, path, departure_road):
+    def __init__(self, newPath, newRoad):
         """
-        Constructor method: a car is provided a (for now unmutable) sequence of directions.
-            self                  :
-            path (list)           : a list of waypoints
-            departure_road (road) : the road where the car originates
+            Constructor method : a car is provided a (for now unmutable) sequence of directions.
+                newPath (list)  :   a list of waypoints
+                newRoad (Road)  :   the road where the car originates
+            
+            Définie par la liste de ses directions successives, pour le moment cette liste est fixe.
+        """
         
-        Définie par la liste de ces directions successives, pour le moment cette liste est fixe.
-        """
-        self.path = path
+        self.path       = newPath
         # For now, the cars' speed is either 0 or 100
         # Cette « vitesse » est pour le moment 0 ou 100, ce sont des « point de deplacements »
-        self.speed = 0 
-        self.pos = 0
-        self.road = departure_road
-        
+        self.speed      = 0
+        self.position   = 0
+        self.road       = newRoad
+    
     def update(self):
         """
-        Updates the car speed and position, manages blocked pathways and queues.
+            Updates the car speed and position, manages blocked pathways and queues.
         """
         
         # Needs to be rewritten to account for tunnelling, see Issue1 -- Sharayanan
         
-        next_object = self.road.next(self.pos)
-        if self.pos + self.speed < next_object:
-            self.pos += self.speed
-        elif self.pos + self.speed < self.road.length:
-            self.pos = next_object -1
+        obstacle = self.road.nextObstacle(self.position)
+        
+        if self.position + self.speed < obstacle:
+            self.position = self.speed
         else:
-            # Manage the "closed gate" event
-            # Gérer le cas du feu rouge
-            print "" 
+            self.position += obstacle - 1
+            #   To do : how the car will cross the node to reach another road
 
 ################################################################################
-#
-#  TESTING ZONE
 
+#   TESTING ZONE
 
-circuit=Track()
+circuit = Track()
 tinr_io.load_track(circuit, "track_default.txt")
-circuit.roads[1].addCar(Car([], circuit.roads[2]),80)
-circuit.roads[1].addCar(Car([], circuit.roads[1]),30)
-circuit.roads[1].addCar(Car([], circuit.roads[1]),130)
+
+circuit.roads[1].addCar(Car([], circuit.roads[2]), 80)
+circuit.roads[1].addCar(Car([], circuit.roads[1]), 30)
+circuit.roads[1].addCar(Car([], circuit.roads[1]), 130)
