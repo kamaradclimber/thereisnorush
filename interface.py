@@ -148,6 +148,10 @@ def event_manager():
         else:
             pass
 
+def update_scene():
+    for road in init.track.roads:
+        road.avance()
+
 def main_loop():
     """
         Main loop : keeps updating and displaying the scene forever,
@@ -168,6 +172,10 @@ def main_loop():
         # Check the users' actions
         # Vérifie les actions de l'utilisateur
         event_manager()
+
+        # Updates the scene
+        # Met à jour la scène
+        update_scene()
         
         pass
         

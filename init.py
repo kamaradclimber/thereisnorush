@@ -125,6 +125,10 @@ class Road:
             if car.position > position: nearestObject = min(car.position , nearestObject)
         
         return nearestObject
+    def avance(self):
+        long= len((self.cars))
+        for i in range(1,long+1):
+            self.cars[-i].update(long-i)
 
     def addCar(self, newCar, newPosition):
         """
@@ -251,21 +255,28 @@ class Car:
         """
             Updates the car speed and position, manages blocked pathways and queues.
         """
+
+        #TEMPORARY
+        delta_t = 0.01
         
         # Needs to be rewritten to account for tunnelling, see Issue1 -- Sharayanan
         
-        if rang == len(self.cars) -1 : 
+        if rang == len(self.road.cars) -1 : 
             obstacle = None #light
         else:
-            obstacle = self.cars[rang+1].position 
+            obstacle = self.road.cars[rang+1].position 
         
-        if self.position + self.speed < obstacle:
-            self.position += self.speed
+        self.speed = 50
+        if self.position + self.speed*delta_t < obstacle:
+            self.position += self.speed * delta_t
         elif obstacle != None:
             self.position = obstacle - CAR_WIDTH
             self.speed = 0
         else:
-            pass            
+            #on oublie les histoires de feu rouge pour le moment: la voiture passe
+            self.position = self.road.length -1
+            self.speed = 0
+            
 
 ################################################################################
 
