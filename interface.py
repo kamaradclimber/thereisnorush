@@ -1,14 +1,11 @@
-#!/usr/local/bin/python
 # -*- coding: utf-8 -*-
 
-################################################################################
-#
+"""
 # File          :   interface.py
-# Description   :   
+# Description   :   Manages the displays and main loop.
 #
-# ToDo          :   ·
-#              
-################################################################################
+# ToDo          :   · 
+"""
 
 import pygame   # http://www.pygame.org
 import init     # ./init.py
@@ -17,40 +14,39 @@ import sys      # standard python library
 #   Settings
 
 global screen                                # Screen object - Objet écran
-global isRunning                           # Indicates whether the simulation is running - Indique si la simulation tourne
+global is_running                            # Indicates whether the simulation is running - Indique si la simulation tourne
 global debug                                 # Indicates whether debugging messages are displayed - Indique si les messages de débogage sont affichés
 
-clock  = pygame.time.Clock()                 # Clock object to control fps - Objet horloge pour controler les fps
-screen = pygame.display.set_mode((320, 240))       # Sets drawing surface - Met en place la surface de dessin
+screen = pygame.display.set_mode(init.RESOLUTION)       # Sets drawing surface - Met en place la surface de dessin
 debug  = True
 
 def init_display():
     pygame.init()
     pygame.display.set_caption("Thereisnorush (unstable)")
 
-def drawNode(node):
+def draw_node(node):
     """
-        Draws a given node on the screen.
-            node (Node) : the aforementioned node.
+    Draws a given node on the screen.
+        node (Node) : the aforementioned node.
     
-        Dessine un carrefour donné à l'écran.
-            node (Node) : le carrefour sus-cité.
+    Dessine un carrefour donné à l'écran.
+        node (Node) : le carrefour sus-cité.
     """
     
     rectangle = pygame.Rect(node.x - init.NODE_WIDTH/2, node.y - init.NODE_HEIGHT/2, init.NODE_WIDTH, init.NODE_HEIGHT)
     pygame.draw.rect(screen, init.NODE_COLOR, rectangle, 0)
 
-def drawCar(car):
+def draw_car(car):
     """
-        Draws a given car on the screen.
-            car (Car) : the aforementioned car.
+    Draws a given car on the screen.
+        car (Car) : the aforementioned car.
     
-        Dessine une voiture donnée à l'écran.
-            car (Car) : la voiture sus-citée.
+    Dessine une voiture donnée à l'écran.
+        car (Car) : la voiture sus-citée.
     """
     
-    xd, yd = car.road.begin.getCoordinates()
-    xa, ya = car.road.end.getCoordinates()
+    xd, yd = car.road.begin.coords
+    xa, ya = car.road.end.coords
 
     length_covered = car.position * 100 / car.road.length
     
@@ -63,50 +59,49 @@ def drawCar(car):
     rectangle      = pygame.Rect(pt_topleft, pt_bottomright)
     pygame.draw.rect(screen, init.CAR_COLOR, rectangle, 0)
 
-def drawRoad(road):
+def draw_road(road):
     """
-        Draws a given road on the screen and all the cars on it.
-            road (Road) : the aforementioned road.
+    Draws a given road on the screen and all the cars on it.
+        road (Road) : the aforementioned road.
             
-        Dessine une route donnée à l'écran et toutes les voitures dessus.
-            road (Road) : la route sus-citée.
+    Dessine une route donnée à l'écran et toutes les voitures dessus.
+        road (Road) : la route sus-citée.
     """
     
     pygame.draw.line(screen, init.ROAD_COLOR, (road.begin.x, road.begin.y), (road.end.x, road.end.y), 1)
     
     for car in road.cars:
-        drawCar(car)
+        draw_car(car)
     
 def draw_scene():
     """
-        Draws the complete scene on the screen.
-        Dessine la scène entière à l'écran.
+    Draws the complete scene on the screen.
+    Dessine la scène entière à l'écran.
     """
     
     screen.fill(init.BLACK)
     
     for node in init.track.nodes:
-        drawNode(node)
+        draw_node(node)
     for road in init.track.roads:
-        drawRoad(road)
+        draw_road(road)
     
     pygame.display.flip()
     pygame.display.update()
     
 def halt():
     """
-        Closes properly the simulation.
-        Quitte correctement la simulation.
+    Closes properly the simulation.
+    Quitte correctement la simulation.
     """
     
-    isRunning = False
+    is_running = False
     pygame.quit()
-    #sys.exit()  
   
 def event_manager():
     """
-        Checks for users' actions and call appropriate methods.
-        Vérifie les actions de l'utilisateur et réagit en conséquence.
+    Checks for users' actions and call appropriate methods.
+    Vérifie les actions de l'utilisateur et réagit en conséquence.
     """
     
     for event in pygame.event.get():
@@ -116,32 +111,16 @@ def event_manager():
 #   Mouse button
     
         elif (event.type == pygame.MOUSEBUTTONDOWN):
+            # The user uses the mouse
             left_button, right_button, middle_button = pygame.mouse.get_pressed()
             x, y = pygame.mouse.get_pos()
-            
-            #debugging code
-            print "MD", x, y, left_button, right_button, middle_button
-            
-            # The next line will be implemented when the GUI code is written : do not delete please
-            # call tinr_gui.mouse_down(x, y, [left_button, right_button, middle_button]
         elif (event.type == pygame.MOUSEBUTTONUP):
             # The user is releasing the buttons
             left_button, right_button, middle_button = pygame.mouse.get_pressed()
-            x, y = pygame.mouse.get_pos()
-            
-            #debugging code
-            print "MU", x, y, left_button, right_button, middle_button
-            
-            # The next line will be implemented when the GUI code is written : do not delete please
-            # call tinr_gui.mouse_up(x, y, [left_button, right_button, middle_button]
-    
-#   Keyboard button
-    
+            x, y = pygame.mouse.get_pos()            
         elif (event.type == pygame.KEYDOWN):
+            # The user hits a key
             keyb_state = pygame.key.get_pressed()
-            
-            #debugging code
-            print "KEY", keyb_state
             
             if keyb_state[pygame.K_ESCAPE]:
                 halt()
@@ -150,59 +129,46 @@ def event_manager():
 
 def update_scene():
     for road in init.track.roads:
-        road.avance()
+        road.update()
 
 def main_loop():
     """
-        Main loop : keeps updating and displaying the scene forever,
-                    unless somebody hits Esc.
+    Main loop : keeps updating and displaying the scene forever,
+                unless somebody hits Esc.
     
-        Boucle principale : met à jour et affiche la scène pour toujours,
-                            jusqu'à ce que quelqu'un appuye sur Esc.
+    Boucle principale : met à jour et affiche la scène pour toujours,
+                        jusqu'à ce que quelqu'un appuye sur Esc.
     """
     # Main loop
 
-    isRunning = True
+    is_running = True
 
-    while isRunning:
-        # Ensure that we won't update more often than 60 times per second
-        # S'assure qu'on ne dépassera pas 60 images par secondes
-        clock.tick(60)
-        
-        # Check the users' actions
-        # Vérifie les actions de l'utilisateur
+    while is_running:
+        # Check the users' actions | Vérifie les actions de l'utilisateur
         event_manager()
 
-        # Updates the scene
-        # Met à jour la scène
+        # Updates the scene | Met à jour la scène
         update_scene()
         
-        pass
-        
-        # Draw the scene
-        # Dessine la scène
+        # Draw the scene | Dessine la scène
         try:
-            # Snafu
-            # Situation normale
+            # Snafu | Situation normale
             draw_scene()
         except Exception, exc:
             # There some error: stop everything
             # Il y a une erreur quelconque : on arrête tout
             print exc
-            isRunning = False
+            is_running = False
             
-        pass
 
     # End of simulation instructions
     # Instructions de fin de simulation
-    pass
     halt()
     
 # Bootstrap
 
 if __name__ == "__main__":
     # Before simulation instructions
-    pass
     init_display()
     # Main loop
     main_loop()
