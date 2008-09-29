@@ -21,7 +21,7 @@ global isRunning                           # Indicates whether the simulation is
 global debug                                 # Indicates whether debugging messages are displayed - Indique si les messages de débogage sont affichés
 
 clock  = pygame.time.Clock()                 # Clock object to control fps - Objet horloge pour controler les fps
-screen = pygame.display.set_mode(resolution)       # Sets drawing surface - Met en place la surface de dessin
+screen = pygame.display.set_mode((320, 240))       # Sets drawing surface - Met en place la surface de dessin
 debug  = True
 
 def init_display():
@@ -37,8 +37,8 @@ def drawNode(node):
             node (Node) : le carrefour sus-cité.
     """
     
-    rectangle = pygame.Rect(node.x - NODE_WIDTH/2, node.y - NODE_HEIGHT/2)
-    pygame.draw.rect(screen, NODE_COLOR, rectangle, 0)
+    rectangle = pygame.Rect(node.x - init.NODE_WIDTH/2, node.y - init.NODE_HEIGHT/2, init.NODE_WIDTH, init.NODE_HEIGHT)
+    pygame.draw.rect(screen, init.NODE_COLOR, rectangle, 0)
 
 def drawCar(car):
     """
@@ -49,19 +49,19 @@ def drawCar(car):
             car (Car) : la voiture sus-citée.
     """
     
-    xd, yd = car.road.begin.coords() # i like this OO call !
-    xa, ya = car.road.end.coords()
+    xd, yd = car.road.begin.getCoordinates() # i like this OO call !
+    xa, ya = car.road.end.getCoordinates()
 
-    length_covered = car.pos * 100 / car.road.length
+    length_covered = car.position * 100 / car.road.length
     
     x_position = xd + (xa - xd ) * length_covered / 100
     y_position = yd + (ya - yd ) * length_covered / 100
     
-    pt_topleft     = (x_position - CAR_WIDTH / 2 , y_position - CAR_HEIGHT / 2 )
-    pt_bottomright = (CAR_WIDTH, CAR_HEIGHT)
+    pt_topleft     = (x_position - init.CAR_WIDTH / 2 , y_position - init.CAR_HEIGHT / 2 )
+    pt_bottomright = (init.CAR_WIDTH, init.CAR_HEIGHT)
     
     rectangle      = pygame.Rect(pt_topleft, pt_bottomright)
-    pygame.draw.rect(screen, CAR_COLOR, rectangle, 0)
+    pygame.draw.rect(screen, init.CAR_COLOR, rectangle, 0)
 
 def drawRoad(road):
     """
@@ -72,7 +72,7 @@ def drawRoad(road):
             road (Road) : la route sus-citée.
     """
     
-    pygame.draw.line(screen, ROAD_COLOR, (road.begin.x, road.begin.y), (road.end.x, road.end.y), 1)
+    pygame.draw.line(screen, init.ROAD_COLOR, (road.begin.x, road.begin.y), (road.end.x, road.end.y), 1)
     
     for car in road.cars:
         drawCar(car)
@@ -83,7 +83,7 @@ def draw_scene():
         Dessine la scène entière à l'écran.
     """
     
-    screen.fill(BLACK)
+    screen.fill(init.BLACK)
     
     for node in init.track.nodes:
         drawNode(node)
@@ -177,9 +177,10 @@ def main_loop():
             # Snafu
             # Situation normale
             draw_scene()
-        except:
+        except Exception, exc:
             # There some error: stop everything
             # Il y a une erreur quelconque : on arrête tout
+            print exc
             isRunning = False
             
         pass

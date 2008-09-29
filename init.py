@@ -12,6 +12,31 @@
 
 import tinr_io # ./tinr_io.py (IO operations)
 
+#   Useful constants
+
+BLACK       = (  0,   0,   0)
+RED         = (255,   0,   0)
+GREEN       = (  0, 255,   0)
+BLUE        = (  0,   0, 255)
+WHITE       = (255, 255, 255)
+
+LIGHT_RED   = (255,  64,  64)
+LIGHT_GREEN = ( 64, 255,  64)
+LIGHT_BLUE  = ( 64,  64, 255)
+
+RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (500, 500)
+
+NODE_WIDTH  = 4
+NODE_HEIGHT = 4
+NODE_COLOR  = RED
+
+CAR_WIDTH   = 4
+CAR_HEIGHT  = 4
+CAR_COLOR   = GREEN
+
+ROAD_COLOR  = WHITE
+
+
 class Track:
     """
         Our city model : a mathematical graph made of nodes, linked to each other by roads.
@@ -78,7 +103,6 @@ class Road:
         self.cars   = [] 
         # this list *has* to be  permanently orderer, i think, further reading on issue1 (see http://code.google.com/p/thereisnorush/issues)
         # I think not, see Issue1/Comment1 -- Sharayanan
-        
         self.length = length
         self.gates  = [False, False]
     
@@ -108,11 +132,10 @@ class Road:
                 newCar      (Car)   :   car to be added
                 newPosition (float) :   curvilinear abscissa for the car
         """
-        #   "newCar" should really be a pointer ; I've read that almost all functions parameters are taken by Python by reference ; is that true ? Or should I specify something in the code ? -- Ch@hine
 
         if (not len(self.cars)): self.cars = []
         
-        self.cars       +=  [newCar]
+        self.cars       =  [newCar] + self.cars
         newCar.position =   newPosition
         newCar.road     =   self
 
@@ -224,46 +247,29 @@ class Car:
         self.position   = 0
         self.road       = newRoad
     
-    def update(self):
+    def update(self,rang):
         """
             Updates the car speed and position, manages blocked pathways and queues.
         """
         
         # Needs to be rewritten to account for tunnelling, see Issue1 -- Sharayanan
         
-        obstacle = self.road.nextObstacle(self.position)
+        if rang == len(self.cars) -1 : 
+            obstacle = None #light
+        else:
+            obstacle = self.cars[rang+1].position 
         
         if self.position + self.speed < obstacle:
-            self.position = self.speed
+            self.position += self.speed
+        elif obstacle != None:
+            self.position = obstacle - CAR_WIDTH
+            self.speed = 0
         else:
-            self.position += obstacle - 1
-            #   To do : how the car will cross the node to reach another road
+            pass            
 
 ################################################################################
 
-#   Useful constants
 
-BLACK       = (  0,   0,   0)
-RED         = (255,   0,   0)
-GREEN       = (  0, 255,   0)
-BLUE        = (  0,   0, 255)
-WHITE       = (255, 255, 255)
-
-LIGHT_RED   = (255,  64,  64)
-LIGHT_GREEN = ( 64, 255,  64)
-LIGHT_BLUE  = ( 64,  64, 255)
-
-RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (500, 500)
-
-NODE_WIDTH  = 4
-NODE_HEIGHT = 4
-NODE_COLOR  = RED
-
-CAR_WIDTH   = 4
-CAR_HEIGHT  = 4
-CAR_COLOR   = GREEN
-
-ROAD_COLOR  = WHITE
 
 #   TESTING ZONE
 
