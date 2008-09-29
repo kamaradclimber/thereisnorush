@@ -26,7 +26,7 @@ def add_track_element(track, elements):
     if (elements[0] == NODE):
         track.addNode([elements[1], elements[2]])
     elif (elements[0] == ROAD):
-        track.addRoad(track.nodes[elements[1]], track.nodes[elements[2]], elements[3])
+        track.createRoad(track.nodes[elements[1]], track.nodes[elements[2]], elements[3])
     else:
         # Should never be reached: something went wrong
         pass

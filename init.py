@@ -1,14 +1,10 @@
 #!/usr/local/bin/python
 # -*- coding: utf-8 -*-
-
-################################################################################
-#
-# File          :   init.py
-# Description   :   defines the classes and constants needed for the simulation
-#
-# ToDo          :   · Rewrite update() to account for tunnelling and crossing a node
-#              
-################################################################################
+"""
+File          :   init.py
+Description   :   defines the classes and constants needed for the simulation
+ToDo          :   · Rewrite update() to account for tunnelling and crossing a node
+"""
 
 import tinr_io # ./tinr_io.py (IO operations)
 
@@ -36,38 +32,34 @@ CAR_COLOR   = GREEN
 
 ROAD_COLOR  = WHITE
 
+#mytrack = Track()
+#mytrack.nodes.append(Node(1,2))
+
 
 class Track:
     """
-        Our city model : a mathematical graph made of nodes, linked to each other by roads.
+    Our city model : a mathematical graph made of nodes, linked to each other by roads.
     """
    
-#   Constructor
-   
-    def __init__(self, newNodes = [], newRoads = []):
+    def __init__(self, newNodes=None, newRoads=None):
         """
-            Constructor method : creates a track given the nodes and roads.
-                newNodes (list) :   a list of the nodes
-                newRoads (list) :   a list of the roads
+        Constructor method : creates a track given the nodes and roads.
+        :type newNodes: list    newNodes (list) :   a list of the nodes
+            newRoads (list) :   a list of the roads
         """ 
-        
-        # if possible, let's try to avoid copies
-        self.nodes = newNodes
-        self.roads = newRoads
+        if newNodes is None:
+            self.nodes = []
+        else:
+            self.nodes = newNodes
+        if newRoads is None:
+            self.roads = []
+        else:
+            self.roads = newRoads
+
    
 #   Mutators
-   
-    def addNode(self, newCoordinates):
-        """
-            Adds a node to the track.
-                newCoordinates (list)   :   coordinates [x, y] for the node
-        """
-        
-        if (not len(self.nodes)): self.nodes = []
-        
-        self.nodes += [Node(newCoordinates)]
     
-    def addRoad(self, newBegin, newEnd, newLength):
+    def createRoad(self, newBegin, newEnd, newLength):
         """
             Adds a road to the track.
                 newBegin  (Node)    :   starting point for the road
@@ -101,30 +93,9 @@ class Road:
         self.begin  = newBegin
         self.end    = newEnd
         self.cars   = [] 
-        # this list *has* to be  permanently orderer, i think, further reading on issue1 (see http://code.google.com/p/thereisnorush/issues)
-        # I think not, see Issue1/Comment1 -- Sharayanan
         self.length = length
         self.gates  = [False, False]
     
-    def nextObstacle(self, position):
-        # Bugged ? This function does not return anything, nor does it acts in any way
-        # Planté ? Cette fonction ne retourne rien, ni n'agit d'une manière ou d'une autre
-        #   I've added the return value -- Ch@hine
-        """
-            Returns the next object on the current road
-            
-            Beginning from the end of the road (position of the node), it browses the list of cars
-            to see whether one of them blocks the way. 
-            
-            Actually there was a mistake, fixed. it should be more understandable now ;-)
-                position  ()    :   
-        """
-        
-        nearestObject = self.length - 1
-        for car in self.cars:
-            if car.position > position: nearestObject = min(car.position , nearestObject)
-        
-        return nearestObject
     def avance(self):
         long= len((self.cars))
         for i in range(1,long+1):
@@ -132,7 +103,7 @@ class Road:
 
     def addCar(self, newCar, newPosition):
         """
-            Inserts a car at given position in the _ordered_ list of cars.
+            Inserts a car at given position in the _ordered_ (yes really ordered !) list of cars.
                 newCar      (Car)   :   car to be added
                 newPosition (float) :   curvilinear abscissa for the car
         """
@@ -163,25 +134,10 @@ class Node:
         self.roadsComing   = []
         self.roadsLeaving  = []
 
-#   Accessors
-
-    def getX(self):
-        """
-            Returns the current node's abscissa.
-        """
-        return (self.x)
-    
-    def getY(self):
-        """
-            Returns the current node's ordinate.
-        """
-        return (self.y)
-    
-    def getCoordinates(self):
-        """
-            Returns the current node's coordinates.
-        """
+    @property
+    def coords(self):
         return (self.x, self.y)
+
     
 #   Mutators
    
@@ -273,7 +229,7 @@ class Car:
             self.position = obstacle - CAR_WIDTH
             self.speed = 0
         else:
-            #on oublie les histoires de feu rouge pour le moment: la voiture passe
+            #on oublie les histoires de feu rouge pour le moment: la voiture s'arrete
             self.position = self.road.length -1
             self.speed = 0
             
@@ -283,10 +239,10 @@ class Car:
 
 
 #   TESTING ZONE
-
+#if __name__ == '__main__': # pour le moment ceci fait bugger on verra ca après !
 track = Track()
 tinr_io.load_track(track, "track_default.txt")
-
+print track.roads
 track.roads[1].addCar(Car([], track.roads[2]), 80)
 track.roads[1].addCar(Car([], track.roads[1]), 30)
 track.roads[1].addCar(Car([], track.roads[1]), 130)

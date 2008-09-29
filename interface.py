@@ -25,8 +25,8 @@ screen = pygame.display.set_mode((320, 240))       # Sets drawing surface - Met 
 debug  = True
 
 def init_display():
-    pygame.init()                                             # Pygame initialization - Initialisation de pygame
-    pygame.display.set_caption("Thereisnorush (unstable)")    # Sets window caption - Définit le titre de la fenêtre
+    pygame.init()
+    pygame.display.set_caption("Thereisnorush (unstable)")
 
 def drawNode(node):
     """
@@ -49,7 +49,7 @@ def drawCar(car):
             car (Car) : la voiture sus-citée.
     """
     
-    xd, yd = car.road.begin.getCoordinates() # i like this OO call !
+    xd, yd = car.road.begin.getCoordinates()
     xa, ya = car.road.end.getCoordinates()
 
     length_covered = car.position * 100 / car.road.length
@@ -200,7 +200,7 @@ def main_loop():
     
 # Bootstrap
 
-if (__name__ == "__main__"):
+if __name__ == "__main__":
     # Before simulation instructions
     pass
     init_display()
