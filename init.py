@@ -5,7 +5,9 @@ Description   :   defines the classes and constants needed for the simulation
 ToDo          :   · Rewrite update() to account for tunnelling and crossing a node
 """
 
-import string #   standard python library
+import string # standard python library
+import os     # standard python library
+import math   # standard python library
 
 #   Useful constants
 
@@ -24,6 +26,7 @@ RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (512, 384)
 NODE_WIDTH  = 4
 NODE_HEIGHT = 4
 NODE_COLOR  = RED
+NODE_RADIUS_DEFAULT = 10
 
 CAR_WIDTH   = 4
 CAR_HEIGHT  = 4
@@ -142,8 +145,10 @@ class Track:
         except Exception, exc:
             # The file doesn't exists or any other error
             print "The file " + filename + " cannot be loaded."
+            print "Current directory is: " + os.getcwd() 
             print exc 
             pass
+            exit()
         for line in lines:
             self.track_line_parse(line)
             
@@ -155,11 +160,13 @@ class Track:
             new_length (int)     :   road length
         """
         
-        if len(self.roads) == 0: self.roads = []
-      
-        self.roads += [Road(new_begin, new_end, new_length)]
-        new_begin.add_road(self, False)
-        new_end.add_road(self, True)
+        if len(self.roads) == 0:
+            self.roads = []
+        
+        new_road = Road(new_begin, new_end, new_length)
+        self.roads += [new_road]
+        new_begin.add_road(new_road, False)
+        new_end.add_road(new_road, True)
 
 class Road:
     """
@@ -198,6 +205,18 @@ class Road:
         self.cars        =  [new_car] + self.cars
         new_car.position =   new_position
         new_car.road     =   self
+        
+    def del_car(self, old_car):
+        """
+        Deletes a car on the road
+        """
+        queue_length = len((self.cars))
+        
+        for i in range(queue_length):
+            if self.cars[-i-1] == old_car : 
+                del self.cars[-i-1]
+                # break;  - not useful here, as it removes duplicates, if any
+                
 
 
 class Node:
@@ -205,17 +224,36 @@ class Node:
     Crossroads of our city ; may host several roads.
     """
     
-    def __init__(self, new_coordinates):
+    def __init__(self, new_coordinates, radius = NODE_RADIUS_DEFAULT):
         """
         Constructor method : creates a new node.
             new_coordinates (list) : the coordinates [x, y] for the node
         """
-        self.roads         = []
+        #self.roads         = []
         self.x             = new_coordinates[0]
         self.y             = new_coordinates[1]
-        self.roads_coming   = []
-        self.roads_leaving  = []
+        self.roads_coming  = None
+        self.roads_leaving = None
+        
+        # Maximum available space to host cars : perimeter divided by cars' width
+        # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
+        self.max_cars      = int(2 * math.pi * radius / CAR_WIDTH)
 
+    def manage_car(self, car):
+        """
+        Asks to node to take control over the car and move it appropriately.
+        Demande au nœud de prendre le contrôle de la voiture et de la déplacer de manière adéquate.
+        """
+        
+        # For now : systematically move to the first available leaving road, if any
+        # Pour l'instant : va toujours à la première route libre, s'il y en a 
+        
+        if self.roads_leaving:
+            # TEMPORARY !
+            car.road.del_car(car)
+            self.roads_leaving[0].add_car(car, 0)
+            
+        
     @property
     def coords(self):
         return (self.x, self.y)
@@ -229,8 +267,12 @@ class Node:
         """
         
         if is_coming:
+            if not self.roads_coming:
+                self.roads_coming = []
             self.roads_coming    += [road]
         else:
+            if not self.roads_leaving:
+                self.roads_leaving = []
             self.roads_leaving   += [road]
     
     def set_gate(self, road, state):
@@ -291,7 +333,7 @@ class Car:
         #TEMPORARY
         delta_t = 0.01
         #print id(self)
-        next_light =self.road.length -1
+        next_light = self.road.length -1
         if rang == len(self.road.cars) - 1 : 
             obstacle =  next_light
             #print "le seul obstacle est un feu"
@@ -310,9 +352,12 @@ class Car:
             #print "je marrete avant le prochain obstacle"
         else:
             #on oublie les histoires de feu rouge pour le moment : la voiture s'arrête.
-            self.position = self.road.length -1
-            self.speed = 0
+            #self.position = self.road.length -1
+            #self.speed = 0
             #print "je suis un bon citoyen et m'arrete au feu"
+            
+            # Let's do some more stuff ! We ask the node to do with us what he wants
+            self.road.end.manage_car(self)
         #print self.position
         #print "----------"
             
@@ -329,6 +374,7 @@ track = Track()
 track.load_track_from_file("track_default.txt")
 #attention à l'ordre dans lequel on place les voitures ! si ce n'est pas dans lordre décroissant par position, tout le reste du programme est gêné !
 # un tri, tout au début devrait résoudre ce bug issue2
+track.roads[3].add_car(Car([], track.roads[3]), 5)
 track.roads[6].add_car(Car([], track.roads[6]), 500)
 track.roads[6].add_car(Car([], track.roads[6]), 30)
 track.roads[6].add_car(Car([], track.roads[6]), 10)
