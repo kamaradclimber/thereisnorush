@@ -27,7 +27,7 @@ NODE_COLOR  = RED
 
 CAR_WIDTH   = 4
 CAR_HEIGHT  = 4
-CAR_COLOR   = GREEN
+CAR_COLOR   = WHITE
 
 ROAD_COLOR  = WHITE
 
@@ -182,7 +182,6 @@ class Road:
     
     def update(self):
         queue_length = len((self.cars))
-
         for i in range(queue_length):
             self.cars[-i-1].update(queue_length-(i+1))
 
@@ -291,23 +290,31 @@ class Car:
 
         #TEMPORARY
         delta_t = 0.01
-        
+        #print id(self)
+        next_light =self.road.length -1
         if rang == len(self.road.cars) - 1 : 
-            obstacle = None #light
+            obstacle =  next_light
+            #print "le seul obstacle est un feu"
         else:
-            obstacle = self.road.cars[rang + 1].position 
+            obstacle = self.road.cars[rang + 1].position
+            #print "ya une voiture devant", obstacle
         
         self.speed = 50
-        
+        #print "ma pos actuelle est", self.position
         if self.position + self.speed*delta_t < obstacle:
             self.position += self.speed * delta_t
-        elif obstacle != None:
+            #print "1 trait danger, 2 traits sécurité: je fonce !"
+        elif obstacle != next_light:
             self.position = obstacle - CAR_WIDTH
-            self.speed = 0
+            self.speed = 0 #ca ne sert un peu à rien, pour le moment,  car la vitesse est remise à 50 après
+            #print "je marrete avant le prochain obstacle"
         else:
             #on oublie les histoires de feu rouge pour le moment : la voiture s'arrête.
             self.position = self.road.length -1
             self.speed = 0
+            #print "je suis un bon citoyen et m'arrete au feu"
+        #print self.position
+        #print "----------"
             
 
 
@@ -320,6 +327,8 @@ if (__name__ == '__main__'):
 
 track = Track()
 track.load_track_from_file("track_default.txt")
-track.roads[1].add_car(Car([], track.roads[2]), 80)
-track.roads[1].add_car(Car([], track.roads[1]), 30)
-track.roads[1].add_car(Car([], track.roads[1]), 130)
+#attention à l'ordre dans lequel on place les voitures ! si ce n'est pas dans lordre décroissant par position, tout le reste du programme est gêné !
+# un tri, tout au début devrait résoudre ce bug issue2
+track.roads[6].add_car(Car([], track.roads[6]), 500)
+track.roads[6].add_car(Car([], track.roads[6]), 30)
+track.roads[6].add_car(Car([], track.roads[6]), 10)
