@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 """
 File        :   init.py
 Description :   defines the classes and constants needed for the simulation
@@ -36,8 +37,8 @@ CAR_COLOR   = WHITE
 
 ROAD_COLOR  = WHITE
 
-NODE = "Node"
-ROAD = "Road"
+NODE        = "Node"
+ROAD        = "Road"
 
 class Track:
     """
@@ -46,7 +47,7 @@ class Track:
    
     def __init__(self, new_nodes = None, new_roads = None):
         """
-        Constructor method : creates a track given the nodes and roads.
+        Constructor method : creates a track given the nodes and roads, if any.
             new_nodes   (list)  :   a list of the nodes
             new_roads   (list)  :   a list of the roads
         """
@@ -88,7 +89,7 @@ class Track:
             lines += [line.strip()]
         
         return lines
-        
+    
     def parse_line(self, line):
         """
         Parses a line in a track description file.
@@ -98,32 +99,32 @@ class Track:
         elements        = string.replace(line, ",", " ").split()
         kind            = ""
         total_arguments = 0
-
-        # Get element type
+        
+        #   Get element type
         if len(elements) != 0:
             kind = elements[0]
-
-        # Define how many arguments are to expect
+        
+        #   Define how many arguments are to expect
         if (kind == NODE):
-            total_arguments = 2
+            total_arguments = 2 #   abscissa and ordinate
         elif (kind == ROAD):
-            total_arguments = 3
+            total_arguments = 3 #   starting node, ending node and lenght
         else:
-            print "ERROR : unknown element type '" + kind + "'."
+            print "ERROR : unknown element type '" + kind + "' !"
             pass
         
-        # Check whether the arguments are corrects
+        #   Add the specified element to the track, if all is correct
         if (len(elements) == 1 + total_arguments):
             try:
-                # Convert arguments to int and add the element
-                for i in range(total_arguments):
-                    elements[i + 1] = int(elements[i + 1])
+                for i in range(1, total_arguments):
+                    elements[i] = int(elements[i])
                 
                 self.add_element(elements)
             except Exception, exc:
-                print "ERROR : in parsing line : "
+                print "ERROR : in parsing the following line : "
                 print elements
                 print exc 
+                print
                 pass
         else:
             print "ERROR : wrong parameters given for the element '" + kind + "'."
@@ -143,7 +144,7 @@ class Track:
         except Exception, exc:
             # The file doesn't exists or any other error
             print "ERROR : the file " + file_name + " cannot be loaded."
-            print "Current directory is: " + os.getcwd() 
+            print "Current directory is : " + os.getcwd() 
             print exc 
             pass
             exit()
@@ -227,12 +228,13 @@ class Node:
         self.coming_roads  = None
         self.leaving_roads = None
         
-        
         # Maximum available space to host cars : perimeter divided by cars' width
         # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
         self.max_cars      = int(2 * pi * radius / CAR_WIDTH)
         
-        #   List of available spaces to host cars ; each value contains a car pointer if the space is taken, None if not
+        #   List of available spaces to host cars ; each value contains :
+        #       - a car pointer if the space is taken ;
+        #       - "None" if not.
         #   For the moment, I will do as if the space number "n" was in front of the leaving road number "n", and I will make it permute every interval of time
         #   Note that the lenght of "self.cars" needs to be constant, and superior to "max_cars" -- Ch@hine
         self.cars          = []
@@ -264,8 +266,8 @@ class Node:
         
         car.road.remove_car(car)
         
-        #   Sets the car in one of the available spaces
-        #   Note : this function cannot be called if no space is available nor if the maximum number of cars is reached -- Ch@hine
+        #   Places the car in one of the available spaces
+        #   Note : this function MUST NOT be called if no space is available nor if the maximum number of cars is reached -- Ch@hine
         for i in range(len(self.leaving_roads)):
             if self.cars[i] is None:
                 self.cars[i] = car
@@ -289,6 +291,7 @@ class Node:
                 self.cars[i] = None
                 self.leaving_roads[i].add_car(self.cars[i], 0)
         
+        #   Any idea to avoid repeating thoses lines of code ? -- Ch@hine
         self.cars[max_cars - 1] = temp
         if self.cars[max_cars - 1].path[0]:
             self.cars[max_cars - 1].path[0] -= 1;
@@ -366,13 +369,19 @@ class Car:
         self.position   = 0
         self.road       = new_road
     
-    def next_way(self): # Becomes useless with my new function "rotate"
+    def next_way(self): # Becomes useless since the function "rotate" manages it -- Ch@hine
         if len(self.path) == 0:
             return 0
         else:
             direction = self.path[0]
             del self.path[0]
             return direction
+    
+    def join_node(self, node):
+        """
+        TO BE IMPLEMENTED
+        """
+        
 
     def update(self, rang):
         """
@@ -383,7 +392,7 @@ class Car:
         #print id(self)
         next_light = self.road.length -1
         if rang == len(self.road.cars) - 1 : 
-            obstacle =  next_light
+            obstacle = next_light
             #print "le seul obstacle est un feu"
         else:
             obstacle = self.road.cars[rang + 1].position
@@ -391,9 +400,9 @@ class Car:
         
         self.speed = 50
         #print "ma pos actuelle est", self.position
-        if self.position + self.speed*delta_t < obstacle:
+        if self.position + self.speed * delta_t < obstacle:
             self.position += self.speed * delta_t
-            #print "1 trait danger, 2 traits sécurité: je fonce !"
+            #print "1 trait danger, 2 traits sécurité : je fonce !"
         elif obstacle != next_light:
             self.position = obstacle - CAR_WIDTH
             self.speed = 0 #ca ne sert un peu à rien, pour le moment,  car la vitesse est remise à 50 après
@@ -407,6 +416,13 @@ class Car:
             
             # Let's do some more stuff ! We ask the node to do with us what he wants
             self.road.end.manage_car(self, remaining_points) #j'indique le nbre de points de déplacement restants (combien coûte le carrefour ?)
+            
+            #   I propose the following code to replace the previous one -- Ch@hine
+            #   
+            #   if (car.road.gate[1]) and (car.road.end.total_free_places):
+            #       self.join(car.road.end)
+            
+            
         #print self.position
         #print "----------"
             

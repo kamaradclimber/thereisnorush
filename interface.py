@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-# File          :   interface.py
-# Description   :   Manages the displays and main loop.
-#
-# ToDo          :   · 
+File        :   interface.py
+Description :   Manages the displays and main loop.
+ToDo        :   · 
 """
 
 import pygame   # http://www.pygame.org
@@ -13,11 +12,11 @@ import sys      # standard python library
 
 #   Settings
 
-global screen                                # Screen object - Objet écran
-global is_running                            # Indicates whether the simulation is running - Indique si la simulation tourne
-global debug                                 # Indicates whether debugging messages are displayed - Indique si les messages de débogage sont affichés
+global screen       # Screen object - Objet écran
+global is_running   # Indicates whether the simulation is running - Indique si la simulation tourne
+global debug        # Indicates whether debugging messages are displayed - Indique si les messages de débogage sont affichés
 
-screen = pygame.display.set_mode(init.RESOLUTION)       # Sets drawing surface - Met en place la surface de dessin
+screen = pygame.display.set_mode(init.RESOLUTION)   # Sets drawing surface - Met en place la surface de dessin
 debug  = True
 
 def init_display():
@@ -107,19 +106,17 @@ def event_manager():
     for event in pygame.event.get():
         if (event.type == pygame.QUIT):
             halt()
-    
-#   Mouse button
-    
+        
+        #   Mouse button
         elif (event.type == pygame.MOUSEBUTTONDOWN):
-            # The user uses the mouse
             left_button, right_button, middle_button = pygame.mouse.get_pressed()
             x, y = pygame.mouse.get_pos()
         elif (event.type == pygame.MOUSEBUTTONUP):
-            # The user is releasing the buttons
             left_button, right_button, middle_button = pygame.mouse.get_pressed()
-            x, y = pygame.mouse.get_pos()            
+            x, y = pygame.mouse.get_pos()
+        
+        #   Keyboard button
         elif (event.type == pygame.KEYDOWN):
-            # The user hits a key
             keyb_state = pygame.key.get_pressed()
             
             if keyb_state[pygame.K_ESCAPE]:
@@ -139,14 +136,13 @@ def main_loop():
     Boucle principale : met à jour et affiche la scène pour toujours,
                         jusqu'à ce que quelqu'un appuye sur Esc.
     """
-    # Main loop
-
+    
     is_running = True
 
     while is_running:
         # Check the users' actions | Vérifie les actions de l'utilisateur
         event_manager()
-
+        
         # Updates the scene | Met à jour la scène
         update_scene()
         
