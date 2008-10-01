@@ -7,9 +7,12 @@ ToDo          :   · Rewrite update() to account for tunnelling and crossing a n
 
 import string # standard python library
 import os     # standard python library
-import math   # standard python library
+from math import pi   # standard python library, ne pas tout prendre, c'est plus propre :-)
 
 #   Useful constants
+
+#TEMPORARY
+delta_t = 0.01
 
 BLACK       = (  0,   0,   0)
 RED         = (255,   0,   0)
@@ -213,8 +216,8 @@ class Road:
         queue_length = len((self.cars))
         
         for i in range(queue_length):
-            if self.cars[-i-1] == old_car : 
-                del self.cars[-i-1]
+            if self.cars[i] == old_car : #ma modif est-elle liée au bug délicat dont tu parlais ?
+                del self.cars[i]
                 # break;  - not useful here, as it removes duplicates, if any
                 
 
@@ -237,9 +240,9 @@ class Node:
         
         # Maximum available space to host cars : perimeter divided by cars' width
         # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
-        self.max_cars      = int(2 * math.pi * radius / CAR_WIDTH)
+        self.max_cars      = int(2 * pi * radius / CAR_WIDTH)
 
-    def manage_car(self, car):
+    def manage_car(self, car, remaining_points):
         """
         Asks to node to take control over the car and move it appropriately.
         Demande au nœud de prendre le contrôle de la voiture et de la déplacer de manière adéquate.
@@ -251,8 +254,11 @@ class Node:
         if self.roads_leaving:
             # TEMPORARY !
             car.road.del_car(car)
-            self.roads_leaving[0].add_car(car, 0)
-            
+            next_way = car.next_way()
+            next_way = car.next_way() % len(self.roads_leaving) #on s'est gardé de la div par 0 avec le test booleen - We prevent the program from the 0-division thanks to previous boolean test
+            self.roads_leaving[next_way].add_car(car, remaining_points * delta_t)
+        else: # on est arrivé à dans une impasse, faut-il faire disparaitre la voiture pour accélerer le programme ?
+            pass
         
     @property
     def coords(self):
@@ -317,21 +323,28 @@ class Car:
         Définie par la liste de ses directions successives, pour le moment cette liste est fixe.
         """
         
-        self.path       = newPath
+        self.path       = self.generate_path()
         # For now, the cars' speed is either 0 or 100
         # Cette « vitesse » est pour le moment 0 ou 100, ce sont des « point de deplacements »
         self.speed      = 0
         self.position   = 0
         self.road       = new_road
     
+    def next_way(self):
+        if len(self.path)==0:
+            return 0
+        else:
+            direction = self.path[0]
+            del self.path[0]
+            return direction
+
     def update(self, rang):
         """
         Updates the car speed and position, manages blocked pathways and queues.
             rang    (int)   :   position on the road (0 : last in)
         """
 
-        #TEMPORARY
-        delta_t = 0.01
+
         #print id(self)
         next_light = self.road.length -1
         if rang == len(self.road.cars) - 1 : 
@@ -352,12 +365,13 @@ class Car:
             #print "je marrete avant le prochain obstacle"
         else:
             #on oublie les histoires de feu rouge pour le moment : la voiture s'arrête.
-            #self.position = self.road.length -1
+            remaining_points = self.speed - (self.road.length -1 - self.position) / delta_t
+            self.position = self.road.length -1 #j'avance autant que je peux, puis demande au carrefour de me prendre en charge
             #self.speed = 0
             #print "je suis un bon citoyen et m'arrete au feu"
             
             # Let's do some more stuff ! We ask the node to do with us what he wants
-            self.road.end.manage_car(self)
+            self.road.end.manage_car(self, remaining_points) #j'indique le nbre de points de déplacement restants (combien coûte le carrefour ?)
         #print self.position
         #print "----------"
             

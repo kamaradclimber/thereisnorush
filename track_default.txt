@@ -5,11 +5,17 @@ Node 50, 50
 Node 100, 50
 Node 10, 100
 Node 150, 150
-Node 180, 180
+Node 200, 200
+Node 150, 200
+Node 200, 150
 Road 0, 1, 150
 Road 1, 2, 150
 Road 2, 0, 150
 Road 4, 0, 150
 Road 3, 5, 150
 Road 3, 0, 150
-Road 6, 7, 800
+Road 6, 7, 150
+Road 7, 8, 150
+Road 8, 9, 150
+Road 9, 6, 150
+Road 9, 7, 150
