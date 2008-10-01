@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-File          :   init.py
-Description   :   defines the classes and constants needed for the simulation
-ToDo          :   · Rewrite update() to account for tunnelling and crossing a node
+File        :   init.py
+Description :   defines the classes and constants needed for the simulation
+ToDo        :   · Rewrite update() to account for tunnelling and crossing a node
 """
 
-import string # standard python library
-import os     # standard python library
-from math import pi   # standard python library, ne pas tout prendre, c'est plus propre :-)
+import string       # standard python library
+import os           # standard python library
+from math import pi # standard python library, ne pas tout prendre, c'est plus propre :-)
 
 #   Useful constants
 
-#TEMPORARY
-delta_t = 0.01
+delta_t = 0.01  # TEMPORARY
 
 BLACK       = (  0,   0,   0)
 RED         = (255,   0,   0)
@@ -37,8 +36,8 @@ CAR_COLOR   = WHITE
 
 ROAD_COLOR  = WHITE
 
-NODE = "NODE"
-ROAD = "ROAD"
+NODE = "Node"
+ROAD = "Road"
 
 class Track:
     """
@@ -48,58 +47,57 @@ class Track:
     def __init__(self, new_nodes = None, new_roads = None):
         """
         Constructor method : creates a track given the nodes and roads.
-            new_nodes (list) :   a list of the nodes
-            new_roads (list) :   a list of the roads
-        """ 
-        if new_nodes is None:
+            new_nodes   (list)  :   a list of the nodes
+            new_roads   (list)  :   a list of the roads
+        """
+        
+        if (new_nodes is None) or (not isinstance(new_nodes, list)):
             self.nodes = []
         else:
             self.nodes = new_nodes
-        if new_roads is None:
+        
+        if (new_roads is None) or (not isinstance(new_nodes, list)):
             self.roads = []
         else:
             self.roads = new_roads
 
-    def add_track_element(self, elements):
-    
+    def add_element(self, elements):
         """
         Adds an element to the track, once it's been checked and validated.
             elements    (list)      :   a list describing the element [type, arg1, arg2…]
         """
         
         if (elements[0] == NODE):
-            #self.add_node([elements[1], elements[2]])
             self.nodes.append(Node([elements[1], elements[2]]))
         elif (elements[0] == ROAD):
             self.create_road(self.nodes[elements[1]], self.nodes[elements[2]], elements[3])
         else:
-            # Should never be reached: something went wrong
-            print "An error occured when loading the file."
+            print "ERROR : unknown element type '" + elements[0] + "'."
             pass
-
-    def get_lines(self, filename):
+    
+    def get_lines(self, file_name):
         """
         Reads a file and returns a list of its lines.
-            filename    (string)    :   the complete name of the file to be read
+            file_name    (string)    :   the complete name of the file to be read
         """
         
-        filedata    = open(filename)
+        file_data   = open(file_name)
         lines       = []
-
-        for line in filedata:
+        
+        for line in file_data:
             lines += [line.strip()]
-
+        
         return lines
         
-    def track_line_parse(self, line):
+    def parse_line(self, line):
         """
         Parses a line in a track description file.
             line    (string)    :   the line of text to be parsed
         """
         
-        elements    = string.replace(string.upper(line), ",", " ").split()
-        kind        = ""
-        total_arguments     = 0
+        elements        = string.replace(line, ",", " ").split()
+        kind            = ""
+        total_arguments = 0
 
         # Get element type
         if len(elements) != 0:
@@ -111,50 +109,48 @@ class Track:
         elif (kind == ROAD):
             total_arguments = 3
         else:
-            # Empty element or incorrect data
-            print "Error during parsing: unknown element type '" + kind + "'."
+            print "ERROR : unknown element type '" + kind + "'."
             pass
-
+        
         # Check whether the arguments are corrects
         if (len(elements) == 1 + total_arguments):
-            # The line is correct, let's convert them and add the element !
             try:
                 # Convert arguments to int and add the element
                 for i in range(total_arguments):
                     elements[i + 1] = int(elements[i + 1])
-                self.add_track_element(elements)
+                
+                self.add_element(elements)
             except Exception, exc:
-                # Ill-formed element
-                print "Error parsing line : "
+                print "ERROR : in parsing line : "
                 print elements
                 print exc 
                 pass
         else:
-            # The line is incorrect
-            print "Incorrect line : "
+            print "ERROR : wrong parameters given for the element '" + kind + "'."
             print elements
             pass
-
-    def load_track_from_file(self, filename):
+    
+    def load_from_file(self, file_name):
         """
         Loads a track from a textfile, checks its validity, parses it
         and loads it in the simulation.
-            filename    (string)    :   the name of the file to load.
+            file_name    (string)    :   the name of the file to load.
         """
 
         try:
             # Attempts to load & read the file
-            lines = self.get_lines(filename)
+            lines = self.get_lines(file_name)
         except Exception, exc:
             # The file doesn't exists or any other error
-            print "The file " + filename + " cannot be loaded."
+            print "ERROR : the file " + file_name + " cannot be loaded."
             print "Current directory is: " + os.getcwd() 
             print exc 
             pass
             exit()
+        
         for line in lines:
-            self.track_line_parse(line)
-            
+            self.parse_line(line)
+    
     def create_road(self, new_begin, new_end, new_length):
         """
         Adds a road to the track.
@@ -162,9 +158,6 @@ class Track:
             new_end    (Node)    :   ending point for the road
             new_length (int)     :   road length
         """
-        
-        if len(self.roads) == 0:
-            self.roads = []
         
         new_road = Road(new_begin, new_end, new_length)
         self.roads += [new_road]
@@ -188,12 +181,12 @@ class Road:
         self.end    = new_end
         self.cars   = [] 
         self.length = length
-        self.gates  = [False, False]
+        self.gates  = [False, False]    # [gate at the beginning, gate at the end]
     
     def update(self):
         queue_length = len((self.cars))
         for i in range(queue_length):
-            self.cars[-i-1].update(queue_length-(i+1))
+            self.cars[-i-1].update(queue_length - (i+1))
 
     def add_car(self, new_car, new_position):
         """
@@ -201,26 +194,22 @@ class Road:
             new_car      (Car)   :   car to be added
             new_position (float) :   curvilinear abscissa for the car
         """
-
-        if len(self.cars) == 0:
-            self.cars = []
         
-        self.cars        =  [new_car] + self.cars
+        self.cars        +=  [new_car]
         new_car.position =   new_position
         new_car.road     =   self
+    
+    def remove_car(self, old_car):
+        """
+        Deletes a car on the road.
+        """
         
-    def del_car(self, old_car):
-        """
-        Deletes a car on the road
-        """
         queue_length = len((self.cars))
         
         for i in range(queue_length):
-            if self.cars[i] == old_car : #ma modif est-elle liée au bug délicat dont tu parlais ?
+            if self.cars[i] == old_car: #ma modif est-elle liée au bug délicat dont tu parlais ?
                 del self.cars[i]
                 # break;  - not useful here, as it removes duplicates, if any
-                
-
 
 class Node:
     """
@@ -232,39 +221,87 @@ class Node:
         Constructor method : creates a new node.
             new_coordinates (list) : the coordinates [x, y] for the node
         """
-        #self.roads         = []
+        
         self.x             = new_coordinates[0]
         self.y             = new_coordinates[1]
-        self.roads_coming  = None
-        self.roads_leaving = None
+        self.coming_roads  = None
+        self.leaving_roads = None
+        
         
         # Maximum available space to host cars : perimeter divided by cars' width
         # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
         self.max_cars      = int(2 * pi * radius / CAR_WIDTH)
-
+        
+        #   List of available spaces to host cars ; each value contains a car pointer if the space is taken, None if not
+        #   For the moment, I will do as if the space number "n" was in front of the leaving road number "n", and I will make it permute every interval of time
+        #   Note that the lenght of "self.cars" needs to be constant, and superior to "max_cars" -- Ch@hine
+        self.cars          = []
+        for i in range(len(self.leaving_roads)):
+            self.cars += [None]
+    
     def manage_car(self, car, remaining_points):
         """
-        Asks to node to take control over the car and move it appropriately.
+        Asks the node to take control over the car and move it appropriately.
         Demande au nœud de prendre le contrôle de la voiture et de la déplacer de manière adéquate.
         """
         
         # For now : systematically move to the first available leaving road, if any
         # Pour l'instant : va toujours à la première route libre, s'il y en a 
         
-        if self.roads_leaving:
+        if self.leaving_roads:
             # TEMPORARY !
-            car.road.del_car(car)
-            next_way = car.next_way()
-            next_way = car.next_way() % len(self.roads_leaving) #on s'est gardé de la div par 0 avec le test booleen - We prevent the program from the 0-division thanks to previous boolean test
-            self.roads_leaving[next_way].add_car(car, remaining_points * delta_t)
+            car.road.remove_car(car)
+            next_way = car.next_way()   # Useless ?! -- Ch@hine
+            next_way = car.next_way() % len(self.leaving_roads) #on s'est gardé de la div par 0 avec le test booleen - We prevent the program from the 0-division thanks to previous boolean test
+            self.leaving_roads[next_way].add_car(car, remaining_points * delta_t)
         else: # on est arrivé à dans une impasse, faut-il faire disparaitre la voiture pour accélerer le programme ?
             pass
+    
+    def host_car(self, car):
+        """
+        This function is to replace the previous one (manage_car)
+        """
         
+        car.road.remove_car(car)
+        
+        #   Sets the car in one of the available spaces
+        #   Note : this function cannot be called if no space is available nor if the maximum number of cars is reached -- Ch@hine
+        for i in range(len(self.leaving_roads)):
+            if self.cars[i] is None:
+                self.cars[i] = car
+    
+    def rotate(self):
+        """
+        Makes the node rotate, so that its cars can reach their destination road ; must be called every X seconds.
+        """
+        
+        temp = self.cars[0]
+        for i in range(self.max_cars - 2):
+            #   Rotating cars
+            self.cars[i] = self.cars[i + 1]
+            
+            #   While the path is not 0, the car keeps rotating around the node
+            if self.cars[i].path[0]:
+                self.cars[i].path[0] -= 1;
+            else:
+                del self.cars.path[0]
+                
+                self.cars[i] = None
+                self.leaving_roads[i].add_car(self.cars[i], 0)
+        
+        self.cars[max_cars - 1] = temp
+        if self.cars[max_cars - 1].path[0]:
+            self.cars[max_cars - 1].path[0] -= 1;
+        else:
+            del self.cars.path[0]
+            
+            self.cars[max_cars - 1] = None
+            self.leaving_roads[max_cars - 1].add_car(self.cars[max_cars - 1], 0)
+    
     @property
     def coords(self):
         return (self.x, self.y)
 
-   
     def add_road(self, road, is_coming):
         """
         Connect a road to this node.
@@ -273,13 +310,13 @@ class Node:
         """
         
         if is_coming:
-            if not self.roads_coming:
-                self.roads_coming = []
-            self.roads_coming    += [road]
+            if not self.coming_roads:
+                self.coming_roads = []
+            self.coming_roads    += [road]
         else:
-            if not self.roads_leaving:
-                self.roads_leaving = []
-            self.roads_leaving   += [road]
+            if not self.leaving_roads:
+                self.leaving_roads = []
+            self.leaving_roads   += [road]
     
     def set_gate(self, road, state):
         """
@@ -305,14 +342,13 @@ class Car:
         
         from random import randint
         
-        total_waypoints  = randint(5, 18)
+        total_waypoints = randint(5, 18)    # Number of nodes to reach
         path            = []
         
         for i in range(total_waypoints):
-            path += [randint(1, 100)]
+            path += [randint(1, 9)] # Number of rotations to do before leaving a node
         
         return path
-    
     
     def __init__(self, newPath, new_road):
         """
@@ -330,8 +366,8 @@ class Car:
         self.position   = 0
         self.road       = new_road
     
-    def next_way(self):
-        if len(self.path)==0:
+    def next_way(self): # Becomes useless with my new function "rotate"
+        if len(self.path) == 0:
             return 0
         else:
             direction = self.path[0]
@@ -343,8 +379,7 @@ class Car:
         Updates the car speed and position, manages blocked pathways and queues.
             rang    (int)   :   position on the road (0 : last in)
         """
-
-
+        
         #print id(self)
         next_light = self.road.length -1
         if rang == len(self.road.cars) - 1 : 
@@ -385,7 +420,7 @@ if (__name__ == '__main__'):
 # Temporary testing zone
 
 track = Track()
-track.load_track_from_file("track_default.txt")
+track.load_from_file("track_default.txt")
 #attention à l'ordre dans lequel on place les voitures ! si ce n'est pas dans lordre décroissant par position, tout le reste du programme est gêné !
 # un tri, tout au début devrait résoudre ce bug issue2
 track.roads[3].add_car(Car([], track.roads[3]), 5)
