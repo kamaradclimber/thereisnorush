@@ -32,7 +32,7 @@ def draw_node(node):
         node (Node) : le carrefour sus-cité.
     """
     
-    rectangle = pygame.Rect(node.x - init.NODE_WIDTH/2, node.y - init.NODE_HEIGHT/2, init.NODE_WIDTH, init.NODE_HEIGHT)
+    rectangle = pygame.Rect(int(node.x) - init.NODE_WIDTH/2, int(node.y) - init.NODE_HEIGHT/2, init.NODE_WIDTH, init.NODE_HEIGHT)
     pygame.draw.rect(screen, init.NODE_COLOR, rectangle, 0)
 
 def draw_car(car):
@@ -47,10 +47,10 @@ def draw_car(car):
     xd, yd = car.road.begin.coords
     xa, ya = car.road.end.coords
 
-    length_covered = car.position * 100 / car.road.length
+    length_covered = int(car.position) * 100 / int(car.road.length)
     
-    x_position = xd + (xa - xd ) * length_covered / 100
-    y_position = yd + (ya - yd ) * length_covered / 100
+    x_position = int(xd) + (int(xa) - int(xd) ) * length_covered / 100
+    y_position = int(yd) + (int(ya) - int(yd) ) * length_covered / 100
     
     pt_topleft     = (x_position - init.CAR_WIDTH / 2 , y_position - init.CAR_HEIGHT / 2 )
     pt_bottomright = (init.CAR_WIDTH, init.CAR_HEIGHT)
@@ -67,7 +67,7 @@ def draw_road(road):
         road (Road) : la route sus-citée.
     """
     
-    pygame.draw.line(screen, init.ROAD_COLOR, (road.begin.x, road.begin.y), (road.end.x, road.end.y), 1)
+    pygame.draw.line(screen, init.ROAD_COLOR, (int(road.begin.x), int(road.begin.y)), (int(road.end.x), int(road.end.y)), 1)
     
     for car in road.cars:
         draw_car(car)
@@ -147,15 +147,7 @@ def main_loop():
         update_scene()
         
         # Draw the scene | Dessine la scène
-        try:
-            # Snafu | Situation normale
-            draw_scene()
-        except Exception, exc:
-            # There some error: stop everything
-            # Il y a une erreur quelconque : on arrête tout
-            print exc
-            is_running = False
-            
+        draw_scene()
 
     # End of simulation instructions
     # Instructions de fin de simulation

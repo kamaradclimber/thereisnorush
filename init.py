@@ -67,7 +67,6 @@ class Track:
         Adds an element to the track, once it's been checked and validated.
             elements    (list)      :   a list describing the element [type, arg1, arg2…]
         """
-        
         if (elements[0] == NODE):
             self.nodes.append(Node([elements[1], elements[2]]))
         elif (elements[0] == ROAD):
@@ -104,32 +103,30 @@ class Track:
         if len(elements) != 0:
             kind = elements[0]
         
-        #   Define how many arguments are to expect
+        #   Define how many arguments are expected
         if (kind == NODE):
             total_arguments = 2 #   abscissa and ordinate
         elif (kind == ROAD):
-            total_arguments = 3 #   starting node, ending node and lenght
+            total_arguments = 3 #   starting node, ending node and length
         else:
             print "ERROR : unknown element type '" + kind + "' !"
             pass
         
-        #   Add the specified element to the track, if all is correct
+        #   Add the specified element to the track, if everything is OK
+        
         if (len(elements) == 1 + total_arguments):
             try:
                 for i in range(1, total_arguments):
                     elements[i] = int(elements[i])
-                
                 self.add_element(elements)
             except Exception, exc:
                 print "ERROR : in parsing the following line : "
                 print elements
                 print exc 
-                print
                 pass
         else:
             print "ERROR : wrong parameters given for the element '" + kind + "'."
             print elements
-            pass
     
     def load_from_file(self, file_name):
         """
@@ -181,13 +178,17 @@ class Road:
         self.begin  = new_begin
         self.end    = new_end
         self.cars   = [] 
-        self.length = length
+        self.length = int(length)
         self.gates  = [False, False]    # [gate at the beginning, gate at the end]
     
-    def update(self):
-        queue_length = len((self.cars))
-        for i in range(queue_length):
-            self.cars[-i-1].update(queue_length - (i+1))
+    def update(self):    
+        if self.cars:
+            queue_length = len((self.cars))
+            if queue_length > 0:
+                for i in range(queue_length-1):
+                    self.cars[-i-1].update(queue_length - (i+1))
+                else:
+                    self.cars[0].update(queue_length - 1)
 
     def add_car(self, new_car, new_position):
         """
@@ -205,12 +206,13 @@ class Road:
         Deletes a car on the road.
         """
         
-        queue_length = len((self.cars))
-        
-        for i in range(queue_length):
-            if self.cars[i] == old_car: #ma modif est-elle liée au bug délicat dont tu parlais ?
-                del self.cars[i]
-                # break;  - not useful here, as it removes duplicates, if any
+        if self.cars:
+            queue_length = len((self.cars))
+            
+            for i in range(queue_length):
+                if self.cars[i] == old_car:
+                    del self.cars[i]
+                    break
 
 class Node:
     """
@@ -237,9 +239,13 @@ class Node:
         #       - "None" if not.
         #   For the moment, I will do as if the space number "n" was in front of the leaving road number "n", and I will make it permute every interval of time
         #   Note that the lenght of "self.cars" needs to be constant, and superior to "max_cars" -- Ch@hine
-        self.cars          = []
-        for i in range(len(self.leaving_roads)):
-            self.cars += [None]
+
+        # BUGGY CODE :  what follows should be rewritten!
+        # CODE PLANTEUR : ce qui suit devrait être réécrit !
+        
+        #self.cars          = []
+        #for i in range(len(self.leaving_roads)):
+        #    self.cars += [None]
     
     def manage_car(self, car, remaining_points):
         """
@@ -253,10 +259,14 @@ class Node:
         if self.leaving_roads:
             # TEMPORARY !
             car.road.remove_car(car)
-            next_way = car.next_way()   # Useless ?! -- Ch@hine
-            next_way = car.next_way() % len(self.leaving_roads) #on s'est gardé de la div par 0 avec le test booleen - We prevent the program from the 0-division thanks to previous boolean test
+            # On s'est gardé de la div par 0 avec le test booléen 
+            # Thanks to the above boolean test, we'll avoid division by zero
+            next_way = car.next_way() % len(self.leaving_roads) 
             self.leaving_roads[next_way].add_car(car, remaining_points * delta_t)
-        else: # on est arrivé à dans une impasse, faut-il faire disparaitre la voiture pour accélerer le programme ?
+        else: 
+            # on est arrivé à dans une impasse, faut-il faire disparaitre la voiture pour accélerer le programme ?
+            # In my opinion, we should, hence the following line :
+            car.road.remove_car(car)
             pass
     
     def host_car(self, car):
@@ -291,7 +301,7 @@ class Node:
                 self.cars[i] = None
                 self.leaving_roads[i].add_car(self.cars[i], 0)
         
-        #   Any idea to avoid repeating thoses lines of code ? -- Ch@hine
+        #   Any idea to avoid repeating thoseslines of code ? -- Ch@hine
         self.cars[max_cars - 1] = temp
         if self.cars[max_cars - 1].path[0]:
             self.cars[max_cars - 1].path[0] -= 1;
@@ -369,7 +379,9 @@ class Car:
         self.position   = 0
         self.road       = new_road
     
-    def next_way(self): # Becomes useless since the function "rotate" manages it -- Ch@hine
+    def next_way(self): 
+        # Becomes useless since the function "rotate" manages it -- Ch@hine
+        # Maybe, though this is temporary anyway, as the cars may later want to go less "randomly" -- Sharayanan
         if len(self.path) == 0:
             return 0
         else:
@@ -388,27 +400,28 @@ class Car:
         Updates the car speed and position, manages blocked pathways and queues.
             rang    (int)   :   position on the road (0 : last in)
         """
+       
+        next_light = self.road.length - 1
         
-        #print id(self)
-        next_light = self.road.length -1
-        if rang == len(self.road.cars) - 1 : 
-            obstacle = next_light
-            #print "le seul obstacle est un feu"
-        else:
-            obstacle = self.road.cars[rang + 1].position
-            #print "ya une voiture devant", obstacle
+        if self.road.cars:
+            if rang <= len(self.road.cars) - 1 : 
+                # Le seul obstacle est un feu
+                obstacle = next_light
+            else:
+                # L'obstacle est la voiture devant
+                obstacle = self.road.cars[rang + 1].position
         
         self.speed = 50
-        #print "ma pos actuelle est", self.position
+        
         if self.position + self.speed * delta_t < obstacle:
+            # « 1 trait danger, 2 traits sécurité : je fonce ! »
             self.position += self.speed * delta_t
-            #print "1 trait danger, 2 traits sécurité : je fonce !"
         elif obstacle != next_light:
+            # On s'arrête au prochain obstacle
             self.position = obstacle - CAR_WIDTH
             self.speed = 0 #ca ne sert un peu à rien, pour le moment,  car la vitesse est remise à 50 après
-            #print "je marrete avant le prochain obstacle"
         else:
-            #on oublie les histoires de feu rouge pour le moment : la voiture s'arrête.
+            # On oublie les histoires de feu rouge pour le moment : la voiture s'arrête.
             remaining_points = self.speed - (self.road.length -1 - self.position) / delta_t
             self.position = self.road.length -1 #j'avance autant que je peux, puis demande au carrefour de me prendre en charge
             #self.speed = 0
@@ -416,17 +429,12 @@ class Car:
             
             # Let's do some more stuff ! We ask the node to do with us what he wants
             self.road.end.manage_car(self, remaining_points) #j'indique le nbre de points de déplacement restants (combien coûte le carrefour ?)
+            # I don't really get it: what do you mean by "remaining_points" ? -- Sharayanan
             
             #   I propose the following code to replace the previous one -- Ch@hine
             #   
             #   if (car.road.gate[1]) and (car.road.end.total_free_places):
             #       self.join(car.road.end)
-            
-            
-        #print self.position
-        #print "----------"
-            
-
 
 #   TESTING ZONE
 
