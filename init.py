@@ -70,24 +70,13 @@ class Track:
         if (elements[0] == NODE):
             self.nodes.append(Node([elements[1], elements[2]]))
         elif (elements[0] == ROAD):
-            self.create_road(self.nodes[elements[1]], self.nodes[elements[2]], elements[3])
+            new_road = Road(self.nodes[elements[1]], self.nodes[elements[2]], elements[3])
+            self.roads += [new_road]
+            self.nodes[elements[1]].add_road(new_road)
+            self.nodes[elements[2]].add_road(new_road)
         else:
             print "ERROR : unknown element type '" + elements[0] + "'."
             pass
-    
-    def get_lines(self, file_name):
-        """
-        Reads a file and returns a list of its lines.
-            file_name    (string)    :   the complete name of the file to be read
-        """
-        
-        file_data   = open(file_name)
-        lines       = []
-        
-        for line in file_data:
-            lines += [line.strip()]
-        
-        return lines
     
     def parse_line(self, line):
         """
@@ -113,7 +102,6 @@ class Track:
             pass
         
         #   Add the specified element to the track, if everything is OK
-        
         if (len(elements) == 1 + total_arguments):
             try:
                 for i in range(1, total_arguments):
@@ -134,9 +122,16 @@ class Track:
         and loads it in the simulation.
             file_name    (string)    :   the name of the file to load.
         """
-
+        
         try:
             # Attempts to load & read the file
+            
+            file_data   = open(file_name)
+            lines       = []
+            
+            for line in file_data:
+                lines += [line.strip()]
+            
             lines = self.get_lines(file_name)
         except Exception, exc:
             # The file doesn't exists or any other error
@@ -148,19 +143,6 @@ class Track:
         
         for line in lines:
             self.parse_line(line)
-    
-    def create_road(self, new_begin, new_end, new_length):
-        """
-        Adds a road to the track.
-            new_begin  (Node)    :   starting point for the road
-            new_end    (Node)    :   ending point for the road
-            new_length (int)     :   road length
-        """
-        
-        new_road = Road(new_begin, new_end, new_length)
-        self.roads += [new_road]
-        new_begin.add_road(new_road, False)
-        new_end.add_road(new_road, True)
 
 class Road:
     """
@@ -334,14 +316,14 @@ class Node:
     def coords(self):
         return (self.x, self.y)
 
-    def add_road(self, road, is_coming):
+    def add_road(self, road):
         """
         Connect a road to this node.
             road        (Road)  :   the road object to be connected
             is_coming    (bool) :   True if the roads comes to this node, False otherwise
         """
         
-        if is_coming:
+        if road.end == self:
             if not self.coming_roads:
                 self.coming_roads = []
             self.coming_roads    += [road]
