@@ -26,8 +26,8 @@ LIGHT_BLUE  = ( 64,  64, 255)
 
 RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (512, 384)
 
-NODE_WIDTH  = 4
-NODE_HEIGHT = 4
+NODE_WIDTH  = 3
+NODE_HEIGHT = 3
 NODE_COLOR  = RED
 NODE_RADIUS_DEFAULT = 10
 
@@ -211,6 +211,7 @@ class Road:
             
             for i in range(queue_length):
                 if self.cars[i] == old_car:
+                    self.cars[i].road = None
                     del self.cars[i]
                     break
 
@@ -229,6 +230,7 @@ class Node:
         self.y             = new_coordinates[1]
         self.coming_roads  = None
         self.leaving_roads = None
+        self.cars          = None 
         
         # Maximum available space to host cars : perimeter divided by cars' width
         # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
@@ -253,16 +255,20 @@ class Node:
         Demande au nœud de prendre le contrôle de la voiture et de la déplacer de manière adéquate.
         """
         
-        # For now : systematically move to the first available leaving road, if any
-        # Pour l'instant : va toujours à la première route libre, s'il y en a 
+        if not self.cars:
+            self.cars = []
         
         if self.leaving_roads:
             # TEMPORARY !
-            car.road.remove_car(car)
-            # On s'est gardé de la div par 0 avec le test booléen 
-            # Thanks to the above boolean test, we'll avoid division by zero
-            next_way = car.next_way() % len(self.leaving_roads) 
-            self.leaving_roads[next_way].add_car(car, remaining_points * delta_t)
+            
+            # The node may, or may not, accept to host the car
+            if len(self.cars) < self.max_cars :
+                # On s'est gardé de la div par 0 avec le test booléen 
+                # Thanks to the above boolean test, we'll avoid division by zero
+                car.road.remove_car(car)
+                self.host_car(car)
+                #next_way = car.next_way() % len(self.leaving_roads) 
+                #self.leaving_roads[next_way].add_car(car, remaining_points * delta_t)
         else: 
             # on est arrivé à dans une impasse, faut-il faire disparaitre la voiture pour accélerer le programme ?
             # In my opinion, we should, hence the following line :
@@ -271,21 +277,34 @@ class Node:
     
     def host_car(self, car):
         """
-        This function is to replace the previous one (manage_car)
+        Manages a car on the node
         """
         
-        car.road.remove_car(car)
-        
+        # BUGGY CODE : cannot work since the self.cars None filler was buggy either-- Sharayanan
         #   Places the car in one of the available spaces
         #   Note : this function MUST NOT be called if no space is available nor if the maximum number of cars is reached -- Ch@hine
-        for i in range(len(self.leaving_roads)):
-            if self.cars[i] is None:
-                self.cars[i] = car
+        #for i in range(len(self.leaving_roads)):
+        #    if self.cars[i] is None:
+        #        self.cars[i] = car
+        
+        # TEMPORARY : go to where you want
+        next_way = car.next_way() % len(self.leaving_roads) 
+        self.leaving_roads[next_way].add_car(car, 0) # No need for remaining_points since we start from *zero*
+        # IDEA : the node should check whether the leaving road is free to go before sending the car
+    
+    def update(self):
+        """
+        Updates the node: rotate the cars, dispatch them…
+        """
+        # BUGGY
+        #self.rotate()
+        pass 
     
     def rotate(self):
         """
         Makes the node rotate, so that its cars can reach their destination road ; must be called every X seconds.
         """
+        # BUGGY CODE : cannot work since the self.cars[] object filler has been removed
         
         temp = self.cars[0]
         for i in range(self.max_cars - 2):
@@ -355,11 +374,15 @@ class Car:
         
         from random import randint
         
-        total_waypoints = randint(5, 18)    # Number of nodes to reach
+        # We may need more than a few nodes to begin with
+        #total_waypoints = randint(5, 18)    # Number of nodes to reach
+        # TEMPORARY
+        total_waypoints = 2000
+        
         path            = []
         
         for i in range(total_waypoints):
-            path += [randint(1, 9)] # Number of rotations to do before leaving a node
+            path += [randint(0, 128)]
         
         return path
     
@@ -439,6 +462,7 @@ class Car:
 #   TESTING ZONE
 
 if (__name__ == '__main__'):
+    print "You should run interface.py instead of this file!"
     pass
 
 # Temporary testing zone
