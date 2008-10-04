@@ -5,7 +5,7 @@ File        :   init.py
 Description :   defines the classes and constants needed for the simulation
 """
 
-import string       # standard python library
+import string               # standard python library
 from os   import getcwd     # standard python library, ne pas tout prendre, c'est plus propre :-)
 from math import pi         # standard python library, ne pas tout prendre, c'est plus propre :-)
 
@@ -29,6 +29,8 @@ NODE_WIDTH  = 3
 NODE_HEIGHT = 3
 NODE_COLOR  = RED
 NODE_RADIUS_DEFAULT = 10
+LEAVING_GATE  = 0
+INCOMING_GATE = 1
 
 CAR_WIDTH   = 4
 CAR_HEIGHT  = 4
@@ -150,9 +152,6 @@ class Road:
     Connection between 2 nodes ; one-way only.
     """
     
-    # TODO :
-    #       · (R1) add a "can host car" property to indicate whether there's still enough room to host a car (cf. UC2)
-    
     def __init__(self, new_begin, new_end, length):
         """
         Constructor method : creates a new road.
@@ -166,6 +165,17 @@ class Road:
         self.cars   = [] 
         self.length = int(length)
         self.gates  = [False, False]    # [gate at the beginning, gate at the end]
+    
+    @property
+    def is_free():
+        """
+        Returns whether there is still room on the road
+        """
+        # I guess there is still room as long as the last car engaged on the road if far enough from the start of the road
+        if self.cars[0].position > CAR_WIDTH:
+            return True
+        else:
+            return False
     
     def update(self):    
         if self.cars:
@@ -212,8 +222,7 @@ class Node:
             new_coordinates (list) : the coordinates [x, y] for the node
         """
         
-        self.x             = new_coordinates[0]
-        self.y             = new_coordinates[1]
+        self.x, self.y     = new_coordinates[0], new_coordinates[1]
         self.coming_roads  = None
         self.leaving_roads = None
         self.cars          = None 
@@ -321,9 +330,11 @@ class Node:
         #       · (N.SG2) lock gate usage when the node is full, see (N.U1)
         
         if (id(road.begin) == id(self)):
-            road.gates[0] = state
+            # The road begins on the node: there is a gate to pass before leaving
+            road.gates[LEAVING_GATE] = state
         else:
-            road.gates[1] = state
+            # The road ends on the road: there is a gate to pass to enter
+            road.gates[INCOMING_GATE] = state
             
 class Car:
     """
@@ -424,7 +435,6 @@ if (__name__ == '__main__'):
     pass
 
 # Temporary testing zone
-
 track = Track()
 track.load_from_file("track_default.txt")
 #attention à l'ordre dans lequel on place les voitures ! si ce n'est pas dans lordre décroissant par position, tout le reste du programme est gêné !

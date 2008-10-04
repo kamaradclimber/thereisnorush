@@ -65,34 +65,50 @@ def draw_car(car):
     rectangle      = pygame.Rect(pt_topleft, pt_bottomright)
     pygame.draw.rect(screen, init.CAR_COLOR, rectangle, 0)
 
+def draw_text(x = screen.get_rect().centerx, y = screen.get_rect().centery, message = "", text_color = init.WHITE, back_color = init.BLACK, font = None, anti_aliasing = True):
+    """
+    Draws text on the screen
+        x, y    (int)        :   position where the text is to be written
+        message (str)        :   the message that is to be written
+        text_color (list)    :   the color of the text to be written
+        back_color (list)    :   the color on which the text is to be written
+        font (pygame.font)   :   the font that will be used for the text to be written
+        anti_aliasing (bool) :   whether we should antialias the text to be written
+    """
+    if not pygame.font:
+        # The (optional) pygame.font module is not supported, we cannot draw text
+        print "ERROR : the pygame.font module is not supported, cannot draw text."
+    else:
+        if not font:
+            # We use a default font if none is provided
+            font = pygame.font.Font(None, 17)
+            
+        text = font.render(message, anti_aliasing, text_color, back_color)
+        textRect = text.get_rect()
+        textRect.x, textRect.y = x, y
+        screen.blit(text, textRect)
+    
 def draw_arrow(x_start, y_start, x_end, y_end):
     """
     Draws lil' cuty arrows along the roads to know where they're going
     """
     
     # Get the vector parallel to the road
-    para_y = y_end - y_start
-    para_x = x_end - x_start
+    para_y, para_x = y_end - y_start, x_end - x_start
     para_len = math.sqrt(para_x**2 + para_y**2)
     
     # Normalize it
-    para_x = para_x / para_len
-    para_y = para_y / para_len
+    para_x, para_y = para_x / para_len, para_y / para_len
     
-    # Get the vector perpendicular to the road (CCW)
-    perp_x = -para_y
-    perp_y = para_x
+    # Get the unit vector perpendicular to the road (CCW)
+    perp_x, perp_y = -para_y, para_x
     
     # Get the midpoint of the road
-    mid_x = (x_start + x_end)/2
-    mid_y = (y_start + y_end)/2
+    mid_x, mid_y = (x_start + x_end)/2, (y_start + y_end)/2
     
     # Draw an arrow on the left side!
-    x_arrow_start = mid_x - perp_x * 4 - para_x * 4
-    y_arrow_start = mid_y - perp_y * 4 - para_y * 4
-    
-    x_arrow_end = mid_x - perp_x * 4 + para_x * 4 
-    y_arrow_end = mid_y - perp_y * 4 + para_y * 4
+    x_arrow_start, y_arrow_start = mid_x - perp_x * 4 - para_x * 4, mid_y - perp_y * 4 - para_y * 4
+    x_arrow_end, y_arrow_end     = mid_x - perp_x * 4 + para_x * 4, mid_y - perp_y * 4 + para_y * 4
     
     pygame.draw.line(screen, init.ROAD_COLOR, (x_arrow_start, y_arrow_start), (x_arrow_end, y_arrow_end), 1)
     pygame.draw.line(screen, init.ROAD_COLOR, (x_arrow_end - perp_x - para_x, y_arrow_end - perp_y - para_y), (x_arrow_end + perp_x - para_x, y_arrow_end + perp_y - para_y), 1)
@@ -106,10 +122,8 @@ def draw_road(road):
         road (Road) : la route sus-citée.
     """
     
-    x_start = int(road.begin.x)
-    y_start = int(road.begin.y)
-    x_end = int(road.end.x)
-    y_end = int(road.end.y)
+    x_start, y_start = int(road.begin.x), int(road.begin.y)
+    x_end, y_end     = int(road.end.x), int(road.end.y)
     
     pygame.draw.line(screen, init.ROAD_COLOR, (x_start, y_start), (x_end, y_end), 1)
     
@@ -191,7 +205,7 @@ def main_loop():
     """
     
     is_running = True
-
+    
     while is_running:
         # Check the users' actions | Vérifie les actions de l'utilisateur
         event_manager()
