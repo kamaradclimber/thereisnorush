@@ -3,12 +3,11 @@
 """
 File        :   init.py
 Description :   defines the classes and constants needed for the simulation
-ToDo        :   · Rewrite update() to account for tunnelling and crossing a node
 """
 
 import string       # standard python library
-import os           # standard python library
-from math import pi # standard python library, ne pas tout prendre, c'est plus propre :-)
+from os   import getcwd     # standard python library, ne pas tout prendre, c'est plus propre :-)
+from math import pi         # standard python library, ne pas tout prendre, c'est plus propre :-)
 
 #   Useful constants
 
@@ -123,6 +122,9 @@ class Track:
             file_name    (string)    :   the name of the file to load.
         """
         
+        # TODO :
+        #       · (T.LFF1) try to figure out a way to force the current directory to be the correct one (especially on Windows), since it raises an error when cwd isn't init.py's directory.
+        
         try:
             # Attempts to load & read the file
             
@@ -132,11 +134,10 @@ class Track:
             for line in file_data:
                 lines += [line.strip()]
             
-            lines = self.get_lines(file_name)
         except Exception, exc:
             # The file doesn't exists or any other error
             print "ERROR : the file " + file_name + " cannot be loaded."
-            print "Current directory is : " + os.getcwd() 
+            print "Current directory is : " + getcwd() 
             print exc 
             pass
             exit()
@@ -148,6 +149,9 @@ class Road:
     """
     Connection between 2 nodes ; one-way only.
     """
+    
+    # TODO :
+    #       · (R1) add a "can host car" property to indicate whether there's still enough room to host a car (cf. UC2)
     
     def __init__(self, new_begin, new_end, length):
         """
@@ -217,19 +221,6 @@ class Node:
         # Maximum available space to host cars : perimeter divided by cars' width
         # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
         self.max_cars      = int(2 * pi * radius / CAR_WIDTH)
-        
-        #   List of available spaces to host cars ; each value contains :
-        #       - a car pointer if the space is taken ;
-        #       - "None" if not.
-        #   For the moment, I will do as if the space number "n" was in front of the leaving road number "n", and I will make it permute every interval of time
-        #   Note that the lenght of "self.cars" needs to be constant, and superior to "max_cars" -- Ch@hine
-
-        # BUGGY CODE :  what follows should be rewritten!
-        # CODE PLANTEUR : ce qui suit devrait être réécrit !
-        
-        #self.cars          = []
-        #for i in range(len(self.leaving_roads)):
-        #    self.cars += [None]
     
     def manage_car(self, car, remaining_points):
         """
@@ -241,76 +232,59 @@ class Node:
             self.cars = []
         
         if self.leaving_roads:
-            # TEMPORARY !
-            
             # The node may, or may not, accept to host the car
             if len(self.cars) < self.max_cars :
                 # On s'est gardé de la div par 0 avec le test booléen 
                 # Thanks to the above boolean test, we'll avoid division by zero
                 car.road.remove_car(car)
-                self.host_car(car)
-                #next_way = car.next_way() % len(self.leaving_roads) 
-                #self.leaving_roads[next_way].add_car(car, remaining_points * delta_t)
+                        
+                # Host the car on the node
+                if self.cars:
+                    self.cars += [car]
+                else:
+                    self.cars = [car]
         else: 
-            # on est arrivé à dans une impasse, faut-il faire disparaitre la voiture pour accélerer le programme ?
+            # On est arrivé à dans une impasse, faut-il faire disparaitre la voiture pour accélerer le programme ?
             # In my opinion, we should, hence the following line :
             car.road.remove_car(car)
             pass
-    
-    def host_car(self, car):
-        """
-        Manages a car on the node
-        """
         
-        # BUGGY CODE : cannot work since the self.cars None filler was buggy either-- Sharayanan
-        #   Places the car in one of the available spaces
-        #   Note : this function MUST NOT be called if no space is available nor if the maximum number of cars is reached -- Ch@hine
-        #for i in range(len(self.leaving_roads)):
-        #    if self.cars[i] is None:
-        #        self.cars[i] = car
+    def remove_car(self, car):
+        """
+        Removes a car on the node *properly*
+        """
+        if self.cars:
+            for i in range(len(self.cars)):
+                if (id(self.cars[i]) == id(car)):
+                    # Important : do not write self.cars[i] = None, cause it erases the car itself and crashes
+                    del self.cars[i]
+                    break
+    
+    def update_car(self, car):
+        """
+        Updates a given car on the node
+        """
+        # TODO :
+        #       · (N.UC1) check for position on the node to account for rotation (cf. N.U2)
+        #       · (N.UC2) check for the leaving_road to be free before branching on it (use read_only = True in newt_way() unless you branch)
         
         # TEMPORARY : go to where you want
         next_way = car.next_way() % len(self.leaving_roads) 
         self.leaving_roads[next_way].add_car(car, 0) # No need for remaining_points since we start from *zero*
+        self.remove_car(car)
         # IDEA : the node should check whether the leaving road is free to go before sending the car
     
     def update(self):
         """
         Updates the node: rotate the cars, dispatch them…
         """
-        # BUGGY
-        #self.rotate()
-        pass 
-    
-    def rotate(self):
-        """
-        Makes the node rotate, so that its cars can reach their destination road ; must be called every X seconds.
-        """
-        # BUGGY CODE : cannot work since the self.cars[] object filler has been removed
+        # TODO :
+        #       · (N.U1) Lock the gates when the node is full and (temporarily) open them otherwise (or at least, let us some control over them)
+        #       · (N.U2) Implement cars' rotation on the node before calling update_car
         
-        temp = self.cars[0]
-        for i in range(self.max_cars - 2):
-            #   Rotating cars
-            self.cars[i] = self.cars[i + 1]
-            
-            #   While the path is not 0, the car keeps rotating around the node
-            if self.cars[i].path[0]:
-                self.cars[i].path[0] -= 1;
-            else:
-                del self.cars.path[0]
-                
-                self.cars[i] = None
-                self.leaving_roads[i].add_car(self.cars[i], 0)
-        
-        #   Any idea to avoid repeating thoseslines of code ? -- Ch@hine
-        self.cars[max_cars - 1] = temp
-        if self.cars[max_cars - 1].path[0]:
-            self.cars[max_cars - 1].path[0] -= 1;
-        else:
-            del self.cars.path[0]
-            
-            self.cars[max_cars - 1] = None
-            self.leaving_roads[max_cars - 1].add_car(self.cars[max_cars - 1], 0)
+        if self.cars:
+            for car in self.cars:
+                self.update_car(car)
     
     @property
     def coords(self):
@@ -322,6 +296,9 @@ class Node:
             road        (Road)  :   the road object to be connected
             is_coming    (bool) :   True if the roads comes to this node, False otherwise
         """
+        
+        # TODO :
+        #       · (N.AR1) add error handlers in order not to crash on misformed track files
         
         if road.end == self:
             if not self.coming_roads:
@@ -338,6 +315,10 @@ class Node:
             road    (Road)  :   the road whose gates are affected
             state   (int)   :   the state (0 = red, 1 = green) of the gate
         """
+        
+        # TODO :
+        #       · (N.SG1) use more explicit constant names (e.g. "GATE_LEAVING" instead of "0")
+        #       · (N.SG2) lock gate usage when the node is full, see (N.U1)
         
         if (id(road.begin) == id(self)):
             road.gates[0] = state
@@ -384,21 +365,19 @@ class Car:
         self.position   = 0
         self.road       = new_road
     
-    def next_way(self): 
+    def next_way(self, read_only = False):
+        """
+        Expresses the cars' wishes :P
+        """
         # Becomes useless since the function "rotate" manages it -- Ch@hine
         # Maybe, though this is temporary anyway, as the cars may later want to go less "randomly" -- Sharayanan
         if len(self.path) == 0:
             return 0
         else:
             direction = self.path[0]
-            del self.path[0]
+            if not read_only:
+                del self.path[0]
             return direction
-    
-    def join_node(self, node):
-        """
-        TO BE IMPLEMENTED
-        """
-        
 
     def update(self, rang):
         """
@@ -406,10 +385,13 @@ class Car:
             rang    (int)   :   position on the road (0 : last in)
         """
        
+        # TODO :
+        #       · (C.U1) resort to more "realistic" physics (e.g. acceleration, braking…)
+       
         next_light = self.road.length - 1
         
         if self.road.cars:
-            if rang <= len(self.road.cars) - 1 : 
+            if rang >= len(self.road.cars) - 1: 
                 # Le seul obstacle est un feu
                 obstacle = next_light
             else:
@@ -430,16 +412,10 @@ class Car:
             remaining_points = self.speed - (self.road.length -1 - self.position) / delta_t
             self.position = self.road.length -1 #j'avance autant que je peux, puis demande au carrefour de me prendre en charge
             #self.speed = 0
-            #print "je suis un bon citoyen et m'arrete au feu"
-            
+
             # Let's do some more stuff ! We ask the node to do with us what he wants
             self.road.end.manage_car(self, remaining_points) #j'indique le nbre de points de déplacement restants (combien coûte le carrefour ?)
             # I don't really get it: what do you mean by "remaining_points" ? -- Sharayanan
-            
-            #   I propose the following code to replace the previous one -- Ch@hine
-            #   
-            #   if (car.road.gate[1]) and (car.road.end.total_free_places):
-            #       self.join(car.road.end)
 
 #   TESTING ZONE
 
@@ -456,4 +432,5 @@ track.load_from_file("track_default.txt")
 track.roads[3].add_car(Car([], track.roads[3]), 5)
 track.roads[6].add_car(Car([], track.roads[6]), 500)
 track.roads[6].add_car(Car([], track.roads[6]), 30)
+track.roads[6].add_car(Car([], track.roads[6]), 10)
 track.roads[6].add_car(Car([], track.roads[6]), 10)

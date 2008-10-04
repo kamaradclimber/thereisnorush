@@ -3,7 +3,6 @@
 """
 File        :   interface.py
 Description :   Manages the displays and main loop.
-ToDo        :   · 
 """
 
 import pygame   # http://www.pygame.org
@@ -33,8 +32,9 @@ def draw_node(node):
         node (Node) : le carrefour sus-cité.
     """
     
-    #rectangle = pygame.Rect(int(node.x) - init.NODE_WIDTH/2, int(node.y) - init.NODE_HEIGHT/2, init.NODE_WIDTH, init.NODE_HEIGHT)
-    #pygame.draw.rect(screen, init.NODE_COLOR, rectangle, 0)
+    # TODO :
+    #       · (DN1) draw the cars on the node, or alter the node drawing procedure to show there are cars, whatever
+   
     pygame.draw.circle(screen, init.NODE_COLOR, (int(node.x), int(node.y)), init.NODE_WIDTH)
     
     if node.cars:
@@ -141,6 +141,9 @@ def halt():
     Closes properly the simulation.
     Quitte correctement la simulation.
     """
+    
+    # TODO :
+    #       · (H1) try to avoid "pygame.error: display Surface quit" on exit, by exiting the main loop first
     
     is_running = False
     pygame.quit()
