@@ -26,6 +26,7 @@ Road 5, 6, 50
 Road 6, 0, 150
 Road 3, 7, 50
 Road 7, 10, 100
+Road 8, 7, 50
 Road 10, 8, 100
 Road 2, 8, 50
 Road 1, 9, 250
