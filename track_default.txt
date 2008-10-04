@@ -1,22 +1,44 @@
-Node 10, 10
-Node 50, 10
-Node 10, 50
-Node 50, 50
-Node 100, 50
-Node 10, 100
-Node 150, 150
-Node 200, 200
-Node 150, 200
+Node 10, 60
+Node 50, 60
+Node 100, 60
+Node 150, 40
+Node 100, 30
+Node 50, 3
+Node 10, 30
+Node 200, 40
+Node 200, 80
 Node 200, 150
-Road 0, 1, 150
-Road 1, 2, 150
-Road 2, 0, 150
-Road 4, 0, 150
-Road 3, 5, 150
-Road 3, 0, 150
-Road 6, 7, 150
-Road 7, 8, 150
-Road 8, 9, 150
-Road 9, 6, 150
-Road 9, 7, 150
-Road 7, 9, 150
+Node 250, 60
+Node 240, 150
+Node 260, 150
+Node 250, 160
+Node 250, 200
+Node 250, 250
+Node 10, 250
+Road 0, 1, 50
+Road 1, 2, 50
+Road 1, 5, 150
+Road 2, 3, 50
+Road 3, 4, 50
+Road 4, 5, 50
+Road 5, 1, 150
+Road 5, 6, 50
+Road 6, 0, 150
+Road 3, 7, 50
+Road 7, 10, 100
+Road 10, 8, 100
+Road 2, 8, 50
+Road 1, 9, 250
+Road 9, 16, 250
+Road 9, 8, 50
+Road 8, 9, 50
+Road 10, 11, 150
+Road 10, 12, 150
+Road 10, 13, 200
+Road 11, 13, 50
+Road 12, 13, 50
+Road 13, 14, 50
+Road 9, 14, 150
+Road 14, 15, 50
+Road 15, 16, 250
+Road 16, 0, 250

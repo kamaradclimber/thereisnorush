@@ -122,6 +122,9 @@ def draw_road(road):
         road (Road) : la route sus-citée.
     """
     
+    # TODO :
+    #       · (DR1) draw the gates (or any symbolic allegory to them) so that we know whether they're locked
+    
     x_start, y_start = int(road.begin.x), int(road.begin.y)
     x_end, y_end     = int(road.end.x), int(road.end.y)
     
