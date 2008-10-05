@@ -9,10 +9,12 @@ try:
     TRACK_FILE
 except NameError:
     TRACK_FILE = True
-
-    import node
+    
+    import string
+    import init 
     import road
-    import car
+    import car 
+    import node
     
     class Track:
         """
@@ -41,10 +43,10 @@ except NameError:
             Adds an element to the track, once it's been checked and validated.
                 elements    (list)      :   a list describing the element [type, arg1, arg2…]
             """
-            if (elements[0] == NODE):
-                self.nodes.append(Node([elements[1], elements[2]]))
-            elif (elements[0] == ROAD):
-                new_road = Road(self.nodes[elements[1]], self.nodes[elements[2]], elements[3])
+            if (elements[0] == init.NODE):
+                self.nodes.append(node.Node([elements[1], elements[2]]))
+            elif (elements[0] == init.ROAD):
+                new_road = road.Road(self.nodes[elements[1]], self.nodes[elements[2]], elements[3])
                 self.roads += [new_road]
                 new_road.connect(self.nodes[elements[1]], self.nodes[elements[2]])
             else:
@@ -66,9 +68,9 @@ except NameError:
                 kind = elements[0]
             
             #   Define how many arguments are expected
-            if (kind == NODE):
+            if (kind == init.NODE):
                 total_arguments = 2 #   abscissa and ordinate
-            elif (kind == ROAD):
+            elif (kind == init.ROAD):
                 total_arguments = 3 #   starting node, ending node and length
             else:
                 print "ERROR : unknown element type '" + kind + "' !"

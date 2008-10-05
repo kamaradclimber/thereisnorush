@@ -11,15 +11,14 @@ except NameError:
     NODE_FILE = True
     
     import init
-    import car
-    import road
+    from math import pi
     
     class Node:
         """
         Crossroads of our city ; may host several roads.
         """
         
-        def __init__(self, new_coordinates, radius = NODE_RADIUS_DEFAULT):
+        def __init__(self, new_coordinates, radius = init.NODE_RADIUS_DEFAULT):
             """
             Constructor method : creates a new node.
                 new_coordinates (list) : the coordinates [x, y] for the node
@@ -32,7 +31,7 @@ except NameError:
             
             # Maximum available space to host cars : perimeter divided by cars' width
             # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
-            self.max_cars      = int(2 * pi * radius / CAR_WIDTH)
+            self.max_cars      = int(2 * pi * radius / init.CAR_WIDTH)
         
         def manage_car(self, car, remaining_points):
             """

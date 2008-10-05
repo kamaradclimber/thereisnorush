@@ -9,9 +9,8 @@ try:
     ROAD_FILE
 except NameError:
     ROAD_FILE = True
-
-    import car
-    import node
+    
+    import init
     
     class Road:
         """
@@ -54,7 +53,7 @@ except NameError:
             # I guess there is still room as long as the last car engaged on the road if far enough from the start of the road
             if not len(self.cars):
                 return True
-            elif self.cars[0].position > CAR_WIDTH * 1.5 + 1: #   Supposing we need at least a distance of 1 between 2 cars
+            elif self.cars[0].position > init.CAR_WIDTH * 1.5 + 1: #   Supposing we need at least a distance of 1 between 2 cars
                 return True
             else:
                 return False

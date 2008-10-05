@@ -5,6 +5,8 @@ File        :   car.py
 Description :   defines the class "Car"
 """
 
+delta_t = 0.01  # TEMPORARY
+
 try:
     CAR_FILE
 except NameError:
@@ -106,7 +108,7 @@ except NameError:
             # TODO :
             #       · (C.U1) resort to more "realistic" physics (e.g. acceleration, braking...)
             
-            if not isinstance(self.location, Road):
+            if not isinstance(self.location, road.Road):
                 return None
             
             next_light = self.location.length - 1

@@ -11,11 +11,6 @@ try:
 except NameError:
     INIT_FILE = True
     
-    import string               # standard python library
-    from os   import getcwd     # standard python library, ne pas tout prendre, c'est plus propre :-)
-    from math import pi         # standard python library, ne pas tout prendre, c'est plus propre :-)
-    import track
-    
     #   Useful constants
     
     delta_t = 0.01  # TEMPORARY
@@ -48,6 +43,11 @@ except NameError:
     NODE        = "Node"
     ROAD        = "Road"
 
+    import string               # standard python library
+    from os   import getcwd     # standard python library, ne pas tout prendre, c'est plus propre :-)
+    import track
+    import car 
+    
     #   TESTING ZONE
     
     def load_demo_track():
@@ -56,19 +56,19 @@ except NameError:
         # Attention à l'ordre dans lequel on place les voitures ! si ce n'est pas dans lordre décroissant par position, tout le reste du programme est gêné !
         # (un tri, tout au début devrait résoudre ce bug issue2)
         # Évitez les doublons aussi, tant que possible ! -- Sharayanan
-        track.roads[3].add_car(Car([], track.roads[3]), 5)
-        track.roads[6].add_car(Car([], track.roads[6]), 500)
-        track.roads[6].add_car(Car([], track.roads[6]), 30)
-        track.roads[6].add_car(Car([], track.roads[6]), 10)
-        track.roads[7].add_car(Car([], track.roads[7]), 40)
-        track.roads[7].add_car(Car([], track.roads[7]), 10)
-        track.roads[8].add_car(Car([], track.roads[8]), 40)
-        track.roads[9].add_car(Car([], track.roads[9]), 10)
-        track.roads[10].add_car(Car([], track.roads[10]), 40)
-        track.roads[10].add_car(Car([], track.roads[10]), 10)
+        track.roads[3].add_car(car.Car([], track.roads[3]), 5)
+        track.roads[6].add_car(car.Car([], track.roads[6]), 500)
+        track.roads[6].add_car(car.Car([], track.roads[6]), 30)
+        track.roads[6].add_car(car.Car([], track.roads[6]), 10)
+        track.roads[7].add_car(car.Car([], track.roads[7]), 40)
+        track.roads[7].add_car(car.Car([], track.roads[7]), 10)
+        track.roads[8].add_car(car.Car([], track.roads[8]), 40)
+        track.roads[9].add_car(car.Car([], track.roads[9]), 10)
+        track.roads[10].add_car(car.Car([], track.roads[10]), 40)
+        track.roads[10].add_car(car.Car([], track.roads[10]), 10)
     
     if (__name__ == '__main__'):
         print "You should run interface.py instead of this file !"
     else:
-        track = Track()
+        track = track.Track()
         load_demo_track()
