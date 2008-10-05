@@ -50,22 +50,33 @@ except NameError:
     
     #   TESTING ZONE
     
+    def add_demo_car(road_number, position):
+        """
+        Adds a car on the demo track
+        """
+        track.roads[road_number].add_car(car.Car([], track.roads[road_number]), position)
+    
     def load_demo_track():
         # Temporary testing zone
         track.load_from_file("track_default.txt")
         # Attention à l'ordre dans lequel on place les voitures ! si ce n'est pas dans lordre décroissant par position, tout le reste du programme est gêné !
         # (un tri, tout au début devrait résoudre ce bug issue2)
         # Évitez les doublons aussi, tant que possible ! -- Sharayanan
-        track.roads[3].add_car(car.Car([], track.roads[3]), 5)
-        track.roads[6].add_car(car.Car([], track.roads[6]), 500)
-        track.roads[6].add_car(car.Car([], track.roads[6]), 30)
-        track.roads[6].add_car(car.Car([], track.roads[6]), 10)
-        track.roads[7].add_car(car.Car([], track.roads[7]), 40)
-        track.roads[7].add_car(car.Car([], track.roads[7]), 10)
-        track.roads[8].add_car(car.Car([], track.roads[8]), 40)
-        track.roads[9].add_car(car.Car([], track.roads[9]), 10)
-        track.roads[10].add_car(car.Car([], track.roads[10]), 40)
-        track.roads[10].add_car(car.Car([], track.roads[10]), 10)
+        add_demo_car(3,5)
+        add_demo_car(6,500)
+        add_demo_car(6,30)
+        add_demo_car(6,10)
+        add_demo_car(7,40)
+        add_demo_car(7,10)
+        add_demo_car(8,40)
+        add_demo_car(9,10)
+        add_demo_car(10,40)
+        add_demo_car(10,10)
+        add_demo_car(11,40)
+        add_demo_car(11,10)
+        add_demo_car(12,40)
+        add_demo_car(13,20)
+        add_demo_car(13,10)
     
     if (__name__ == '__main__'):
         print "You should run interface.py instead of this file !"

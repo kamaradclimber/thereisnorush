@@ -125,8 +125,9 @@ def draw_road(road):
     x_end, y_end     = int(road.end.x), int(road.end.y)
     
     # EXPERIMENTAL: color the road from green (empty) to red (full)
+    # Model : color key proportional to traffic density (N_cars/L_road)
     if road.cars:
-        key = 50 * len(road.cars)
+        key =  2* (float(len(road.cars*init.CAR_WIDTH))/float(road.length))*255
         if key > 255: key = 255
         color = [key, 255 - key, 0]
     else:
