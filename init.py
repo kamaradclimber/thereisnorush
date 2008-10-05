@@ -62,7 +62,7 @@ class Track:
             self.roads = []
         else:
             self.roads = new_roads
-
+    
     def add_element(self, elements):
         """
         Adds an element to the track, once it's been checked and validated.
@@ -73,8 +73,7 @@ class Track:
         elif (elements[0] == ROAD):
             new_road = Road(self.nodes[elements[1]], self.nodes[elements[2]], elements[3])
             self.roads += [new_road]
-            self.nodes[elements[1]].add_road(new_road)
-            self.nodes[elements[2]].add_road(new_road)
+            new_road.connect(self.nodes[elements[1]], self.nodes[elements[2]])
         else:
             print "ERROR : unknown element type '" + elements[0] + "'."
             pass
@@ -129,7 +128,6 @@ class Track:
         
         try:
             # Attempts to load & read the file
-            
             file_data   = open(file_name)
             lines       = []
             
@@ -152,7 +150,7 @@ class Road:
     Connection between 2 nodes ; one-way only.
     """
     
-    def __init__(self, new_begin, new_end, length):
+    def __init__(self, new_begin = None, new_end = None, length = 100):
         """
         Constructor method : creates a new road.
             new_begin  (Node)    : starting point for the road
@@ -166,50 +164,50 @@ class Road:
         self.length = int(length)
         self.gates  = [False, False]    # [gate at the beginning, gate at the end]
     
+    def connect(self, starting_node, ending_node):
+        """
+        Connects the road to 2 nodes.
+        """
+        
+        # TODO :
+        #       · (N.AR1) add error handlers in order not to crash on misformed track files
+        
+        self.begin                  =   starting_node
+        self.end                    =   ending_node
+        ending_node.coming_roads    +=  [self]
+        starting_node.leaving_roads +=  [self]
+    
     @property
-    def is_free():
+    def is_free(self):
         """
         Returns whether there is still room on the road
         """
+        
         # I guess there is still room as long as the last car engaged on the road if far enough from the start of the road
-        if self.cars[0].position > CAR_WIDTH:
+        if not len(self.cars):
+            return True
+        elif self.cars[0].position > CAR_WIDTH * 1.5 + 1: #   Supposing we need at least a distance of 1 between 2 cars
             return True
         else:
             return False
     
-    def update(self):    
+    def update(self):
         if self.cars:
-            queue_length = len((self.cars))
+            queue_length = len(self.cars)
             if queue_length > 0:
-                for i in range(queue_length-1):
+                for i in range(queue_length - 1):
                     self.cars[-i-1].update(queue_length - (i+1))
                 else:
                     self.cars[0].update(queue_length - 1)
 
-    def add_car(self, new_car, new_position):
+    def add_car(self, new_car, new_position = 0):
         """
         Inserts a car at given position in the ordered list of cars.
             new_car      (Car)   :   car to be added
             new_position (float) :   curvilinear abscissa for the car
         """
         
-        self.cars        +=  [new_car]
-        new_car.position =   new_position
-        new_car.road     =   self
-    
-    def remove_car(self, old_car):
-        """
-        Deletes a car on the road.
-        """
-        
-        if self.cars:
-            queue_length = len((self.cars))
-            
-            for i in range(queue_length):
-                if self.cars[i] == old_car:
-                    self.cars[i].road = None
-                    del self.cars[i]
-                    break
+        new_car.join(self, new_position)
 
 class Node:
     """
@@ -223,9 +221,9 @@ class Node:
         """
         
         self.x, self.y     = new_coordinates[0], new_coordinates[1]
-        self.coming_roads  = None
-        self.leaving_roads = None
-        self.cars          = None 
+        self.coming_roads  = []
+        self.leaving_roads = []
+        self.cars          = []
         
         # Maximum available space to host cars : perimeter divided by cars' width
         # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
@@ -237,37 +235,17 @@ class Node:
         Demande au nœud de prendre le contrôle de la voiture et de la déplacer de manière adéquate.
         """
         
-        if not self.cars:
-            self.cars = []
-        
-        if self.leaving_roads:
+        if len(self.leaving_roads):
             # The node may, or may not, accept to host the car
             if len(self.cars) < self.max_cars :
                 # On s'est gardé de la div par 0 avec le test booléen 
                 # Thanks to the above boolean test, we'll avoid division by zero
-                car.road.remove_car(car)
-                        
-                # Host the car on the node
-                if self.cars:
-                    self.cars += [car]
-                else:
-                    self.cars = [car]
+                car.join(self)
         else: 
             # On est arrivé à dans une impasse, faut-il faire disparaitre la voiture pour accélerer le programme ?
             # In my opinion, we should, hence the following line :
-            car.road.remove_car(car)
+            car.die()
             pass
-        
-    def remove_car(self, car):
-        """
-        Removes a car on the node *properly*
-        """
-        if self.cars:
-            for i in range(len(self.cars)):
-                if (id(self.cars[i]) == id(car)):
-                    # Important : do not write self.cars[i] = None, cause it erases the car itself and crashes
-                    del self.cars[i]
-                    break
     
     def update_car(self, car):
         """
@@ -275,17 +253,16 @@ class Node:
         """
         # TODO :
         #       · (N.UC1) check for position on the node to account for rotation (cf. N.U2)
-        #       · (N.UC2) check for the leaving_road to be free before branching on it (use read_only = True in newt_way() unless you branch)
+        #       · (N.UC2) check for the leaving_road to be free before branching on it (use read_only = True in newt_way() unless you branch) ; DONE !
         
         # TEMPORARY : go to where you want
-        next_way = car.next_way() % len(self.leaving_roads) 
-        self.leaving_roads[next_way].add_car(car, 0) # No need for remaining_points since we start from *zero*
-        self.remove_car(car)
-        # IDEA : the node should check whether the leaving road is free to go before sending the car
+        next_way = car.next_way() % len(self.leaving_roads)
+        if (self.leaving_roads[next_way].is_free):
+            car.join(self.leaving_roads[next_way]) # No need for remaining_points since we start from *zero*
     
     def update(self):
         """
-        Updates the node: rotate the cars, dispatch them…
+        Updates the node: rotate the cars, dispatch them...
         """
         # TODO :
         #       · (N.U1) Lock the gates when the node is full and (temporarily) open them otherwise (or at least, let us some control over them)
@@ -298,25 +275,6 @@ class Node:
     @property
     def coords(self):
         return (self.x, self.y)
-
-    def add_road(self, road):
-        """
-        Connect a road to this node.
-            road        (Road)  :   the road object to be connected
-            is_coming    (bool) :   True if the roads comes to this node, False otherwise
-        """
-        
-        # TODO :
-        #       · (N.AR1) add error handlers in order not to crash on misformed track files
-        
-        if road.end == self:
-            if not self.coming_roads:
-                self.coming_roads = []
-            self.coming_roads    += [road]
-        else:
-            if not self.leaving_roads:
-                self.leaving_roads = []
-            self.leaving_roads   += [road]
     
     def set_gate(self, road, state):
         """
@@ -326,7 +284,7 @@ class Node:
         """
         
         # TODO :
-        #       · (N.SG1) use more explicit constant names (e.g. "GATE_LEAVING" instead of "0")
+        #       · (N.SG1) use more explicit constant names (e.g. "GATE_LEAVING" instead of "0") ; DONE !
         #       · (N.SG2) lock gate usage when the node is full, see (N.U1)
         
         if (id(road.begin) == id(self)):
@@ -374,7 +332,37 @@ class Car:
         # Cette « vitesse » est pour le moment 0 ou 100, ce sont des « point de deplacements »
         self.speed      = 0
         self.position   = 0
-        self.road       = new_road
+        self.location   = new_road  #   Where the car is ; can be a road or a node
+    
+    def join(self, new_location, new_position = 0):
+        """
+        Allocate the car to the given location. The concept of location makes it possible to use this code for either a road or a node.
+            new_location    (Road or Node)  :   road or node that will host, if possible, the car
+            new_position    (list)          :   position in the road or in the node (note that the meaning of the position depends on the kind of location)
+        """
+        
+        if self.location is not None:
+            for i in range(len(self.location.cars)):
+                if (id(self.location.cars[i]) == id(self)):
+                    # Important : do not write self.cars[i] = None, cause it erases the car itself and crashes
+                    del self.location.cars[i]
+                    break
+        
+        new_location.cars   +=  [self]
+        self.position       =   new_position
+        self.location       =   new_location
+    
+    def die(self):
+        """
+            Kills the car, which simply disappear ; should be mostly used in dead-ends.
+        """
+        
+        if self.location.cars:
+            for i in range(len(self.location.cars)):
+                if self.location.cars[i] == self:
+                    del self.location.cars[i]
+                    self.location = None
+                    break
     
     def next_way(self, read_only = False):
         """
@@ -390,24 +378,27 @@ class Car:
                 del self.path[0]
             return direction
 
-    def update(self, rang):
+    def update(self, rank):
         """
         Updates the car speed and position, manages blocked pathways and queues.
-            rang    (int)   :   position on the road (0 : last in)
+            rank    (int)   :   position on the road (0 : last in)
         """
        
         # TODO :
-        #       · (C.U1) resort to more "realistic" physics (e.g. acceleration, braking…)
-       
-        next_light = self.road.length - 1
+        #       · (C.U1) resort to more "realistic" physics (e.g. acceleration, braking...)
         
-        if self.road.cars:
-            if rang >= len(self.road.cars) - 1: 
+        if not isinstance(self.location, Road):
+            return None
+        
+        next_light = self.location.length - 1
+        
+        if self.location.cars:
+            if rank >= len(self.location.cars) - 1: 
                 # Le seul obstacle est un feu
                 obstacle = next_light
             else:
                 # L'obstacle est la voiture devant
-                obstacle = self.road.cars[rang + 1].position
+                obstacle = self.location.cars[rank + 1].position
         
         self.speed = 50
         
@@ -420,18 +411,18 @@ class Car:
             self.speed = 0 #ca ne sert un peu à rien, pour le moment,  car la vitesse est remise à 50 après
         else:
             # On oublie les histoires de feu rouge pour le moment : la voiture s'arrête.
-            remaining_points = self.speed - (self.road.length -1 - self.position) / delta_t
-            self.position = self.road.length -1 #j'avance autant que je peux, puis demande au carrefour de me prendre en charge
+            remaining_points = self.speed - (self.location.length -1 - self.position) / delta_t
+            self.position = self.location.length -1 #j'avance autant que je peux, puis demande au carrefour de me prendre en charge
             #self.speed = 0
 
             # Let's do some more stuff ! We ask the node to do with us what he wants
-            self.road.end.manage_car(self, remaining_points) #j'indique le nbre de points de déplacement restants (combien coûte le carrefour ?)
+            self.location.end.manage_car(self, remaining_points) #j'indique le nbre de points de déplacement restants (combien coûte le carrefour ?)
             # I don't really get it: what do you mean by "remaining_points" ? -- Sharayanan
 
 #   TESTING ZONE
 
 if (__name__ == '__main__'):
-    print "You should run interface.py instead of this file!"
+    print "You should run interface.py instead of this file !"
     pass
 
 # Temporary testing zone

@@ -51,10 +51,10 @@ def draw_car(car):
         car (Car) : la voiture sus-citée.
     """
     
-    xd, yd = car.road.begin.coords
-    xa, ya = car.road.end.coords
+    xd, yd = car.location.begin.coords
+    xa, ya = car.location.end.coords
 
-    length_covered = int(car.position) * 100 / int(car.road.length)
+    length_covered = int(car.position) * 100 / int(car.location.length)
     
     x_position = int(xd) + (int(xa) - int(xd) ) * length_covered / 100
     y_position = int(yd) + (int(ya) - int(yd) ) * length_covered / 100
