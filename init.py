@@ -253,12 +253,11 @@ class Node:
         """
         # TODO :
         #       · (N.UC1) check for position on the node to account for rotation (cf. N.U2)
-        #       · (N.UC2) check for the leaving_road to be free before branching on it (use read_only = True in newt_way() unless you branch) ; DONE !
         
         # TEMPORARY : go to where you want
-        next_way = car.next_way() % len(self.leaving_roads)
+        next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
         if (self.leaving_roads[next_way].is_free):
-            car.join(self.leaving_roads[next_way]) # No need for remaining_points since we start from *zero*
+            car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # No need for remaining_points since we start from *zero* + remove the path element
     
     def update(self):
         """
@@ -284,7 +283,6 @@ class Node:
         """
         
         # TODO :
-        #       · (N.SG1) use more explicit constant names (e.g. "GATE_LEAVING" instead of "0") ; DONE !
         #       · (N.SG2) lock gate usage when the node is full, see (N.U1)
         
         if (id(road.begin) == id(self)):
@@ -340,13 +338,13 @@ class Car:
             new_location    (Road or Node)  :   road or node that will host, if possible, the car
             new_position    (list)          :   position in the road or in the node (note that the meaning of the position depends on the kind of location)
         """
-        
-        if self.location is not None:
+
+        if self.location:
             for i in range(len(self.location.cars)):
                 if (id(self.location.cars[i]) == id(self)):
                     # Important : do not write self.cars[i] = None, cause it erases the car itself and crashes
                     del self.location.cars[i]
-                    break
+                    break           
         
         new_location.cars   +=  [self]
         self.position       =   new_position
@@ -359,7 +357,7 @@ class Car:
         
         if self.location.cars:
             for i in range(len(self.location.cars)):
-                if self.location.cars[i] == self:
+                if (id(self.location.cars[i]) == id(self)):
                     del self.location.cars[i]
                     self.location = None
                     break
@@ -402,14 +400,23 @@ class Car:
         
         self.speed = 50
         
-        if self.position + self.speed * delta_t < obstacle:
+        next_position = self.position + self.speed * delta_t
+        
+        if next_position < obstacle:
             # « 1 trait danger, 2 traits sécurité : je fonce ! »
-            self.position += self.speed * delta_t
-        elif obstacle != next_light:
+            self.position = next_position
+        elif (obstacle != next_light) and (next_position >= obstacle):
             # On s'arrête au prochain obstacle
-            self.position = obstacle - CAR_WIDTH
-            self.speed = 0 #ca ne sert un peu à rien, pour le moment,  car la vitesse est remise à 50 après
-        else:
+            
+            # TEMPORARY: see buggy code below
+            self.position = next_position
+            
+            # BUGGY CODE: for some reason, when cars join a road where multiple cars already crowd, they sometimes get "stuck" with them
+            #                           and "teleport" the first car back at the beginning of the road, as if it had to be behind the last car…
+            #                           This is not important for now, as this won't hamper the way the program works.
+            #self.position = obstacle - CAR_WIDTH
+            #self.speed = 0 #ca ne sert un peu à rien, pour le moment,  car la vitesse est remise à 50 après
+        elif (obstacle == next_light) and (next_position >= obstacle):
             # On oublie les histoires de feu rouge pour le moment : la voiture s'arrête.
             remaining_points = self.speed - (self.location.length -1 - self.position) / delta_t
             self.position = self.location.length -1 #j'avance autant que je peux, puis demande au carrefour de me prendre en charge
@@ -421,17 +428,26 @@ class Car:
 
 #   TESTING ZONE
 
+def load_demo_track():
+    # Temporary testing zone
+    track.load_from_file("track_default.txt")
+    # Attention à l'ordre dans lequel on place les voitures ! si ce n'est pas dans lordre décroissant par position, tout le reste du programme est gêné !
+    # (un tri, tout au début devrait résoudre ce bug issue2)
+    # Évitez les doublons aussi, tant que possible ! -- Sharayanan
+    track.roads[3].add_car(Car([], track.roads[3]), 5)
+    track.roads[6].add_car(Car([], track.roads[6]), 500)
+    track.roads[6].add_car(Car([], track.roads[6]), 30)
+    track.roads[6].add_car(Car([], track.roads[6]), 10)
+    track.roads[7].add_car(Car([], track.roads[7]), 40)
+    track.roads[7].add_car(Car([], track.roads[7]), 10)
+    track.roads[8].add_car(Car([], track.roads[8]), 40)
+    track.roads[9].add_car(Car([], track.roads[9]), 10)
+    track.roads[10].add_car(Car([], track.roads[10]), 40)
+    track.roads[10].add_car(Car([], track.roads[10]), 10)
+
 if (__name__ == '__main__'):
     print "You should run interface.py instead of this file !"
-    pass
-
-# Temporary testing zone
-track = Track()
-track.load_from_file("track_default.txt")
-#attention à l'ordre dans lequel on place les voitures ! si ce n'est pas dans lordre décroissant par position, tout le reste du programme est gêné !
-# un tri, tout au début devrait résoudre ce bug issue2
-track.roads[3].add_car(Car([], track.roads[3]), 5)
-track.roads[6].add_car(Car([], track.roads[6]), 500)
-track.roads[6].add_car(Car([], track.roads[6]), 30)
-track.roads[6].add_car(Car([], track.roads[6]), 10)
-track.roads[6].add_car(Car([], track.roads[6]), 10)
+else:
+    track = Track()
+    load_demo_track()
+    

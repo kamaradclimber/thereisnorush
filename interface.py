@@ -128,13 +128,25 @@ def draw_road(road):
     x_start, y_start = int(road.begin.x), int(road.begin.y)
     x_end, y_end     = int(road.end.x), int(road.end.y)
     
-    pygame.draw.line(screen, init.ROAD_COLOR, (x_start, y_start), (x_end, y_end), 1)
+    # EXPERIMENTAL: color the road from green (empty) to red (full)
+    if road.cars:
+        key = 50 * len(road.cars)
+        if key > 255: key = 255
+        color = [key, 255 - key, 0]
+    else:
+        #color = init.ROAD_COLOR
+        color = init.GREEN
+    
+    #pygame.draw.line(screen, init.ROAD_COLOR, (x_start, y_start), (x_end, y_end), 1)
+    
+    pygame.draw.line(screen, color, (x_start, y_start), (x_end, y_end), 1) # EXPERIMENTAL
     
     # Draw an arrow pointing at where we go
     draw_arrow(x_start, y_start, x_end, y_end)
     
-    for car in road.cars:
-        draw_car(car)
+    if road.cars:
+        for car in road.cars:
+            draw_car(car)
     
 def draw_scene():
     """
