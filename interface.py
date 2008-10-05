@@ -19,10 +19,6 @@ global debug        # Indicates whether debugging messages are displayed - Indiq
 screen = pygame.display.set_mode(init.RESOLUTION)   # Sets drawing surface - Met en place la surface de dessin
 debug  = True
 
-def init_display():
-    pygame.init()
-    pygame.display.set_caption("Thereisnorush (unstable)")
-
 def draw_node(node):
     """
     Draws a given node on the screen.
@@ -239,7 +235,11 @@ def main_loop():
 
 if __name__ == "__main__":
     # Before simulation instructions
-    init_display()
+    
+    #   PLEASE STOP MAKING FUNCTIONS THAT DO ONLY 2 INSTRUCTIONS -- Ch@hine
+    pygame.init()
+    pygame.display.set_caption("Thereisnorush (unstable)")
+    
     # Main loop
     main_loop()
 
