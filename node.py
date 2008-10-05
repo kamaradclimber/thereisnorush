@@ -61,7 +61,7 @@ except NameError:
             #       · (N.UC2) check for the leaving_road to be free before branching on it (use read_only = True in newt_way() unless you branch) ; DONE !
             
             # TEMPORARY : go to where you want
-            next_way = car.next_way() % len(self.leaving_roads)
+            next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
             if (self.leaving_roads[next_way].is_free):
                 car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # No need for remaining_points since we start from *zero*
         
