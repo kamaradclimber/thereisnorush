@@ -12,9 +12,9 @@ except NameError:
     
     import string
     import init 
-    import road
-    import car 
-    import node
+    from road import Road
+    from car import Car 
+    from node import Node
     
     class Track:
         """
@@ -44,9 +44,9 @@ except NameError:
                 elements    (list)      :   a list describing the element [type, arg1, arg2…]
             """
             if (elements[0] == init.NODE):
-                self.nodes.append(node.Node([elements[1], elements[2]]))
+                self.nodes.append(Node([elements[1], elements[2]]))
             elif (elements[0] == init.ROAD):
-                new_road = road.Road(self.nodes[elements[1]], self.nodes[elements[2]], elements[3])
+                new_road = Road(self.nodes[elements[1]], self.nodes[elements[2]], elements[3])
                 self.roads += [new_road]
                 new_road.connect(self.nodes[elements[1]], self.nodes[elements[2]])
             else:

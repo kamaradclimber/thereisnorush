@@ -12,8 +12,8 @@ try:
 except NameError:
     CAR_FILE = True
 
-    import road
-    import node
+    from road import Road
+    from node import Node
     
     class Car:
         """
@@ -108,7 +108,7 @@ except NameError:
             # TODO :
             #       · (C.U1) resort to more "realistic" physics (e.g. acceleration, braking...)
             
-            if not isinstance(self.location, road.Road):
+            if not isinstance(self.location, Road):
                 return None
             
             next_light = self.location.length - 1

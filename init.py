@@ -44,9 +44,9 @@ except NameError:
     ROAD        = "Road"
 
     import string               # standard python library
-    from os   import getcwd     # standard python library, ne pas tout prendre, c'est plus propre :-)
-    import track
-    import car 
+    from os     import getcwd   # standard python library, ne pas tout prendre, c'est plus propre :-)
+    from track  import Track
+    from car    import Car 
     
     #   TESTING ZONE
     
@@ -54,7 +54,7 @@ except NameError:
         """
         Adds a car on the demo track
         """
-        track.roads[road_number].add_car(car.Car([], track.roads[road_number]), position)
+        track.roads[road_number].add_car(Car([], track.roads[road_number]), position)
     
     def load_demo_track():
         # Temporary testing zone
@@ -81,5 +81,5 @@ except NameError:
     if (__name__ == '__main__'):
         print "You should run interface.py instead of this file !"
     else:
-        track = track.Track()
+        track = Track()
         load_demo_track()
