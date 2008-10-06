@@ -34,9 +34,7 @@ except NameError:
     LEAVING             = 1
     INCOMING            = 0
     
-    CAR_WIDTH   = 4
-    CAR_HEIGHT  = 4
-    CAR_COLOR   = LIGHT_BLUE
+
     
     ROAD_COLOR  = WHITE
     

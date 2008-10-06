@@ -55,11 +55,11 @@ def draw_car(car):
     x_position = int(xd) + (int(xa) - int(xd) ) * length_covered / 100
     y_position = int(yd) + (int(ya) - int(yd) ) * length_covered / 100
     
-    pt_topleft     = (x_position - init.CAR_WIDTH / 2 , y_position - init.CAR_HEIGHT / 2 )
-    pt_bottomright = (init.CAR_WIDTH, init.CAR_HEIGHT)
+    pt_topleft     = (x_position - car.length / 2 , y_position - car.width / 2 )
+    pt_bottomright = (car.length, car.width)
     
     rectangle      = pygame.Rect(pt_topleft, pt_bottomright)
-    pygame.draw.rect(screen, init.CAR_COLOR, rectangle, 0)
+    pygame.draw.rect(screen, car.color, rectangle, 0)
 
 def draw_text(x = screen.get_rect().centerx, y = screen.get_rect().centery, message = "", text_color = init.WHITE, back_color = init.BLACK, font = None, anti_aliasing = True):
     """
@@ -127,7 +127,11 @@ def draw_road(road):
     # EXPERIMENTAL: color the road from green (empty) to red (full)
     # Model : color key proportional to traffic density (N_cars/L_road)
     if road.cars:
-        key =  2* (float(len(road.cars*init.CAR_WIDTH))/float(road.length))*255
+        occupation = 0
+        for car in road.cars:
+            occupation += car.length
+            
+        key =  2* (float(occupation)/float(road.length))*255
         if key > 255: key = 255
         color = [key, 255 - key, 0]
     else:

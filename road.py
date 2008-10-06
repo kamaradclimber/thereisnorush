@@ -51,12 +51,10 @@ except NameError:
             """
             
             # I guess there is still room as long as the last car engaged on the road if far enough from the start of the road
-            if not len(self.cars):
-                return True
-            elif self.cars[0].position > init.CAR_WIDTH * 1.5 + 1: #   Supposing we need at least a distance of 1 between 2 cars
+            if not self.cars:
                 return True
             else:
-                return False
+                return(self.cars[0].position > self.cars[0].length/2 + self.cars[0].headway)
         
         def update(self):
             queue_length = len(self.cars)

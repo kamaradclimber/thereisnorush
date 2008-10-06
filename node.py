@@ -32,20 +32,18 @@ except NameError:
             # Maximum available space to host cars : perimeter divided by cars' width
             # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
             
-            self.max_cars      = int(2 * pi * radius / init.CAR_WIDTH)
+            # TEMPORARY
+            #self.max_cars      = int(2 * pi * radius / car.CAR_DEFAULT_LENGTH)
+            self.max_cars = 10
         
         @property
         def is_full(self):
             """
             Returns whether there is still place on the node
             """
-            
-            if len(self.cars) >= self.max_cars:
-                return True
-            else:
-                return False
+            return (len(self.cars) >= self.max_cars)
         
-        def updateGates(self):
+        def update_gates(self):
             """
             Manages the gates of the roads.
             For now, only closes gates if the node is full.
@@ -59,6 +57,7 @@ except NameError:
                     self.leaving_roads[i].gates[1] = True
         
         #   I THINK THIS FUNCTION SHOULD BE DELETED ; PLEASE CONFIRM -- Ch@hine
+        # There's no need to capitalize… you should give a proposition first, I guess. If you think it's better to remove this method, proceed. -- Sharayanan
         def manage_car(self, car, remaining_points):
             """
             Asks the node to take control over the car and move it appropriately.

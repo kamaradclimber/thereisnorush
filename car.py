@@ -15,13 +15,18 @@ except NameError:
     from road import Road
     from node import Node
     
+    CAR_DEFAULT_LENGTH   = 4
+    CAR_DEFAULT_WIDTH    = 4
+    CAR_DEFAULT_HEADWAY  = 2 * CAR_DEFAULT_WIDTH
+    CAR_DEFAULT_SPEED    = 50
+    CAR_DEFAULT_COLOR    = ( 64,  64, 255)
     
     class Car:
         """
         Those which will crowd our city >_< .
         """
         
-        def __init__(self, newPath, new_road, new_speed = 50):
+        def __init__(self, newPath, new_road, new_speed = CAR_DEFAULT_SPEED, new_length = CAR_DEFAULT_LENGTH, new_width = CAR_DEFAULT_WIDTH, new_headway = CAR_DEFAULT_HEADWAY, new_color = CAR_DEFAULT_COLOR):
             """
             Constructor method : a car is provided a (for now unmutable) sequence of directions.
                 newPath (list)  :   a list of waypoints
@@ -31,10 +36,19 @@ except NameError:
             """
             
             self.path       = []
-            # For now, the cars' speed is either 0 or 100
-            # Cette « vitesse » est pour le moment 0 ou 100, ce sont des « point de deplacements »
-            self.speed      = new_speed
-            self.position   = 0
+            
+            # Car & driver properties, to use in dynamics & behavior management
+            self.length    = new_length     # Car's length (from front to rear) / Longueur de la voiture (de l'avant à l'arrière)
+            self.width     = new_width      # Car's width (from left to right) / Envergure de la voiture (de gauche à droite)   
+            self.speed     = new_speed 
+            self.position  = 0               
+            self.headway   = new_headway    # Desired headway to the preceding car / Distance souhaitée par rapport à la voiture devant
+            self.color     = new_color 
+
+            # For future developments on driver dynamics, just to know where it is, you may delete it if it bothers you -- Sharayanan
+            #self.max_speed =        
+            #self.max_accel =  # Car's maximum acceleration / Accélération maximale
+            #self.acceleration =              
             
             if isinstance(new_road, Road):
                 self.location = new_road
@@ -74,16 +88,16 @@ except NameError:
                         del self.location.cars[i]
                         break
             
+            self.position       =   new_position
+            self.location       =   new_location
+            
             new_location.cars   +=  [self]
             
             #   Each time a car joins or leaves a node, this one has to update the calculate again the best configuration for the gates
             if isinstance(self.location, Node):
-                self.location.updateGates()
+                self.location.update_gates()
             elif isinstance(new_location, Node):
-                new_location.updateGates()
-            
-            self.position       =   new_position
-            self.location       =   new_location
+                new_location.update_gates()
         
         def die(self):
             """
@@ -134,29 +148,29 @@ except NameError:
                 obstacle = next_light
             else:
                 # L'obstacle est la voiture devant
-                obstacle = self.location.cars[rank + 1].position
+                obstacle = self.location.cars[rank + 1].position - self.location.cars[rank + 1].length/2
             
             next_position = self.position + self.speed * delta_t
             
-            if next_position < obstacle:
+            if next_position < obstacle + self.headway :
                 # « 1 trait danger, 2 traits sécurité : je fonce ! »
                 self.position = next_position
             elif obstacle != next_light:
                 # On s'arrête au prochain obstacle
                 
-                # TEMPORARY: see buggy code below
+                # TEMPORARY
                 self.position = next_position
-                
-                # BUGGY CODE: for some reason, when cars join a road where multiple cars already crowd, they sometimes get "stuck" with them and "teleport" the first car back at the beginning of the road, as if it had to be behind the last car...
-                # This is not important for now, as this won't hamper the way the program works.
-                # self.position = obstacle - CAR_WIDTH
             elif obstacle == next_light:
-                # remaining_points = self.speed - (self.location.length -1 - self.position) / delta_t
-                self.position = self.location.length - 1 #j'avance autant que je peux, puis demande au carrefour de me prendre en charge
+                #remaining_points = self.speed - (self.location.length -1 - self.position) / delta_t
+                self.position = self.location.length - self.headway - self.length / 2
                 
                 if self.location.gates[1]:
+                    #self.position = self.location.length - 1
                     self.join(self.location.end)
+                else:
+                     #j'avance autant que je peux, puis demande au carrefour de me prendre en charge
+                     self.position = self.location.length - self.headway - self.length / 2
                 
-                # self.location.end.manage_car(self, remaining_points) #j'indique le nbre de points de déplacement restants (combien coûte le carrefour ?)
+                #self.location.end.manage_car(self, remaining_points) #j'indique le nbre de points de déplacement restants (combien coûte le carrefour ?)
                 # I don't really get it: what do you mean by "remaining_points" ? -- Sharayanan
                 # I suggest we give up the idea of remaining_points, which is not very significative for our simulation -- Ch@hine
