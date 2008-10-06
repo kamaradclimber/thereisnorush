@@ -75,6 +75,13 @@ except NameError:
                         break
             
             new_location.cars   +=  [self]
+            
+            #   Each time a car joins or leaves a node, this one has to update the calculate again the best configuration for the gates
+            if isinstance(self.location, Node):
+                self.location.updateGates()
+            elif isinstance(new_location, Node):
+                new_location.updateGates()
+            
             self.position       =   new_position
             self.location       =   new_location
         

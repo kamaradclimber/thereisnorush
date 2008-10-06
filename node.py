@@ -31,8 +31,34 @@ except NameError:
             
             # Maximum available space to host cars : perimeter divided by cars' width
             # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
+            
             self.max_cars      = int(2 * pi * radius / init.CAR_WIDTH)
         
+        @property
+        def is_full(self):
+            """
+            Returns whether there is still place on the node
+            """
+            
+            if len(self.cars) >= self.max_cars:
+                return True
+            else:
+                return False
+        
+        def updateGates(self):
+            """
+            Manages the gates of the roads.
+            For now, only closes gates if the node is full.
+            """
+            
+            if self.is_full:
+                for i in range(len(self.leaving_roads) - 1):
+                    self.leaving_roads[i].gates[1] = False
+            else:
+                for i in range(len(self.leaving_roads) - 1):
+                    self.leaving_roads[i].gates[1] = True
+        
+        #   I THINK THIS FUNCTION SHOULD BE DELETED ; PLEASE CONFIRM -- Ch@hine
         def manage_car(self, car, remaining_points):
             """
             Asks the node to take control over the car and move it appropriately.
@@ -41,7 +67,7 @@ except NameError:
             
             if len(self.leaving_roads):
                 # The node may, or may not, accept to host the car
-                if len(self.cars) < self.max_cars :
+                if len(self.cars) < self.max_cars:
                     # On s'est gardé de la div par 0 avec le test booléen 
                     # Thanks to the above boolean test, we'll avoid division by zero
                     car.join(self)
