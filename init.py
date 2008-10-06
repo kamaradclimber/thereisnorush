@@ -27,12 +27,12 @@ except NameError:
     
     RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (512, 384)
     
-    NODE_WIDTH  = 3
-    NODE_HEIGHT = 3
-    NODE_COLOR  = RED
+    NODE_WIDTH          = 3
+    NODE_HEIGHT         = 3
+    NODE_COLOR          = RED
     NODE_RADIUS_DEFAULT = 10
-    LEAVING_GATE  = 0
-    INCOMING_GATE = 1
+    LEAVING             = 1
+    INCOMING            = 0
     
     CAR_WIDTH   = 4
     CAR_HEIGHT  = 4

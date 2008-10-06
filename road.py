@@ -29,7 +29,7 @@ except NameError:
             self.end    = new_end
             self.cars   = [] 
             self.length = int(length)
-            self.gates  = [False, False]    # [gate at the beginning, gate at the end]
+            self.gates  = [True, True]    # [gate at the beginning, gate at the end]
         
         def connect(self, starting_node, ending_node):
             """
@@ -59,14 +59,13 @@ except NameError:
                 return False
         
         def update(self):
-            if self.cars:
-                queue_length = len(self.cars)
-                if queue_length > 0:
-                    for i in range(queue_length - 1):
-                        self.cars[-i-1].update(queue_length - (i+1))
-                    else:
-                        self.cars[0].update(queue_length - 1)
-    
+            queue_length = len(self.cars)
+            if queue_length > 0:
+                for i in range(queue_length - 1):
+                    self.cars[queue_length - 1 - i].update(queue_length - 1 - i)
+                else:
+                    self.cars[0].update(queue_length - 1)
+        
         def add_car(self, new_car, new_position = 0):
             """
             Inserts a car at given position in the ordered list of cars.
