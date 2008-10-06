@@ -54,9 +54,11 @@ except NameError:
             if not self.cars:
                 return True
             else:
+                # CONVENTION SENSITIVE
                 return(self.cars[0].position > self.cars[0].length/2 + self.cars[0].headway)
         
         def update(self):
+            # CONVENTION SENSITIVE
             queue_length = len(self.cars)
             if queue_length > 0:
                 for i in range(queue_length - 1):

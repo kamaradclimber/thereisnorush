@@ -131,7 +131,7 @@ def draw_road(road):
         for car in road.cars:
             occupation += car.length
             
-        key =  2* (float(occupation)/float(road.length))*255
+        key = 2 * (float(occupation)/float(road.length)) * 255
         if key > 255: key = 255
         color = [key, 255 - key, 0]
     else:

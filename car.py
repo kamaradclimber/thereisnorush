@@ -91,6 +91,7 @@ except NameError:
             self.position       =   new_position
             self.location       =   new_location
             
+            # CONVENTION SENSITIVE
             new_location.cars   +=  [self]
             
             #   Each time a car joins or leaves a node, this one has to update the calculate again the best configuration for the gates
@@ -148,6 +149,7 @@ except NameError:
                 obstacle = next_light
             else:
                 # L'obstacle est la voiture devant
+                # CONVENTION SENSITIVE
                 obstacle = self.location.cars[rank + 1].position - self.location.cars[rank + 1].length/2
             
             next_position = self.position + self.speed * delta_t
@@ -155,22 +157,14 @@ except NameError:
             if next_position < obstacle + self.headway :
                 # « 1 trait danger, 2 traits sécurité : je fonce ! »
                 self.position = next_position
-            elif obstacle != next_light:
+            elif obstacle < next_light:
                 # On s'arrête au prochain obstacle
                 
                 # TEMPORARY
                 self.position = next_position
-            elif obstacle == next_light:
-                #remaining_points = self.speed - (self.location.length -1 - self.position) / delta_t
+            elif obstacle >= next_light:
+                # We have a gate in front of us : stop & align
                 self.position = self.location.length - self.headway - self.length / 2
                 
                 if self.location.gates[1]:
-                    #self.position = self.location.length - 1
                     self.join(self.location.end)
-                else:
-                     #j'avance autant que je peux, puis demande au carrefour de me prendre en charge
-                     self.position = self.location.length - self.headway - self.length / 2
-                
-                #self.location.end.manage_car(self, remaining_points) #j'indique le nbre de points de déplacement restants (combien coûte le carrefour ?)
-                # I don't really get it: what do you mean by "remaining_points" ? -- Sharayanan
-                # I suggest we give up the idea of remaining_points, which is not very significative for our simulation -- Ch@hine

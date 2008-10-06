@@ -60,6 +60,7 @@ except NameError:
         # Attention à l'ordre dans lequel on place les voitures ! si ce n'est pas dans lordre décroissant par position, tout le reste du programme est gêné !
         # (un tri, tout au début devrait résoudre ce bug issue2)
         # Évitez les doublons aussi, tant que possible ! -- Sharayanan
+        # CONVENTION SENSITIVE
         add_demo_car(3,5)
         add_demo_car(6,500)
         add_demo_car(6,30)
