@@ -20,6 +20,7 @@ except NameError:
     GREEN       = (  0, 255,   0)
     BLUE        = (  0,   0, 255)
     WHITE       = (255, 255, 255)
+    GRAY        = (190, 190, 190)
     
     LIGHT_RED   = (255,  64,  64)
     LIGHT_GREEN = ( 64, 255,  64)
@@ -31,8 +32,7 @@ except NameError:
     NODE_HEIGHT         = 3
     NODE_COLOR          = RED
     NODE_RADIUS_DEFAULT = 10
-    LEAVING             = 1
-    INCOMING            = 0
+    
     
 
     
@@ -76,6 +76,11 @@ except NameError:
         add_demo_car(12,40)
         add_demo_car(13,20)
         add_demo_car(13,10)
+        add_demo_car(14,48)
+        add_demo_car(14,45)
+        add_demo_car(14,40)
+        add_demo_car(14,35)
+        add_demo_car(14,30)
     
     if (__name__ == '__main__'):
         print "You should run interface.py instead of this file !"

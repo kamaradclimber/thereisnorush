@@ -13,6 +13,9 @@ except NameError:
     import init
     from math import pi
     
+    LEAVING_GATE             = 1
+    INCOMING_GATE            = 0
+
     class Node:
         """
         Crossroads of our city ; may host several roads.
@@ -25,7 +28,7 @@ except NameError:
             """
             
             self.x, self.y     = new_coordinates[0], new_coordinates[1]
-            self.coming_roads  = []
+            self.incoming_roads  = []
             self.leaving_roads = []
             self.cars          = []
             
@@ -35,12 +38,21 @@ except NameError:
             # TEMPORARY
             #self.max_cars      = int(2 * pi * radius / car.CAR_DEFAULT_LENGTH)
             self.max_cars = 10
-        
+
+        def num_waiting_cars(self, road):
+            waiting_cars = 0
+            if road.cars:
+                for car in road.cars:
+                    if car.waiting:
+                        waiting_cars += 1
+            return waiting_cars
+
         @property
         def is_full(self):
             """
-            Returns whether there is still place on the node
+            Returns whether there is no place left on the node
             """
+           
             return (len(self.cars) >= self.max_cars)
         
         def update_gates(self):
@@ -48,14 +60,25 @@ except NameError:
             Manages the gates of the roads. This function will be the key part of the code, that's why it is called everytime
             For now, only closes gates if the node is full.
             """
-            
+
+            # Number of cars that are waiting on all the incoming roads
+            num_waiting = 0
+            for road in self.incoming_roads:
+                num_waiting += self.num_waiting_cars(road)
+
+            # CAUTION: this *has* to be in a separate loop !
+            for road in self.incoming_roads:
+                if self.num_waiting_cars(road) > 2:
+                    self.set_gate(road, True)
+                else:
+                    self.set_gate(road, False)
+
+
+            # ne rien ajouter apres cette section, !
             if self.is_full:
-                for i in range(len(self.leaving_roads) - 1):
+                for i in range(len(self.leaving_roads)):
                     self.set_gate(self.leaving_roads[i], False)
-            else:
-                for i in range(len(self.leaving_roads) - 1):
-                    self.set_gate(self.leaving_roads[i],True)
-        
+                        
         #   I THINK THIS FUNCTION SHOULD BE DELETED ; PLEASE CONFIRM -- Ch@hine
         # There's no need to capitalize… you should give a proposition first, I guess. If you think it's better to remove this method, proceed. -- Sharayanan
         def manage_car(self, car, remaining_points):
@@ -102,9 +125,7 @@ except NameError:
             if self.cars:
                 for car in self.cars:
                     self.update_car(car)
-                    self.update_gates()
 
-            self.update_gates() #at the end, update to be sure
 
         @property
         def coords(self):
@@ -117,12 +138,10 @@ except NameError:
                 state   (bool)   :   the state (False = red, True = green) of the gate
             """
             
-            # TODO :
-            #       · (N.SG2) lock gate usage when the node is full, see (N.U1)
             
             if (id(road.begin) == id(self)):
                 # The road begins on the node: there is a gate to pass before leaving
-                road.gates[1] = state
+                road.gates[LEAVING_GATE] = state
             else:
                 # The road ends on the road: there is a gate to pass to enter
-                road.gates[0] = state
+                road.gates[INCOMING_GATE] = state

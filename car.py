@@ -36,7 +36,7 @@ except NameError:
             """
             
             self.path       = []
-            
+            self.waiting    = False # Indicates whether the car is waiting at the gates
             # Car & driver properties, to use in dynamics & behavior management
             self.length    = new_length     # Car's length (from front to rear) / Longueur de la voiture (de l'avant à l'arrière)
             self.width     = new_width      # Car's width (from left to right) / Envergure de la voiture (de gauche à droite)   
@@ -128,10 +128,10 @@ except NameError:
             if len(self.path) == 0:
                 return 0
             else:
-                next_dir = self.path[0]
+                
                 if not read_only:
                     del self.path[0]
-                return next_dir
+                return self.path[0]
         
         def update(self, rank):
             """
@@ -157,19 +157,25 @@ except NameError:
             
             next_position = self.position + self.speed * delta_t
             
+            
             if next_position + self.headway < obstacle:
                 # « 1 trait danger, 2 traits sécurité : je fonce ! »
                 self.position = next_position
             elif obstacle < next_light:
                 # On s'arrête au prochain obstacle
                 
-                self.position = obstacle - self.length/2 - self.headway
+                if not self.waiting:
+                    self.position = obstacle - self.length/2 - self.headway
+                #CONVENTION SENSITIVE
+                self.waiting = self.location.cars[rank + 1].waiting
             elif obstacle >= next_light:
 
                 if self.location.gates[1]:
                     # Everything's ok, let's go !
+                    self.waiting = False
                     self.position = next_position
                     self.join(self.location.end)
                 else:
                     # We have a closed gate in front of us : stop & align
                     self.position = self.location.length - self.headway - self.length / 2
+                    self.waiting = True

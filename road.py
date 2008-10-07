@@ -29,7 +29,7 @@ except NameError:
             self.end    = new_end
             self.cars   = [] 
             self.length = int(length)
-            self.gates  = [True, True]    # [gate at the beginning, gate at the end]
+            self.gates  = [True, False]    # [gate at the beginning, gate at the end]
         
         def connect(self, starting_node, ending_node):
             """
@@ -41,7 +41,7 @@ except NameError:
             
             self.begin                  =   starting_node
             self.end                    =   ending_node
-            ending_node.coming_roads    +=  [self]
+            ending_node.incoming_roads    +=  [self]
             starting_node.leaving_roads +=  [self]
         
         @property

@@ -58,8 +58,12 @@ def draw_car(car):
     pt_topleft     = (x_position - car.length / 2 , y_position - car.width / 2 )
     pt_bottomright = (car.length, car.width)
     
+    color = car.color
+    if car.waiting:
+        color = init.GRAY
+
     rectangle      = pygame.Rect(pt_topleft, pt_bottomright)
-    pygame.draw.rect(screen, car.color, rectangle, 0)
+    pygame.draw.rect(screen, color, rectangle, 0)
 
 def draw_text(x = screen.get_rect().centerx, y = screen.get_rect().centery, message = "", text_color = init.WHITE, back_color = init.BLACK, font = None, anti_aliasing = True):
     """
