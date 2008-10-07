@@ -17,7 +17,7 @@ except NameError:
     
     CAR_DEFAULT_LENGTH   = 4
     CAR_DEFAULT_WIDTH    = 4
-    CAR_DEFAULT_HEADWAY  = 2 * CAR_DEFAULT_WIDTH
+    CAR_DEFAULT_HEADWAY  = 2 * CAR_DEFAULT_WIDTH #marge de sécurité ?
     CAR_DEFAULT_SPEED    = 50
     CAR_DEFAULT_COLOR    = ( 64,  64, 255)
     
@@ -89,14 +89,15 @@ except NameError:
                         break
             
             self.position       =   new_position
+            old_location        =   self.location
             self.location       =   new_location
             
             # CONVENTION SENSITIVE
             new_location.cars   +=  [self]
             
             #   Each time a car joins or leaves a node, this one has to update the calculate again the best configuration for the gates
-            if isinstance(self.location, Node):
-                self.location.update_gates()
+            if isinstance(old_location, Node): #erreur sémantique ici: on teste deux fois la meme chose puisque slef.location == new_location, je modif
+                old_location.update_gates()
             elif isinstance(new_location, Node):
                 new_location.update_gates()
         
@@ -110,6 +111,8 @@ except NameError:
                     if (id(self.location.cars[i]) == id(self)):
                         del self.location.cars[i]
                         
+                        #toutes les modifs suivantes sont justes pour le confort de l'esprit et ne changent pas grand chose
+                        #cela dit, un jour mais cest pas pour tout de suite, il faudra verifier que les voitures non utilisée sont bien libérées de la memoire (ocaml le ferait, qu'en est-il de python ?)
                         self.location   = None
                         self.path       = []
                         self.speed      = 0
@@ -121,14 +124,14 @@ except NameError:
             """
             Expresses the cars' wishes :P
             """
-            # Becomes useless since the function "rotate" manages it -- Ch@hine
-            # Maybe, though this is temporary anyway, as the cars may later want to go less "randomly" -- Sharayanan
+
             if len(self.path) == 0:
                 return 0
             else:
+                next_dir = self.path[0]
                 if not read_only:
                     del self.path[0]
-                return self.path[0]
+                return next_dir
         
         def update(self, rank):
             """
@@ -154,14 +157,14 @@ except NameError:
             
             next_position = self.position + self.speed * delta_t
             
-            if next_position < obstacle + self.headway :
+            if next_position + self.headway < obstacle:
                 # « 1 trait danger, 2 traits sécurité : je fonce ! »
                 self.position = next_position
             elif obstacle < next_light:
                 # On s'arrête au prochain obstacle
                 
                 # TEMPORARY
-                self.position = next_position
+                self.position = obstacle - self.headway
             elif obstacle >= next_light:
                 # We have a gate in front of us : stop & align
                 self.position = self.location.length - self.headway - self.length / 2

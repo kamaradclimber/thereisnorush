@@ -45,16 +45,16 @@ except NameError:
         
         def update_gates(self):
             """
-            Manages the gates of the roads.
+            Manages the gates of the roads. This function will be the key part of the code, that's why it is called everytime
             For now, only closes gates if the node is full.
             """
             
             if self.is_full:
                 for i in range(len(self.leaving_roads) - 1):
-                    self.leaving_roads[i].gates[1] = False
+                    self.set_gate(self.leaving_roads[i], False)
             else:
                 for i in range(len(self.leaving_roads) - 1):
-                    self.leaving_roads[i].gates[1] = True
+                    self.set_gate(self.leaving_roads[i],True)
         
         #   I THINK THIS FUNCTION SHOULD BE DELETED ; PLEASE CONFIRM -- Ch@hine
         # There's no need to capitalize… you should give a proposition first, I guess. If you think it's better to remove this method, proceed. -- Sharayanan
@@ -97,10 +97,15 @@ except NameError:
             #       · (N.U1) Lock the gates when the node is full and (temporarily) open them otherwise (or at least, let us some control over them)
             #       · (N.U2) Implement cars' rotation on the node before calling update_car
             
+            self.update_gates() # first, update gates, unless it should be unnecessary
+            
             if self.cars:
                 for car in self.cars:
                     self.update_car(car)
-        
+                    self.update_gates()
+
+            self.update_gates() #at the end, update to be sure
+
         @property
         def coords(self):
             return (self.x, self.y)
@@ -109,7 +114,7 @@ except NameError:
             """
             Sets the state of the gates on the road.
                 road    (Road)  :   the road whose gates are affected
-                state   (int)   :   the state (0 = red, 1 = green) of the gate
+                state   (bool)   :   the state (False = red, True = green) of the gate
             """
             
             # TODO :
@@ -117,7 +122,7 @@ except NameError:
             
             if (id(road.begin) == id(self)):
                 # The road begins on the node: there is a gate to pass before leaving
-                road.gates[LEAVING_GATE] = state
+                road.gates[1] = state
             else:
                 # The road ends on the road: there is a gate to pass to enter
-                road.gates[INCOMING_GATE] = state
+                road.gates[0] = state
