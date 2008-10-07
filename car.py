@@ -93,7 +93,7 @@ except NameError:
             self.location       =   new_location
             
             # CONVENTION SENSITIVE
-            new_location.cars   +=  [self]
+            new_location.cars   =  [self] + new_location.cars
             
             #   Each time a car joins or leaves a node, this one has to update the calculate again the best configuration for the gates
             if isinstance(old_location, Node): #erreur sémantique ici: on teste deux fois la meme chose puisque slef.location == new_location, je modif
@@ -163,11 +163,13 @@ except NameError:
             elif obstacle < next_light:
                 # On s'arrête au prochain obstacle
                 
-                # TEMPORARY
-                self.position = obstacle - self.headway
+                self.position = obstacle - self.length/2 - self.headway
             elif obstacle >= next_light:
-                # We have a gate in front of us : stop & align
-                self.position = self.location.length - self.headway - self.length / 2
-                
+
                 if self.location.gates[1]:
+                    # Everything's ok, let's go !
+                    self.position = next_position
                     self.join(self.location.end)
+                else:
+                    # We have a closed gate in front of us : stop & align
+                    self.position = self.location.length - self.headway - self.length / 2
