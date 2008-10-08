@@ -49,21 +49,27 @@ def draw_car(car):
     
     xd, yd = car.location.begin.coords
     xa, ya = car.location.end.coords
-
-    length_covered = int(car.position) * 100 / int(car.location.length)
     
-    x_position = int(xd) + (int(xa) - int(xd) ) * length_covered / 100
-    y_position = int(yd) + (int(ya) - int(yd) ) * length_covered / 100
+    para_x, para_y, perp_x, perp_y = get_vectors(xd, yd, xa, ya)
+    length_covered = float(int(car.position)) / float(int(car.location.length))
     
-    pt_topleft     = (x_position - car.length / 2 , y_position - car.width / 2 )
-    pt_bottomright = (car.length, car.width)
+    # Coordinates for the center
+    cx, cy = xd + length_covered * (xa - xd), yd + length_covered * (ya - yd)
     
+    # Get the coordinates for the endpoints
+    # ToDo : use relative sizes to respect the roads' scales
+    x1, y1 = cx - para_x * car.length/2 - perp_x * car.width/2, cy - para_y * car.length/2 - perp_y * car.width/2
+    x2, y2 = cx + para_x * car.length/2 - perp_x * car.width/2, cy + para_y * car.length/2 - perp_y * car.width/2
+    x3, y3 = cx + para_x * car.length/2 + perp_x * car.width/2, cy + para_y * car.length/2 + perp_y * car.width/2
+    x4, y4 = cx - para_x * car.length/2 + perp_x * car.width/2, cy - para_y * car.length/2 + perp_y * car.width/2
+    
+    # Change the color in case the car is waiting    
     color = car.color
     if car.waiting:
         color = init.GRAY
 
-    rectangle      = pygame.Rect(pt_topleft, pt_bottomright)
-    pygame.draw.rect(screen, color, rectangle, 0)
+    # Draw the car 
+    pygame.draw.polygon(screen, color, ((x1, y1), (x2, y2), (x3, y3), (x4, y4)), 0)
 
 def draw_text(x = screen.get_rect().centerx, y = screen.get_rect().centery, message = "", text_color = init.WHITE, back_color = init.BLACK, font = None, anti_aliasing = True):
     """
@@ -87,12 +93,15 @@ def draw_text(x = screen.get_rect().centerx, y = screen.get_rect().centery, mess
         textRect = text.get_rect()
         textRect.x, textRect.y = x, y
         screen.blit(text, textRect)
-    
-def draw_arrow(x_start, y_start, x_end, y_end):
+
+def get_vectors(x_start, y_start, x_end, y_end):
     """
-    Draws lil' cuty arrows along the roads to know where they're going
+    Returns the unit parallel and perpendicular vectors to a line 
     """
-    
+
+    # ToDo : incorporate this as a property of Road, so that we won't calculate
+    # it each and every time we require it
+
     # Get the vector parallel to the road
     para_y, para_x = y_end - y_start, x_end - x_start
     para_len = math.sqrt(para_x**2 + para_y**2)
@@ -103,6 +112,15 @@ def draw_arrow(x_start, y_start, x_end, y_end):
     # Get the unit vector perpendicular to the road (CCW)
     perp_x, perp_y = -para_y, para_x
     
+    return para_x, para_y, perp_x, perp_y
+        
+def draw_arrow(x_start, y_start, x_end, y_end):
+    """
+    Draws lil' cuty arrows along the roads to know where they're going
+    """
+    
+    para_x, para_y, perp_x, perp_y = get_vectors(x_start, y_start, x_end, y_end)
+
     # Get the midpoint of the road
     mid_x, mid_y = (x_start + x_end)/2, (y_start + y_end)/2
     

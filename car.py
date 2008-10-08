@@ -15,10 +15,12 @@ except NameError:
     from road import Road
     from node import Node
     
-    CAR_DEFAULT_LENGTH   = 4
+    CAR_DEFAULT_LENGTH   = 5
     CAR_DEFAULT_WIDTH    = 4
     CAR_DEFAULT_HEADWAY  = CAR_DEFAULT_WIDTH #marge de sécurité
-    CAR_DEFAULT_SPEED    = 50
+    CAR_DEFAULT_SPEED    = 0
+    CAR_DEFAULT_MAX_SPEED= 50
+    CAR_DEFAULT_ACCEL    = 10
     CAR_DEFAULT_COLOR    = ( 64,  64, 255)
     
     class Car:
@@ -26,7 +28,16 @@ except NameError:
         Those which will crowd our city >_< .
         """
         
-        def __init__(self, newPath, new_road, new_speed = CAR_DEFAULT_SPEED, new_length = CAR_DEFAULT_LENGTH, new_width = CAR_DEFAULT_WIDTH, new_headway = CAR_DEFAULT_HEADWAY, new_color = CAR_DEFAULT_COLOR):
+        def __init__(self,
+                     newPath,
+                     new_road,
+                     new_speed = CAR_DEFAULT_SPEED,
+                     new_accel = CAR_DEFAULT_ACCEL,
+                     new_max_speed = CAR_DEFAULT_MAX_SPEED,
+                     new_length = CAR_DEFAULT_LENGTH,
+                     new_width = CAR_DEFAULT_WIDTH,
+                     new_headway = CAR_DEFAULT_HEADWAY,
+                     new_color = CAR_DEFAULT_COLOR):
             """
             Constructor method : a car is provided a (for now unmutable) sequence of directions.
                 newPath (list)  :   a list of waypoints
@@ -35,20 +46,18 @@ except NameError:
             Définie par la liste de ses directions successives, pour le moment cette liste est fixe.
             """
             
-            self.path       = []
-            self.waiting    = False # Indicates whether the car is waiting at the gates
             # Car & driver properties, to use in dynamics & behavior management
+            self.path       = []
+            self.waiting    = False         # Indicates whether the car is waiting at the gates
             self.length    = new_length     # Car's length (from front to rear) / Longueur de la voiture (de l'avant à l'arrière)
             self.width     = new_width      # Car's width (from left to right) / Envergure de la voiture (de gauche à droite)   
             self.speed     = new_speed 
             self.position  = 0               
             self.headway   = new_headway    # Desired headway to the preceding car / Distance souhaitée par rapport à la voiture devant
             self.color     = new_color 
-
-            # For future developments on driver dynamics, just to know where it is, you may delete it if it bothers you -- Sharayanan
-            #self.max_speed =        
+            self.max_speed = new_max_speed
             #self.max_accel =  # Car's maximum acceleration / Accélération maximale
-            #self.acceleration =              
+            self.acceleration = new_accel      
             
             if isinstance(new_road, Road):
                 self.location = new_road
@@ -157,10 +166,14 @@ except NameError:
             
             next_position = self.position + self.speed * delta_t
             
-            
             if next_position + self.headway < obstacle:
                 # « 1 trait danger, 2 traits sécurité : je fonce ! »
                 self.position = next_position
+                
+                # EXPERIMENTAL: accounting for the physics of acceleration
+                self.speed += self.acceleration * delta_t
+                if self.speed > self.max_speed:
+                    self.speed = self.max_speed
             elif obstacle < next_light:
                 # On s'arrête au prochain obstacle
                 
@@ -168,6 +181,10 @@ except NameError:
                     self.position = obstacle - self.length/2 - self.headway
                 #CONVENTION SENSITIVE
                 self.waiting = self.location.cars[rank + 1].waiting
+                
+                # EXPERIMENTAL : stop the car that is waiting 
+                if self.waiting:
+                    self.speed = 0
             elif obstacle >= next_light:
 
                 if self.location.gates[1]:

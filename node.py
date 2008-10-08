@@ -11,6 +11,7 @@ except NameError:
     NODE_FILE = True
     
     import init
+    from pygame import time
     from math import pi
     
     LEAVING_GATE             = 1
@@ -46,14 +47,6 @@ except NameError:
                     if car.waiting:
                         waiting_cars += 1
             return waiting_cars
-
-        @property
-        def is_full(self):
-            """
-            Returns whether there is no place left on the node
-            """
-           
-            return (len(self.cars) >= self.max_cars)
         
         def update_gates(self):
             """
@@ -128,11 +121,6 @@ except NameError:
                 for car in self.cars:
                     self.update_car(car)
 
-
-        @property
-        def coords(self):
-            return (self.x, self.y)
-        
         def set_gate(self, road, state):
             """
             Sets the state of the gates on the road.
@@ -142,7 +130,24 @@ except NameError:
 
             if (id(road.begin) == id(self)):
                 # The road begins on the node: there is a gate to pass before leaving
-                road.gates[INCOMING_GATE] = state
+                if road.gates[INCOMING_GATE] != state:
+                    road.gates[INCOMING_GATE] = state
+                    road.gates_update[INCOMING_GATE] = time.get_ticks()
             else:
                 # The road ends on the road: there is a gate to pass to enter
-                road.gates[LEAVING_GATE] = state
+                if road.gates[LEAVING_GATE] != state:
+                    road.gates[LEAVING_GATE] = state
+                    road.gates_update[LEAVING_GATE] = time.get_ticks()
+
+        @property
+        def is_full(self):
+            """
+            Returns whether there is no place left on the node
+            """
+           
+            return (len(self.cars) >= self.max_cars)
+
+        @property
+        def coords(self):
+            return (int(self.x), int(self.y))
+        

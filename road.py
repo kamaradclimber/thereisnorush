@@ -11,6 +11,7 @@ except NameError:
     ROAD_FILE = True
     
     import init
+    from pygame import time
     
     class Road:
         """
@@ -29,7 +30,16 @@ except NameError:
             self.end    = new_end
             self.cars   = [] 
             self.length = int(length)
+            self.gates_update = [time.get_ticks(), time.get_ticks()]
             self.gates  = [True, True]    # [gate at the beginning, gate at the end]
+        
+        @property
+        def last_gate_update(self, gate):
+            """
+            Return the time (in milliseconds) since the last update of a gate (0 or 1)
+            """
+            current_time = get_ticks()
+            return self.gates_update[gate]
         
         def connect(self, starting_node, ending_node):
             """
