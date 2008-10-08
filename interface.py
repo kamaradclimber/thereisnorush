@@ -112,7 +112,23 @@ def draw_arrow(x_start, y_start, x_end, y_end):
     
     pygame.draw.line(screen, init.ROAD_COLOR, (x_arrow_start, y_arrow_start), (x_arrow_end, y_arrow_end), 1)
     pygame.draw.line(screen, init.ROAD_COLOR, (x_arrow_end - perp_x - para_x, y_arrow_end - perp_y - para_y), (x_arrow_end + perp_x - para_x, y_arrow_end + perp_y - para_y), 1)
+
+def draw_traffic_light(x, y, state):
+    """
+    Draws a traffic light…
+        x, y : coordinates
+        state : (True, False)
+    """
     
+    TF_RADIUS = 2
+    
+    for i in range(3):
+        if (state) and (i == 2):
+            pygame.draw.circle(screen, init.LIGHT_GREEN, [x, y + TF_RADIUS * i * 2], TF_RADIUS, 0)
+        elif (not state) and (i == 0):
+            pygame.draw.circle(screen, init.LIGHT_RED, [x, y + TF_RADIUS * i * 2], TF_RADIUS, 0)
+        pygame.draw.circle(screen, init.GRAY, [x, y + TF_RADIUS * i * 2], TF_RADIUS, 1)
+
 def draw_road(road):
     """
     Draws a given road on the screen and all the cars on it.
@@ -122,12 +138,13 @@ def draw_road(road):
         road (Road) : la route sus-citée.
     """
     
-    # TODO :
-    #       · (DR1) draw the gates (or any symbolic allegory to them) so that we know whether they're locked
-    
     x_start, y_start = int(road.begin.x), int(road.begin.y)
     x_end, y_end     = int(road.end.x), int(road.end.y)
-    
+   
+    # This is not perfect… but it's ok for now I guess -- Sharayanan
+    draw_traffic_light(x_start + 4, y_start + 4, road.gates[0])
+    draw_traffic_light(x_end - 4, y_end + 4, road.gates[1])
+   
     # EXPERIMENTAL: color the road from green (empty) to red (full)
     # Model : color key proportional to traffic density (N_cars/L_road)
     if road.cars:

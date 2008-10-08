@@ -29,7 +29,7 @@ except NameError:
             self.end    = new_end
             self.cars   = [] 
             self.length = int(length)
-            self.gates  = [True, False]    # [gate at the beginning, gate at the end]
+            self.gates  = [True, True]    # [gate at the beginning, gate at the end]
         
         def connect(self, starting_node, ending_node):
             """
@@ -61,10 +61,8 @@ except NameError:
             # CONVENTION SENSITIVE
             queue_length = len(self.cars)
             if queue_length > 0:
-                for i in range(queue_length - 1):
-                    self.cars[queue_length - 1 - i].update(queue_length - 1 - i)
-                else:
-                    self.cars[0].update(queue_length - 1)
+                for i in range(queue_length):
+                    self.cars[queue_length -1-i].update(queue_length - 1-i)
         
         def add_car(self, new_car, new_position = 0):
             """

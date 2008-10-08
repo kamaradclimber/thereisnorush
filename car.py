@@ -17,7 +17,7 @@ except NameError:
     
     CAR_DEFAULT_LENGTH   = 4
     CAR_DEFAULT_WIDTH    = 4
-    CAR_DEFAULT_HEADWAY  = 2 * CAR_DEFAULT_WIDTH #marge de sécurité ?
+    CAR_DEFAULT_HEADWAY  = CAR_DEFAULT_WIDTH #marge de sécurité
     CAR_DEFAULT_SPEED    = 50
     CAR_DEFAULT_COLOR    = ( 64,  64, 255)
     
@@ -96,7 +96,7 @@ except NameError:
             new_location.cars   =  [self] + new_location.cars
             
             #   Each time a car joins or leaves a node, this one has to update the calculate again the best configuration for the gates
-            if isinstance(old_location, Node): #erreur sémantique ici: on teste deux fois la meme chose puisque slef.location == new_location, je modif
+            if isinstance(old_location, Node):
                 old_location.update_gates()
             elif isinstance(new_location, Node):
                 new_location.update_gates()
@@ -112,7 +112,7 @@ except NameError:
                         del self.location.cars[i]
                         
                         #toutes les modifs suivantes sont justes pour le confort de l'esprit et ne changent pas grand chose
-                        #cela dit, un jour mais cest pas pour tout de suite, il faudra verifier que les voitures non utilisée sont bien libérées de la memoire (ocaml le ferait, qu'en est-il de python ?)
+                        #cela dit, un jour mais cest pas pour tout de suite, il faudra verifier que les voitures non utilisées sont bien libérées de la memoire (ocaml le ferait, qu'en est-il de python ?)
                         self.location   = None
                         self.path       = []
                         self.speed      = 0

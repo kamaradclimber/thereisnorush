@@ -68,10 +68,12 @@ except NameError:
 
             # CAUTION: this *has* to be in a separate loop !
             for road in self.incoming_roads:
+                # TESTING ONLY: there has to be at least 2 waiting cars for the node to open, otherwise it closes the gates!
                 if self.num_waiting_cars(road) > 2:
                     self.set_gate(road, True)
                 else:
                     self.set_gate(road, False)
+                    pass
 
 
             # ne rien ajouter apres cette section, !
@@ -137,11 +139,10 @@ except NameError:
                 road    (Road)  :   the road whose gates are affected
                 state   (bool)   :   the state (False = red, True = green) of the gate
             """
-            
-            
+
             if (id(road.begin) == id(self)):
                 # The road begins on the node: there is a gate to pass before leaving
-                road.gates[LEAVING_GATE] = state
+                road.gates[INCOMING_GATE] = state
             else:
                 # The road ends on the road: there is a gate to pass to enter
-                road.gates[INCOMING_GATE] = state
+                road.gates[LEAVING_GATE] = state
