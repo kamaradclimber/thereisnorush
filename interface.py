@@ -9,6 +9,8 @@ import pygame   # http://www.pygame.org
 import init     # ./init.py
 import sys      # standard python library
 import math     # standard python library
+from random import randint
+from car    import Car 
 
 #   Settings
 
@@ -174,10 +176,10 @@ def draw_road(road):
     
     # Draw an arrow pointing at where we go
     draw_arrow(road)
-    
-    if road.cars:
-        for car in road.cars:
-            draw_car(car)
+    if (not road.cars) or (key < 200): #print only cars if color isn't self sufficient
+        if road.cars:
+            for car in road.cars:
+                draw_car(car)
     
 def draw_scene():
     """
@@ -238,6 +240,12 @@ def update_scene():
         road.update()
     for node in init.track.nodes:
         node.update()
+    # add randomly a car at random position
+    #this function might be factorised, just here for testing
+    if randint(1,10)==1:
+        num_of_roads = len(init.track.roads)
+        chosen_road = randint(0, num_of_roads -1)
+        init.track.roads[chosen_road].add_car(Car([], init.track.roads[chosen_road]), 1) #i hope there is no car at this position !
 
 def main_loop():
     """
@@ -269,7 +277,7 @@ def main_loop():
 if __name__ == "__main__":
     # Before simulation instructions
     
-    #   PLEASE STOP MAKING FUNCTIONS THAT DO ONLY 2 INSTRUCTIONS -- Ch@hine
+    #   please do not shout everywhere, i agree on your point, but this particular function may remain, i think -kamaradclimber
     # Please don't *shout*, this is not a function, and this is required here -- Sharayanan
     pygame.init()
     pygame.display.set_caption("Thereisnorush (unstable)")
