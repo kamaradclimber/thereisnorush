@@ -17,7 +17,7 @@ except NameError:
     
     CAR_DEFAULT_LENGTH   = 5
     CAR_DEFAULT_WIDTH    = 4
-    CAR_DEFAULT_HEADWAY  = CAR_DEFAULT_WIDTH #marge de sécurité
+    CAR_DEFAULT_HEADWAY  = CAR_DEFAULT_LENGTH #marge de sécurité
     CAR_DEFAULT_SPEED    = 0
     CAR_DEFAULT_MAX_SPEED= 50
     CAR_DEFAULT_ACCEL    = 10
@@ -166,7 +166,7 @@ except NameError:
             
             next_position = self.position + self.speed * delta_t
             
-            if next_position + self.headway < obstacle:
+            if next_position + self.length / 2 + self.headway < obstacle:
                 # « 1 trait danger, 2 traits sécurité : je fonce ! »
                 self.position = next_position
                 

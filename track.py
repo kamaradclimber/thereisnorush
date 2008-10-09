@@ -13,7 +13,7 @@ except NameError:
     import string
     import init 
     from road import Road
-    from car import Car 
+    from car  import Car 
     from node import Node
     
     class Track:
@@ -51,8 +51,7 @@ except NameError:
                 new_road.connect(self.nodes[elements[1]], self.nodes[elements[2]])
             else:
                 print "ERROR : unknown element type '" + elements[0] + "'."
-                pass
-        
+               
         def parse_line(self, line):
             """
             Parses a line in a track description file.
@@ -74,8 +73,7 @@ except NameError:
                 total_arguments = 3 #   starting node, ending node and length
             else:
                 print "ERROR : unknown element type '" + kind + "' !"
-                pass
-            
+                
             #   Add the specified element to the track, if everything is OK
             if (len(elements) == 1 + total_arguments):
                 try:
@@ -86,7 +84,7 @@ except NameError:
                     print "ERROR : in parsing the following line : "
                     print elements
                     print exc 
-                    pass
+                    
             else:
                 print "ERROR : wrong parameters given for the element '" + kind + "'."
                 print elements
@@ -114,7 +112,7 @@ except NameError:
                 print "ERROR : the file " + file_name + " cannot be loaded."
                 print "Current directory is : " + getcwd() 
                 print exc 
-                pass
+                
                 exit()
             
             for line in lines:

@@ -50,18 +50,26 @@ def draw_car(car):
     xd, yd = car.location.begin.coords
     xa, ya = car.location.end.coords
     
-    para_x, para_y, perp_x, perp_y = get_vectors(xd, yd, xa, ya)
+    para_x, para_y, perp_x, perp_y = car.location.get_vectors
     length_covered = float(int(car.position)) / float(int(car.location.length))
+    
+    # EXPERIMENTAL: draw the cars at a scale consistent with the road
+    #scale_factor = car.location.length / math.sqrt((xa-xd)**2 + (ya-yd)**2)
+    scale_factor = 1
     
     # Coordinates for the center
     cx, cy = xd + length_covered * (xa - xd), yd + length_covered * (ya - yd)
     
+    # Relative size of the car
+    r_width = car.width * scale_factor
+    r_length = car.length * scale_factor
+    
     # Get the coordinates for the endpoints
     # ToDo : use relative sizes to respect the roads' scales
-    x1, y1 = cx - para_x * car.length/2 - perp_x * car.width/2, cy - para_y * car.length/2 - perp_y * car.width/2
-    x2, y2 = cx + para_x * car.length/2 - perp_x * car.width/2, cy + para_y * car.length/2 - perp_y * car.width/2
-    x3, y3 = cx + para_x * car.length/2 + perp_x * car.width/2, cy + para_y * car.length/2 + perp_y * car.width/2
-    x4, y4 = cx - para_x * car.length/2 + perp_x * car.width/2, cy - para_y * car.length/2 + perp_y * car.width/2
+    x1, y1 = cx - para_x * r_length/2 - perp_x * r_width/2, cy - para_y * r_length/2 - perp_y * r_width/2
+    x2, y2 = cx + para_x * r_length/2 - perp_x * r_width/2, cy + para_y * r_length/2 - perp_y * r_width/2
+    x3, y3 = cx + para_x * r_length/2 + perp_x * r_width/2, cy + para_y * r_length/2 + perp_y * r_width/2
+    x4, y4 = cx - para_x * r_length/2 + perp_x * r_width/2, cy - para_y * r_length/2 + perp_y * r_width/2
     
     # Change the color in case the car is waiting    
     color = car.color
@@ -93,33 +101,16 @@ def draw_text(x = screen.get_rect().centerx, y = screen.get_rect().centery, mess
         textRect = text.get_rect()
         textRect.x, textRect.y = x, y
         screen.blit(text, textRect)
-
-def get_vectors(x_start, y_start, x_end, y_end):
-    """
-    Returns the unit parallel and perpendicular vectors to a line 
-    """
-
-    # ToDo : incorporate this as a property of Road, so that we won't calculate
-    # it each and every time we require it
-
-    # Get the vector parallel to the road
-    para_y, para_x = y_end - y_start, x_end - x_start
-    para_len = math.sqrt(para_x**2 + para_y**2)
-    
-    # Normalize it
-    para_x, para_y = para_x / para_len, para_y / para_len
-    
-    # Get the unit vector perpendicular to the road (CCW)
-    perp_x, perp_y = -para_y, para_x
-    
-    return para_x, para_y, perp_x, perp_y
         
-def draw_arrow(x_start, y_start, x_end, y_end):
+def draw_arrow(road):
     """
     Draws lil' cuty arrows along the roads to know where they're going
     """
     
-    para_x, para_y, perp_x, perp_y = get_vectors(x_start, y_start, x_end, y_end)
+    para_x, para_y, perp_x, perp_y = road.get_vectors
+    
+    x_start, y_start = road.begin.coords
+    x_end, y_end     = road.end.coords
 
     # Get the midpoint of the road
     mid_x, mid_y = (x_start + x_end)/2, (y_start + y_end)/2
@@ -160,7 +151,7 @@ def draw_road(road):
     x_end, y_end     = int(road.end.x), int(road.end.y)
    
     # This is not perfect… but it's ok for now I guess -- Sharayanan
-    draw_traffic_light(x_start + 4, y_start + 4, road.gates[0])
+    #draw_traffic_light(x_start + 4, y_start + 4, road.gates[0])
     draw_traffic_light(x_end - 4, y_end + 4, road.gates[1])
    
     # EXPERIMENTAL: color the road from green (empty) to red (full)
@@ -182,7 +173,7 @@ def draw_road(road):
     pygame.draw.line(screen, color, (x_start, y_start), (x_end, y_end), 1) # EXPERIMENTAL
     
     # Draw an arrow pointing at where we go
-    draw_arrow(x_start, y_start, x_end, y_end)
+    draw_arrow(road)
     
     if road.cars:
         for car in road.cars:
@@ -203,7 +194,6 @@ def draw_scene():
     
     pygame.display.flip()
     pygame.display.update()
-    
     
 def halt():
     """
@@ -234,7 +224,6 @@ def event_manager():
         elif (event.type == pygame.MOUSEBUTTONUP):
             left_button, right_button, middle_button = pygame.mouse.get_pressed()
             x, y = pygame.mouse.get_pos()
-        
         #   Keyboard button
         elif (event.type == pygame.KEYDOWN):
             keyb_state = pygame.key.get_pressed()
@@ -242,7 +231,7 @@ def event_manager():
             if keyb_state[pygame.K_ESCAPE]:
                 halt()
         else:
-            pass
+            pass 
 
 def update_scene():
     for road in init.track.roads:
@@ -281,6 +270,7 @@ if __name__ == "__main__":
     # Before simulation instructions
     
     #   PLEASE STOP MAKING FUNCTIONS THAT DO ONLY 2 INSTRUCTIONS -- Ch@hine
+    # Please don't *shout*, this is not a function, and this is required here -- Sharayanan
     pygame.init()
     pygame.display.set_caption("Thereisnorush (unstable)")
     

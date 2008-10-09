@@ -41,6 +41,10 @@ except NameError:
             self.max_cars = 10
 
         def num_waiting_cars(self, road):
+            """
+            Returns the number of waiting cars on the road.
+                road (Road) : the aforementioned road 
+            """
             waiting_cars = 0
             if road.cars:
                 for car in road.cars:
@@ -61,15 +65,20 @@ except NameError:
 
             # CAUTION: this *has* to be in a separate loop !
             for road in self.incoming_roads:
-                # TESTING ONLY: there has to be at least 2 waiting cars for the node to open, otherwise it closes the gates!
-                if self.num_waiting_cars(road) > 2:
+                
+                # BEGINNING OF ROAD-SPECIFIC GATE HANDLING
+                
+                # TESTING ONLY: there has to be at least 2 waiting cars for the node to open, 
+                # otherwise we wait 1 second and close the gates!
+                if self.num_waiting_cars(road) > 1:
                     self.set_gate(road, True)
                 else:
-                    self.set_gate(road, False)
-                    pass
+                    if road.gates_update[1] > 1000:
+                        self.set_gate(road, False)
+                        
+                # END OF GATE HANDLING
 
-
-            # ne rien ajouter apres cette section, !
+            # Do not add anything after this: it ensures the node closes when full!
             if self.is_full:
                 for i in range(len(self.leaving_roads)):
                     self.set_gate(self.leaving_roads[i], False)
@@ -89,10 +98,9 @@ except NameError:
                     # Thanks to the above boolean test, we'll avoid division by zero
                     car.join(self)
             else: 
-                # On est arrivé à dans une impasse, faut-il faire disparaitre la voiture pour accélerer le programme ?
+                # On est arrivé à dans une ime, faut-il faire disparaitre la voiture pour accélerer le programme ?
                 # In my opinion, we should, hence the following line :
                 car.die()
-                pass
         
         def update_car(self, car):
             """
@@ -100,7 +108,6 @@ except NameError:
             """
             # TODO :
             #       · (N.UC1) check for position on the node to account for rotation (cf. N.U2)
-            #       · (N.UC2) check for the leaving_road to be free before branching on it (use read_only = True in newt_way() unless you branch) ; DONE !
             
             # TEMPORARY : go to where you want
             next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
@@ -112,7 +119,6 @@ except NameError:
             Updates the node: rotate the cars, dispatch them...
             """
             # TODO :
-            #       · (N.U1) Lock the gates when the node is full and (temporarily) open them otherwise (or at least, let us some control over them)
             #       · (N.U2) Implement cars' rotation on the node before calling update_car
             
             self.update_gates() # first, update gates, unless it should be unnecessary
@@ -129,12 +135,12 @@ except NameError:
             """
 
             if (id(road.begin) == id(self)):
-                # The road begins on the node: there is a gate to pass before leaving
+                # The road begins on the node: there is a gate to  before leaving
                 if road.gates[INCOMING_GATE] != state:
                     road.gates[INCOMING_GATE] = state
                     road.gates_update[INCOMING_GATE] = time.get_ticks()
             else:
-                # The road ends on the road: there is a gate to pass to enter
+                # The road ends on the road: there is a gate to  to enter
                 if road.gates[LEAVING_GATE] != state:
                     road.gates[LEAVING_GATE] = state
                     road.gates_update[LEAVING_GATE] = time.get_ticks()
@@ -150,4 +156,3 @@ except NameError:
         @property
         def coords(self):
             return (int(self.x), int(self.y))
-        
