@@ -20,7 +20,7 @@ except NameError:
     CAR_DEFAULT_HEADWAY  = CAR_DEFAULT_LENGTH #marge de sécurité
     CAR_DEFAULT_SPEED    = 0
     CAR_DEFAULT_MAX_SPEED= 50
-    CAR_DEFAULT_ACCEL    = 10
+    CAR_DEFAULT_ACCEL    = 50
     CAR_DEFAULT_COLOR    = ( 64,  64, 255)
     
     class Car:

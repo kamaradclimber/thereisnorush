@@ -9,8 +9,6 @@ import pygame   # http://www.pygame.org
 import init     # ./init.py
 import sys      # standard python library
 import math     # standard python library
-from random import randint
-from car    import Car 
 
 #   Settings
 
@@ -167,19 +165,16 @@ def draw_road(road):
         if key > 255: key = 255
         color = [key, 255 - key, 0]
     else:
-        #color = init.ROAD_COLOR
         color = init.GREEN
-    
-    #pygame.draw.line(screen, init.ROAD_COLOR, (x_start, y_start), (x_end, y_end), 1)
     
     pygame.draw.line(screen, color, (x_start, y_start), (x_end, y_end), 1) # EXPERIMENTAL
     
     # Draw an arrow pointing at where we go
     draw_arrow(road)
-    if (not road.cars) or (key < 200): #print only cars if color isn't self sufficient
-        if road.cars:
-            for car in road.cars:
-                draw_car(car)
+    if road.cars and key < 200:
+        # Do not draw cars when density exceeds ~80%
+        for car in road.cars:
+            draw_car(car)
     
 def draw_scene():
     """
@@ -240,12 +235,6 @@ def update_scene():
         road.update()
     for node in init.track.nodes:
         node.update()
-    # add randomly a car at random position
-    #this function might be factorised, just here for testing
-    if randint(1,10)==1:
-        num_of_roads = len(init.track.roads)
-        chosen_road = randint(0, num_of_roads -1)
-        init.track.roads[chosen_road].add_car(Car([], init.track.roads[chosen_road]), 1) #i hope there is no car at this position !
 
 def main_loop():
     """

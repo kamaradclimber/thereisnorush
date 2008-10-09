@@ -12,10 +12,12 @@ except NameError:
     
     import init
     from pygame import time
-    from math import pi
+    from math   import pi
+    from random import randint
     
     LEAVING_GATE             = 1
     INCOMING_GATE            = 0
+    SPAWN_TIME               = 5000
 
     class Node:
         """
@@ -32,6 +34,7 @@ except NameError:
             self.incoming_roads  = []
             self.leaving_roads = []
             self.cars          = []
+            self.spawn_timer   = time.get_ticks()
             
             # Maximum available space to host cars : perimeter divided by cars' width
             # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
@@ -122,6 +125,15 @@ except NameError:
             #       · (N.U2) Implement cars' rotation on the node before calling update_car
             
             self.update_gates() # first, update gates, unless it should be unnecessary
+            
+            if (len(self.incoming_roads) == 0) and (len(self.leaving_roads) > 0):
+                # We are a "spawn node" : let's add a car at periodic rates
+                if time.get_ticks() - self.spawn_timer > SPAWN_TIME:
+                    self.spawn_timer = time.get_ticks()
+                    
+                    chosen_road = self.leaving_roads[randint(0, len(self.leaving_roads) - 1)]
+                    new_car = init.new_car([], None)
+                    new_car.join(chosen_road)
             
             if self.cars:
                 for car in self.cars:

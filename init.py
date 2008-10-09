@@ -79,6 +79,9 @@ except NameError:
         add_demo_car(14,20)
         add_demo_car(14,10)
     
+    def new_car(new_path, road):
+        return Car(new_path, road)
+    
     if (__name__ == '__main__'):
         print "You should run interface.py instead of this file !"
     else:
