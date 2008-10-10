@@ -36,8 +36,8 @@ def draw_node(node):
     if node.cars:
         # There are cars on the node, we may want to draw them
         # albeit we can't use draw_car here…
-        pass 
-    
+        pass
+
 def draw_car(car):
     """
     Draws a given car on the screen.
@@ -61,8 +61,8 @@ def draw_car(car):
     cx, cy = xd + length_covered * (xa - xd), yd + length_covered * (ya - yd)
     
     # Relative size of the car
-    r_width = car.width * scale_factor
-    r_length = car.length * scale_factor
+    r_width     = car.width * scale_factor
+    r_length    = car.length * scale_factor
     
     # Get the coordinates for the endpoints
     # ToDo : use relative sizes to respect the roads' scales

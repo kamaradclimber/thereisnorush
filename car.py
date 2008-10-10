@@ -181,9 +181,7 @@ class Car:
                     if self.speed > 5:
                         self.speed /= 1.5
                 else:
-                    if self.speed - self.location.cars[rank + 1].speed < 5:
-                        self.speed = self.location.cars[rank + 1].speed
-                    else:
+                    if self.speed - self.location.cars[rank + 1].speed > 5:
                         self.speed = (self.speed - self.location.cars[rank + 1].speed) / 2 + self.location.cars[rank + 1].speed
         
         #   Obstacle = previous car

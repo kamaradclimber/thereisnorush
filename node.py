@@ -89,8 +89,9 @@ class Node:
             for i in range(len(self.leaving_roads)):
                 self.set_gate(self.leaving_roads[i], False)
                     
-    #   I THINK THIS FUNCTION SHOULD BE DELETED ; PLEASE CONFIRM -- Ch@hine
-    # There's no need to capitalize… you should give a proposition first, I guess. If you think it's better to remove this method, proceed. -- Sharayanan
+    #   I think this function should be deleted ; please confirm -- Ch@hine
+    # You should give a proposition first, I guess. If you think it's better to remove this method, proceed. -- Sharayanan
+    #   So sorry for the capital letters, it was only to draw your attention :s -- Ch@hine
     def manage_car(self, car, remaining_points):
         """
         Asks the node to take control over the car and move it appropriately.
