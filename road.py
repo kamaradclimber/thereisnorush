@@ -9,12 +9,14 @@ import init
 from pygame import time
 from math   import sqrt
 
+ROAD_DEFAULT_MAX_SPEED = 50
+
 class Road:
     """
     Connection between 2 nodes ; one-way only.
     """
     
-    def __init__(self, new_begin = None, new_end = None, length = 100):
+    def __init__(self, new_begin = None, new_end = None, length = 100, new_max_speed = ROAD_DEFAULT_MAX_SPEED):
         """
         Constructor method : creates a new road.
             new_begin  (Node)    : starting point for the road
@@ -22,12 +24,13 @@ class Road:
             new_length (int)     : road length
         """
         
-        self.begin  = new_begin
-        self.end    = new_end
-        self.cars   = [] 
-        self.length = int(length)
-        self.gates_update = [time.get_ticks(), time.get_ticks()]
-        self.gates  = [True, False]    # [gate at the beginning, gate at the end]
+        self.begin          = new_begin
+        self.end            = new_end
+        self.cars           = [] 
+        self.length         = int(length)
+        self.max_speed      = new_max_speed
+        self.gates_update   = [time.get_ticks(), time.get_ticks()]
+        self.gates          = [True, False]    # [gate at the beginning, gate at the end]
         
         # TEMPORARY
         self.vecs = False # indicates whether the vectors have been calculated

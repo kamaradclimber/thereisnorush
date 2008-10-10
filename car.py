@@ -11,13 +11,12 @@ delta_t = 0.01  # TEMPORARY
 from road import Road
 from node import Node
 
-CAR_DEFAULT_LENGTH   = 5
-CAR_DEFAULT_WIDTH    = 4
-CAR_DEFAULT_HEADWAY  = CAR_DEFAULT_LENGTH   # marge de sécurité
-CAR_DEFAULT_SPEED    = 0
-CAR_DEFAULT_MAX_SPEED= 50
-CAR_DEFAULT_ACCEL    = 50
-CAR_DEFAULT_COLOR    = ( 64,  64, 255)
+CAR_DEFAULT_LENGTH      = 5
+CAR_DEFAULT_WIDTH       = 4
+CAR_DEFAULT_HEADWAY     = CAR_DEFAULT_LENGTH    # marge de sécurité
+CAR_DEFAULT_SPEED       = 0
+CAR_DEFAULT_ACCEL       = 50
+CAR_DEFAULT_COLOR       = ( 64,  64, 255)
 
 class Car:
     """
@@ -27,13 +26,12 @@ class Car:
     def __init__(   self,
                     new_path,
                     new_location,
-                    new_speed = CAR_DEFAULT_SPEED,
-                    new_accel = CAR_DEFAULT_ACCEL,
-                    new_max_speed = CAR_DEFAULT_MAX_SPEED,
-                    new_length = CAR_DEFAULT_LENGTH,
-                    new_width = CAR_DEFAULT_WIDTH,
-                    new_headway = CAR_DEFAULT_HEADWAY,
-                    new_color = CAR_DEFAULT_COLOR):
+                    new_speed       = CAR_DEFAULT_SPEED,
+                    new_accel       = CAR_DEFAULT_ACCEL,
+                    new_length      = CAR_DEFAULT_LENGTH,
+                    new_width       = CAR_DEFAULT_WIDTH,
+                    new_headway     = CAR_DEFAULT_HEADWAY,
+                    new_color       = CAR_DEFAULT_COLOR):
         """
         Constructor method : a car is provided a (for now unmutable) sequence of directions.
             new_path (list)  :   a list of waypoints
@@ -53,7 +51,6 @@ class Car:
         #   Are you sure to want the headway to be possibly different from a car to another ? -- Ch@hine
         # Absolutely! -- Sharayanan
         self.color          = new_color 
-        self.max_speed      = new_max_speed
         #self.max_accel =  # Car's maximum acceleration / Accélération maximale
         self.acceleration   = new_accel      
         
@@ -171,22 +168,34 @@ class Car:
             
             # EXPERIMENTAL: accounting for the physics of acceleration
             #   I assume this is no more experimental since it runs pretty well :D -- Ch@hine
-            if self.speed + self.acceleration * delta_t >= self.max_speed:
-                self.speed = self.max_speed
-            elif self.speed < self.max_speed:
+            if self.speed + self.acceleration * delta_t >= self.location.max_speed:
+                self.speed = self.location.max_speed
+            elif self.speed < self.location.max_speed:
                 self.speed += self.acceleration * delta_t
             
+            #   EXPERIMENTAL : accounting for the deceleration in front of an obstacle
+            if (self.position + self.speed * 30 * delta_t + self.length / 2 + self.headway > obstacle):
+                if obstacle_is_light:
+                    if self.speed > 5:
+                        self.speed /= 1.5
+                else:
+                    if self.speed - self.location.cars[rank + 1].speed < 5:
+                        self.speed = self.location.cars[rank + 1].speed
+                    else:
+                        self.speed = (self.speed - self.location.cars[rank + 1].speed) / 2 + self.speed
+        
         elif not obstacle_is_light:
             # On s'arrête au prochain obstacle
             
             if not self.waiting:
-                self.position = obstacle - self.length/2 - self.headway
+                self.position = obstacle - self.length / 2 - self.headway
             #CONVENTION SENSITIVE
             self.waiting = self.location.cars[rank + 1].waiting
             
             # EXPERIMENTAL : stop the car that is waiting 
             if self.waiting:
                 self.speed = 0
+        
         elif obstacle_is_light and next_position + self.length / 2 + self.headway >= obstacle:
             if self.location.gates[1]:
                 # Everything's ok, let's go !
