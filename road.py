@@ -9,14 +9,19 @@ import init
 from pygame import time
 from math   import sqrt
 
-ROAD_DEFAULT_MAX_SPEED = 50
+ROAD_DEFAULT_MAX_SPEED  = 50
+ROAD_DEFAULT_LENGHT     = 100
 
 class Road:
     """
     Connection between 2 nodes ; one-way only.
     """
     
-    def __init__(self, new_begin = None, new_end = None, length = 100, new_max_speed = ROAD_DEFAULT_MAX_SPEED):
+    def __init__(   self,
+                    new_begin       = None,
+                    new_end         = None,
+                    length          = ROAD_DEFAULT_LENGHT,
+                    new_max_speed   = ROAD_DEFAULT_MAX_SPEED):
         """
         Constructor method : creates a new road.
             new_begin  (Node)    : starting point for the road
@@ -50,27 +55,20 @@ class Road:
     
     def update(self):
         """
-        Updates the road (will update the cars on the road)
+        Updates the road (will update the cars on the road).
         """
+        
         # CONVENTION SENSITIVE
         if self.cars:
             queue_length = len(self.cars)
+            
             for i in range(queue_length):
                 self.cars[queue_length -1-i].update(queue_length - 1-i)
-    
-    def add_car(self, new_car, new_position = 0):
-        """
-        Inserts a car at given position in the ordered list of cars.
-            new_car      (Car)   :   car to be added
-            new_position (float) :   curvilinear abscissa for the car
-        """
-        
-        new_car.join(self, new_position)
 
     @property
     def is_free(self):
         """
-        Returns whether there is still room on the road
+        Returns whether there is still room on the road.
         """
         
         # I guess there is still room as long as the last car engaged on the road if far enough from the start of the road
@@ -79,21 +77,22 @@ class Road:
         else:
             # CONVENTION SENSITIVE
             return(self.cars[0].position > self.cars[0].length/2 + self.cars[0].headway)
-
-    @property
+    
     def last_gate_update(self, gate):
         """
-        Return the time (in milliseconds) since the last update of a gate (0 or 1)
+        Return the time (in milliseconds) since the last update of a gate (0 or 1).
         """
-        current_time = get_ticks()
-        return self.gates_update[gate]
         
+        #   Isn't that useless ? Maybe I've not understood the meaning of the following line -- Ch@hine
+        #current_time = get_ticks()
+        return self.gates_update[gate]
+    
     @property
     def get_vectors(self):
         """
         Returns the unit parallel and perpendicular vectors to a the road
         """
-
+        
         # Do not compute unless necessary
         if not self.vecs:
             # Get the begin and endpoints of the road
@@ -116,5 +115,5 @@ class Road:
             self.para_y = para_y
             
             self.vecs = True
-            
+        
         return self.para_x, self.para_y, self.perp_x, self.perp_y

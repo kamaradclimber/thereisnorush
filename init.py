@@ -52,7 +52,9 @@ except NameError:
         """
         Adds a car on the demo track
         """
-        track.roads[road_number].add_car(Car([], track.roads[road_number]), position)
+        
+        new_car = Car([], track.roads[road_number])
+        new_car.join(track.roads[road_number], position)
     
     def load_demo_track():
         # Temporary testing zone
