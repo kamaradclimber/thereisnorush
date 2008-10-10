@@ -43,6 +43,7 @@ class Car:
         # Car & driver properties, to use in dynamics & behavior management
         self.path           = []
         self.waiting        = False         # Indicates whether the car is waiting at the gates
+        #   This variable seems to be redundant, can't we just check the value of the speed to know whether the car is waiting or not ? -- Ch@hine
         self.length         = new_length    # Car's length (from front to rear) / Longueur de la voiture (de l'avant à l'arrière)
         self.width          = new_width     # Car's width (from left to right) / Envergure de la voiture (de gauche à droite)
         self.speed          = new_speed 
@@ -162,6 +163,7 @@ class Car:
         
         next_position = self.position + self.speed * delta_t
         
+        #   No obstacle
         if next_position + self.length / 2 + self.headway < obstacle:
             # « 1 trait danger, 2 traits sécurité : je fonce ! »
             self.position = next_position
@@ -182,13 +184,14 @@ class Car:
                     if self.speed - self.location.cars[rank + 1].speed < 5:
                         self.speed = self.location.cars[rank + 1].speed
                     else:
-                        self.speed = (self.speed - self.location.cars[rank + 1].speed) / 2 + self.speed
+                        self.speed = (self.speed - self.location.cars[rank + 1].speed) / 2 + self.location.cars[rank + 1].speed
         
+        #   Obstacle = previous car
         elif not obstacle_is_light:
             # On s'arrête au prochain obstacle
             
             if not self.waiting:
-                self.position = obstacle - self.length / 2 - self.headway
+                self.position = obstacle - self.length/2 - self.headway
             #CONVENTION SENSITIVE
             self.waiting = self.location.cars[rank + 1].waiting
             
@@ -196,11 +199,11 @@ class Car:
             if self.waiting:
                 self.speed = 0
         
-        elif obstacle_is_light and next_position + self.length / 2 + self.headway >= obstacle:
+        #   Obstacle = light
+        elif next_position + self.length / 2 + self.headway >= obstacle:
             if self.location.gates[1]:
                 # Everything's ok, let's go !
                 self.waiting = False
-                self.position = next_position
                 self.join(self.location.end)
             else:
                 # We have a closed gate in front of us : stop & align
