@@ -37,11 +37,14 @@ except NameError:
     
     NODE        = "Node"
     ROAD        = "Road"
+    
+    DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
 
-    import string               # standard python library
     from os     import getcwd   # standard python library, ne pas tout prendre, c'est plus propre :-)
     from track  import Track
     from car    import Car 
+    from road   import Road
+    from node   import Node
     
     #   TESTING ZONE
     
@@ -80,7 +83,22 @@ except NameError:
         add_demo_car(14,10)
     
     def new_car(new_path, road):
+        """
+        Returns a new Car instance (avoid cross-referencing)
+        """
         return Car(new_path, road)
+        
+    def new_road(new_begin = None, new_end = None, length = 100):
+        """
+        Returns a new Road instance (avoid cross-referencing)
+        """
+        return Road(new_begin, new_end, length)
+        
+    def new_node(new_coordinates, radius = NODE_RADIUS_DEFAULT):
+        """
+        Returns a new Node instance (avoid cross-referencing)
+        """
+        return Node(new_coordinates, radius)
     
     if (__name__ == '__main__'):
         print "You should run interface.py instead of this file !"

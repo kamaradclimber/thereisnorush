@@ -5,8 +5,8 @@ File        :   interface.py
 Description :   Manages the displays and main loop.
 """
 
-import pygame   # http://www.pygame.org
 import init     # ./init.py
+import pygame   # http://www.pygame.org
 import sys      # standard python library
 import math     # standard python library
 
@@ -156,7 +156,10 @@ def draw_road(road):
    
     # EXPERIMENTAL: color the road from green (empty) to red (full)
     # Model : color key proportional to traffic density (N_cars/L_road)
-    if road.cars:
+    
+    color = init.GREEN
+    key = 0
+    if road.cars and init.DISPLAY_DENSITY:
         occupation = 0
         for car in road.cars:
             occupation += car.length
@@ -164,8 +167,6 @@ def draw_road(road):
         key = 2 * (float(occupation)/float(road.length)) * 255
         if key > 255: key = 255
         color = [key, 255 - key, 0]
-    else:
-        color = init.GREEN
     
     pygame.draw.line(screen, color, (x_start, y_start), (x_end, y_end), 1) # EXPERIMENTAL
     
