@@ -13,19 +13,19 @@ class Track:
     Our city model : a mathematical graph made of nodes, linked to each other by roads.
     """
     
-    def __init__(self, new_nodes = None, new_roads = None):
+    def __init__(self, new_nodes = [], new_roads = []):
         """
         Constructor method : creates a track given the nodes and roads, if any.
             new_nodes   (list)  :   a list of the nodes
             new_roads   (list)  :   a list of the roads
         """
         
-        if (new_nodes is None) or (not isinstance(new_nodes, list)):
+        if not isinstance(new_nodes, list):
             self.nodes = []
         else:
             self.nodes = new_nodes
         
-        if (new_roads is None) or (not isinstance(new_nodes, list)):
+        if not isinstance(new_roads, list):
             self.roads = []
         else:
             self.roads = new_roads
@@ -35,6 +35,7 @@ class Track:
         Adds an element to the track, once it's been checked and validated.
             elements    (list)      :   a list describing the element [type, arg1, arg2…]
         """
+        
         if (elements[0] == init.NODE):
             self.nodes.append(init.new_node([elements[1], elements[2]]))
         elif (elements[0] == init.ROAD):
@@ -43,7 +44,7 @@ class Track:
             new_road.connect(self.nodes[elements[1]], self.nodes[elements[2]])
         else:
             print "ERROR : unknown element type '" + elements[0] + "'."
-           
+    
     def parse_line(self, line):
         """
         Parses a line in a track description file.
