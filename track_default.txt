@@ -1,21 +1,21 @@
-Node 10, 60
-Node 50, 60
-Node 100, 60
-Node 150, 40
-Node 100, 30
-Node 50, 3
-Node 10, 30
-Node 200, 40
-Node 200, 80
-Node 200, 150
-Node 250, 60
-Node 240, 150
-Node 260, 150
-Node 250, 160
-Node 250, 200
-Node 250, 250
-Node 10, 250
-Node 10, 300
+Node 20, 120
+Node 100, 120
+Node 200, 120
+Node 300, 80
+Node 200, 60
+Node 100, 6
+Node 20, 60
+Node 400, 80
+Node 400, 160
+Node 400, 300
+Node 500, 120
+Node 480, 300
+Node 520, 300
+Node 500, 320
+Node 500, 400
+Node 500, 500
+Node 20, 500
+Node 20, 600
 Road 0, 1, 50
 Road 1, 2, 50
 Road 1, 5, 150

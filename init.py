@@ -26,7 +26,7 @@ except NameError:
     LIGHT_GREEN = ( 64, 255,  64)
     LIGHT_BLUE  = ( 64,  64, 255)
     
-    RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (512, 384)
+    RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (800, 600)
     
     NODE_WIDTH          = 3
     NODE_HEIGHT         = 3
