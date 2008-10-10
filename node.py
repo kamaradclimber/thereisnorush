@@ -10,9 +10,9 @@ from pygame import time
 from math   import pi
 from random import randint
 
-LEAVING_GATE             = 1
-INCOMING_GATE            = 0
-SPAWN_TIME               = 5000
+LEAVING_GATE    = 1
+INCOMING_GATE   = 0
+SPAWN_TIME      = 5000
 
 class Node:
     """
@@ -25,11 +25,11 @@ class Node:
             new_coordinates (list) : the coordinates [x, y] for the node
         """
         
-        self.x, self.y     = new_coordinates[0], new_coordinates[1]
-        self.incoming_roads  = []
-        self.leaving_roads = []
-        self.cars          = []
-        self.spawn_timer   = time.get_ticks()
+        self.x, self.y      = new_coordinates[0], new_coordinates[1]
+        self.incoming_roads = []
+        self.leaving_roads  = []
+        self.cars           = []
+        self.spawn_timer    = time.get_ticks()
         
         # Maximum available space to host cars : perimeter divided by cars' width
         # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
@@ -37,18 +37,6 @@ class Node:
         # TEMPORARY
         #self.max_cars      = int(2 * pi * radius / car.CAR_DEFAULT_LENGTH)
         self.max_cars = 10
-
-    def num_waiting_cars(self, road):
-        """
-        Returns the number of waiting cars on the road.
-            road (Road) : the aforementioned road 
-        """
-        waiting_cars = 0
-        if road.cars:
-            for car in road.cars:
-                if car.waiting:
-                    waiting_cars += 1
-        return waiting_cars
     
     def update_gate(self, road, waiting_cars):
         """
@@ -60,7 +48,7 @@ class Node:
         # TESTING ONLY: there has to be at least 2 waiting cars for the node to open, 
         # otherwise we wait 1 second and close the gates!
         # We may put some very complex behavior in this!
-        if self.num_waiting_cars(road) > 1:
+        if road.total_waiting_cars > 1:
             self.set_gate(road, True)
         else:
             if road.gates_update[1] > 1000:
@@ -75,7 +63,7 @@ class Node:
         # Number of cars that are waiting on all the incoming roads
         num_waiting = 0
         for road in self.incoming_roads:
-            num_waiting += self.num_waiting_cars(road)
+            num_waiting += road.total_waiting_cars
 
         # CAUTION: this *has* to be in a separate loop !
         for road in self.incoming_roads:
@@ -83,29 +71,11 @@ class Node:
             # BEGINNING OF ROAD-SPECIFIC GATE HANDLING
             self.update_gate(road, num_waiting)
             # END OF GATE HANDLING
-
+        
         # Do not add anything after this: it ensures the node closes when full!
         if self.is_full:
             for i in range(len(self.leaving_roads)):
                 self.set_gate(self.leaving_roads[i], False)
-                    
-    #   I think this function should be deleted ; please confirm -- Ch@hine
-    # You should give a proposition first, I guess. If you think it's better to remove this method, proceed. -- Sharayanan
-    #   So sorry for the capital letters, it was only to draw your attention :s -- Ch@hine
-    def manage_car(self, car, remaining_points):
-        """
-        Asks the node to take control over the car and move it appropriately.
-        Demande au nœud de prendre le contrôle de la voiture et de la déplacer de manière adéquate.
-        """
-        
-        if len(self.leaving_roads):
-            # The node may, or may not, accept to host the car
-            if len(self.cars) < self.max_cars:
-                car.join(self)
-        else: 
-            # On est arrivé à dans une ime, faut-il faire disparaitre la voiture pour accélerer le programme ?
-            # In my opinion, we should, hence the following line :
-            car.die()
     
     def update_car(self, car):
         """
@@ -147,7 +117,7 @@ class Node:
             road    (Road)  :   the road whose gates are affected
             state   (bool)   :   the state (False = red, True = green) of the gate
         """
-
+        
         if (id(road.begin) == id(self)):
             # The road begins on the node: there is a gate to  before leaving
             if road.gates[INCOMING_GATE] != state:

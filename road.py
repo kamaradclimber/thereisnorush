@@ -117,3 +117,16 @@ class Road:
             self.vecs = True
         
         return self.para_x, self.para_y, self.perp_x, self.perp_y
+    
+    @property
+    def total_waiting_cars(self):
+        """
+        Returns the number of waiting cars on the road.
+        """
+        
+        total = 0
+        if self.cars:
+            for car in self.cars:
+                if car.waiting:
+                    total += 1
+        return total
