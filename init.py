@@ -88,19 +88,22 @@ except NameError:
         """
         Returns a new Car instance (avoid cross-referencing)
         """
+        
         return Car(new_path, road)
         
     def new_road(new_begin = None, new_end = None, length = 100):
         """
         Returns a new Road instance (avoid cross-referencing)
         """
+        
         return Road(new_begin, new_end, length)
         
-    def new_node(new_coordinates, radius = NODE_RADIUS_DEFAULT):
+    def new_node(new_coordinates, spawning = False, radius = NODE_RADIUS_DEFAULT):
         """
         Returns a new Node instance (avoid cross-referencing)
         """
-        return Node(new_coordinates, radius)
+        
+        return Node(new_coordinates, spawning, radius)
     
     if (__name__ == '__main__'):
         print "You should run interface.py instead of this file !"

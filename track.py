@@ -37,9 +37,9 @@ class Track:
         """
         
         if (elements[0] == init.NODE):
-            self.nodes.append(init.new_node([elements[1], elements[2]]))
+            self.nodes.append(init.new_node([elements[1], elements[2]], bool(elements[3])))
         elif (elements[0] == init.ROAD):
-            new_road = init.new_road(self.nodes[elements[1]], self.nodes[elements[2]], elements[3])
+            new_road = init.new_road(self.nodes[elements[1]], self.nodes[elements[2]])
             self.roads += [new_road]
             new_road.connect(self.nodes[elements[1]], self.nodes[elements[2]])
         else:
@@ -61,16 +61,16 @@ class Track:
         
         #   Define how many arguments are expected
         if (kind == init.NODE):
-            total_arguments = 2 #   abscissa and ordinate
+            total_arguments = 3 #   abscissa, ordinate, spawning mode
         elif (kind == init.ROAD):
-            total_arguments = 3 #   starting node, ending node and length
+            total_arguments = 2 #   starting node, ending node and length
         else:
             print "ERROR : unknown element type '" + kind + "' !"
             
         #   Add the specified element to the track, if everything is OK
         if (len(elements) == 1 + total_arguments):
             try:
-                for i in range(1, total_arguments):
+                for i in range(1, total_arguments + 1):
                     elements[i] = int(elements[i])
                 self.add_element(elements)
             except Exception, exc:

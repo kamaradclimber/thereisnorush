@@ -20,7 +20,6 @@ class Road:
     def __init__(   self,
                     new_begin       = None,
                     new_end         = None,
-                    length          = ROAD_DEFAULT_LENGTH,
                     new_max_speed   = ROAD_DEFAULT_MAX_SPEED):
         """
         Constructor method : creates a new road.
@@ -31,8 +30,7 @@ class Road:
         
         self.begin          = new_begin
         self.end            = new_end
-        self.cars           = [] 
-        self.length         = int(length)
+        self.cars           = []
         self.max_speed      = new_max_speed
         self.gates_update   = [time.get_ticks(), time.get_ticks()]
         self.gates          = [True, False]    # [gate at the beginning, gate at the end]
@@ -87,6 +85,16 @@ class Road:
         # I fixed it, it should now be quite clear! -- Sharayanan
         current_time = get_ticks()
         return (current_time - self.gates_update[gate])
+    
+    @property
+    def length(self):
+        """
+        Returns the calculated length of the road.
+        """
+        if (self.begin is not None) and (self.end is not None):
+            return sqrt((self.end.x - self.begin.x)**2 + (self.end.y - self.begin.y)**2)
+        
+        return None
     
     @property
     def get_vectors(self):

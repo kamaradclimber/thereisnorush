@@ -19,7 +19,7 @@ class Node:
     Crossroads of our city ; may host several roads.
     """
     
-    def __init__(self, new_coordinates, radius = init.NODE_RADIUS_DEFAULT):
+    def __init__(self, new_coordinates, new_spawning = False, radius = init.NODE_RADIUS_DEFAULT):
         """
         Constructor method : creates a new node.
             new_coordinates (list) : the coordinates [x, y] for the node
@@ -29,6 +29,7 @@ class Node:
         self.incoming_roads = []
         self.leaving_roads  = []
         self.cars           = []
+        self.spawning       = new_spawning
         self.spawn_timer    = time.get_ticks()
         
         # Maximum available space to host cars : perimeter divided by cars' width
@@ -98,8 +99,8 @@ class Node:
         
         self.update_gates() # first, update gates, unless it should be unnecessary
         
-        if (len(self.incoming_roads) == 0) and (len(self.leaving_roads) > 0):
-            # We are a "spawn node" : let's add a car at periodic rates
+        # We are a "spawn node" : let's add a car at periodic rates
+        if self.spawning and len(self.leaving_roads):
             if time.get_ticks() - self.spawn_timer > SPAWN_TIME:
                 self.spawn_timer = time.get_ticks()
                 
@@ -107,10 +108,9 @@ class Node:
                 new_car = init.new_car([], None)
                 new_car.join(chosen_road)
         
-        if self.cars:
-            for car in self.cars:
-                self.update_car(car)
-
+        for car in self.cars:
+            self.update_car(car)
+    
     def set_gate(self, road, state):
         """
         Sets the state of the gates on the road.
@@ -134,7 +134,7 @@ class Node:
         """
         Returns whether there is no place left on the node
         """
-       
+        
         return (len(self.cars) >= self.max_cars)
 
     @property

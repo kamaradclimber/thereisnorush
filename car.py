@@ -178,6 +178,7 @@ class Car:
             
             #   EXPERIMENTAL : accounting for the deceleration in front of an obstacle
             # There is a problem with this part: imho the car should not decelerate until either the car ahead does, or the traffic lights are red! Plus, this should be done using acceleration, not speed directly-- Sharayanan
+            # I've done this because in real life, when a car arrives at a crossroad, it has to decelerate by security and because it cannot turn while moving so fast ; your second point is alright, but more difficult to implement -- Ch@hine
             if (self.position + self.speed * 30 * delta_t + self.length / 2 + self.headway > obstacle):
                 if obstacle_is_light:
                     if self.speed > 5:

@@ -30,8 +30,11 @@ def draw_node(node):
     
     # TODO :
     #       · (DN1) draw the cars on the node, or alter the node drawing procedure to show there are cars, whatever
-   
+    
     pygame.draw.circle(screen, init.NODE_COLOR, (int(node.x), int(node.y)), init.NODE_WIDTH)
+    
+    # Nodes should be drawn as rotating crossroads, in order to draw the cars that rotate in ; the problem is that roads must not be drawn from the center of the node anymore
+    pygame.draw.circle(screen, init.NODE_COLOR, (int(node.x), int(node.y)), init.NODE_WIDTH * 4, 1)
     
     if node.cars:
         # There are cars on the node, we may want to draw them
