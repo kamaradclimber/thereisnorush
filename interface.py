@@ -122,21 +122,34 @@ def draw_arrow(road):
     pygame.draw.line(screen, init.ROAD_COLOR, (x_arrow_start, y_arrow_start), (x_arrow_end, y_arrow_end), 1)
     pygame.draw.line(screen, init.ROAD_COLOR, (x_arrow_end - perp_x - para_x, y_arrow_end - perp_y - para_y), (x_arrow_end + perp_x - para_x, y_arrow_end + perp_y - para_y), 1)
 
-def draw_traffic_light(x, y, state):
+def draw_traffic_light(x, y, road, gate):
     """
     Draws a traffic light…
         x, y : coordinates
-        state : (True, False)
+        road : the road
+        gate : 1 or 0, the gate
     """
     
     TF_RADIUS = 2
+    state = road.gates[gate]
+    
+    para_x, para_y, perp_x, perp_y = road.get_vectors
+    
+    x_start, y_start = x + 4 * perp_x - 8 * para_x, y + 4 * perp_y - 8 * para_y
+    dx, dy = -para_x * TF_RADIUS*2, -para_y*TF_RADIUS*2
     
     for i in range(3):
-        if (state) and (i == 2):
-            pygame.draw.circle(screen, init.LIGHT_GREEN, [x, y + TF_RADIUS * i * 2], TF_RADIUS, 0)
-        elif (not state) and (i == 0):
-            pygame.draw.circle(screen, init.LIGHT_RED, [x, y + TF_RADIUS * i * 2], TF_RADIUS, 0)
-        pygame.draw.circle(screen, init.GRAY, [x, y + TF_RADIUS * i * 2], TF_RADIUS, 1)
+        if (state) and (i == 0):
+            color = init.LIGHT_GREEN
+            width = 0
+        elif (not state) and (i == 2):
+            color = init.LIGHT_RED
+            width = 0
+        else:
+            color = init.GRAY
+            width = 1
+        
+        pygame.draw.circle(screen, color, [x_start + i * dx, y_start + i * dy], TF_RADIUS, width)
 
 def draw_road(road):
     """
@@ -152,7 +165,7 @@ def draw_road(road):
    
     # This is not perfect… but it's ok for now I guess -- Sharayanan
     #draw_traffic_light(x_start + 4, y_start + 4, road.gates[0])
-    draw_traffic_light(x_end - 4, y_end + 4, road.gates[1])
+    draw_traffic_light(x_end, y_end, road, 1)
    
     # EXPERIMENTAL: color the road from green (empty) to red (full)
     # Model : color key proportional to traffic density (N_cars/L_road)

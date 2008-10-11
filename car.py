@@ -44,6 +44,7 @@ class Car:
         self.path           = []
         self.waiting        = False         # Indicates whether the car is waiting at the gates
         #   This variable seems to be redundant, can't we just check the value of the speed to know whether the car is waiting or not ? -- Ch@hine
+        # No, this is required: the car may be waiting and yet move, or conversely. We ought to know whether it waits, notwithstanding its speed. -- Sharayanan
         self.length         = new_length    # Car's length (from front to rear) / Longueur de la voiture (de l'avant à l'arrière)
         self.width          = new_width     # Car's width (from left to right) / Envergure de la voiture (de gauche à droite)
         self.speed          = new_speed 
@@ -176,6 +177,7 @@ class Car:
                 self.speed += self.acceleration * delta_t
             
             #   EXPERIMENTAL : accounting for the deceleration in front of an obstacle
+            # There is a problem with this part: imho the car should not decelerate until either the car ahead does, or the traffic lights are red! Plus, this should be done using acceleration, not speed directly-- Sharayanan
             if (self.position + self.speed * 30 * delta_t + self.length / 2 + self.headway > obstacle):
                 if obstacle_is_light:
                     if self.speed > 5:

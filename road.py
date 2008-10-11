@@ -10,7 +10,7 @@ from pygame import time
 from math   import sqrt
 
 ROAD_DEFAULT_MAX_SPEED  = 50
-ROAD_DEFAULT_LENGHT     = 100
+ROAD_DEFAULT_LENGTH     = 100
 
 class Road:
     """
@@ -20,7 +20,7 @@ class Road:
     def __init__(   self,
                     new_begin       = None,
                     new_end         = None,
-                    length          = ROAD_DEFAULT_LENGHT,
+                    length          = ROAD_DEFAULT_LENGTH,
                     new_max_speed   = ROAD_DEFAULT_MAX_SPEED):
         """
         Constructor method : creates a new road.
@@ -84,8 +84,9 @@ class Road:
         """
         
         #   Isn't that useless ? Maybe I've not understood the meaning of the following line -- Ch@hine
-        #current_time = get_ticks()
-        return self.gates_update[gate]
+        # I fixed it, it should now be quite clear! -- Sharayanan
+        current_time = get_ticks()
+        return (current_time - self.gates_update[gate])
     
     @property
     def get_vectors(self):

@@ -15,7 +15,7 @@ Node 500, 320
 Node 500, 400
 Node 500, 500
 Node 20, 500
-Node 20, 600
+Node 20, 550
 Road 0, 1, 50
 Road 1, 2, 50
 Road 1, 5, 150
