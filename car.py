@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 File        :   car.py
 Description :   defines the class "Car"
@@ -7,59 +6,49 @@ Description :   defines the class "Car"
 
 delta_t = 0.01  # TEMPORARY
 
+from random import randint
 
 from road import Road
 from node import Node
-
-CAR_DEFAULT_LENGTH      = 5
-CAR_DEFAULT_WIDTH       = 4
-CAR_DEFAULT_HEADWAY     = CAR_DEFAULT_LENGTH    # marge de sécurité
-CAR_DEFAULT_SPEED       = 0
-CAR_DEFAULT_ACCEL       = 50
-CAR_DEFAULT_COLOR       = ( 64,  64, 255)
 
 class Car:
     """
     Those which will crowd our city >_< .
     """
     
-    def __init__(   self,
-                    new_path,
-                    new_location,
-                    new_speed       = CAR_DEFAULT_SPEED,
-                    new_accel       = CAR_DEFAULT_ACCEL,
-                    new_length      = CAR_DEFAULT_LENGTH,
-                    new_width       = CAR_DEFAULT_WIDTH,
-                    new_headway     = CAR_DEFAULT_HEADWAY,
-                    new_color       = CAR_DEFAULT_COLOR):
+    CAR_DEFAULT_LENGTH      = 5
+    CAR_DEFAULT_WIDTH       = 4
+    CAR_DEFAULT_HEADWAY     = CAR_DEFAULT_LENGTH    # marge de sécurité
+    CAR_DEFAULT_SPEED       = 0
+    CAR_DEFAULT_ACCEL       = 50
+    CAR_DEFAULT_COLOR       = ( 64,  64, 255)
+
+    def __init__(self, new_path, new_location, new_position = 0):
         """
         Constructor method : a car is provided a (for now unmutable) sequence of directions.
             new_path (list)  :   a list of waypoints
             new_road (Road) :   the road where the car originates (for now, let's forbid the original location to be a node)
-        
+        headway: Desired headway to the preceding car / Distance souhaitée par rapport à la voiture devant
         Définie par la liste de ses directions successives, pour le moment cette liste est fixe.
         """
-        
-        # Car & driver properties, to use in dynamics & behavior management
-        self.path           = []
-        self.waiting        = False         # Indicates whether the car is waiting at the gates
-        #   This variable seems to be redundant, can't we just check the value of the speed to know whether the car is waiting or not ? -- Ch@hine
-        # No, this is required: the car may be waiting and yet move, or conversely. We ought to know whether it waits, notwithstanding its speed. -- Sharayanan
-        self.length         = new_length    # Car's length (from front to rear) / Longueur de la voiture (de l'avant à l'arrière)
-        self.width          = new_width     # Car's width (from left to right) / Envergure de la voiture (de gauche à droite)
-        self.speed          = new_speed 
-        self.position       = 0               
-        self.headway        = new_headway    # Desired headway to the preceding car / Distance souhaitée par rapport à la voiture devant
-        #   Are you sure to want the headway to be possibly different from a car to another ? -- Ch@hine
-        # Absolutely! -- Sharayanan
-        self.color          = new_color 
-        #self.max_accel =  # Car's maximum acceleration / Accélération maximale
-        self.acceleration   = new_accel      
-        
+
+        self.path           = new_path
+        self.waiting        = False         
+        self.length         = self.CAR_DEFAULT_LENGTH
+        self.width          = self.CAR_DEFAULT_WIDTH
+        self.speed          = self.CAR_DEFAULT_SPEED 
+        self.position       = new_position               
+        self.headway        = self.CAR_DEFAULT_HEADWAY
+        self.color          = self.CAR_DEFAULT_COLOR 
+        self.acceleration   = self.CAR_DEFAULT_ACCEL     
+        self.location       = new_location
+
         if isinstance(new_location, Road):
             self.location = new_location
+            self.location.cars.insert(0, self)
         else:
-            self.location = None
+            print new_location
+            raise ValueError('new_location should be a Road')
         
         self.generate_path()
     
@@ -67,15 +56,7 @@ class Car:
         """
         Assembles random waypoints into a "path" list.
         """
-        
-        from random import randint
-        
-        self.path = []
-        
-        # for i in range(randint(5, 18)):
-        # We may need more than a few nodes to begin with
-        for i in range(2000):   # TEMPORARY
-            self.path += [randint(0, 128)]
+        self.path = [randint(0, 128) for i in range(2000)]
     
     def join(self, new_location, new_position = 0):
         """
@@ -84,25 +65,23 @@ class Car:
             new_position    (list)          :   position in the road or in the node (note that the meaning of the position depends on the kind of location)
         """
         
-        if self.location:
-            for i in range(len(self.location.cars)):
-                if (id(self.location.cars[i]) == id(self)):
-                    # Important : do not write self.cars[i] = None, cause it erases the car itself and crashes
-                    del self.location.cars[i]
-                    break
+        if self.location and self in self.location.cars:
+            self.location.cars.remove(self)
         
         self.position       =   new_position
         old_location        =   self.location
         self.location       =   new_location
-        
-        # CONVENTION SENSITIVE
-        new_location.cars   =  [self] + new_location.cars
+        self.location.cars.insert(0, self)
         
         #   Each time a car joins or leaves a node, this one has to update in order to calculate again the best configuration for the gates
         if isinstance(old_location, Node):
+
             old_location.update_gates()
         elif isinstance(new_location, Node):
+
             new_location.update_gates()
+        else:
+            raise Exception('ERROR (in join()): the car is teleporting!')
     
     def die(self):
         """
@@ -110,45 +89,30 @@ class Car:
         """
         
         if self.location.cars:
-            for i in range(len(self.location.cars)):
-                if (id(self.location.cars[i]) == id(self)):
-                    del self.location.cars[i]
-                    
-                    #toutes les modifs suivantes sont justes pour le confort de l'esprit et ne changent pas grand chose
-                    #cela dit, un jour mais cest pas pour tout de suite, il faudra verifier que les voitures non utilisées sont bien libérées de la memoire (ocaml le ferait, qu'en est-il de python ?)
-                    self.location   = None
-                    self.path       = []
-                    self.speed      = 0
-                    self.position   = 0
-                    
-                    break
+            for car in self.location.cars:
+                if car == self:
+                   self.location.cars.remove(car)
     
-    def next_way(self, read_only = False):
+    def next_way(self, read_only=False):
         """
         Expresses the cars' wishes :P
         """
         
+        # TEMPORARY 
         if len(self.path) == 0:
             return 0
         else:
             if not read_only:
                 del self.path[0]
             return self.path[0]
-    
-    def update(self, rank):
+
+    def _next_obstacle(self, rank):
         """
-        Updates the car speed and position, manages blocked pathways and queues.
-            rank    (int)   :   position on the road (0 : last in)
+        Returns the position of the obstacle ahead of the car
         """
-        
-        # TODO :
-        #       · (C.U1) resort to more "realistic" physics (e.g. acceleration, braking...)
-        
-        if not isinstance(self.location, Road):
-            return None
-        
+        obstacle = 0
+        obstacle_is_light = False
         if rank >= len(self.location.cars) - 1: 
-            # Le seul obstacle est un feu
             obstacle_is_light = True
             if self.location.gates[1]:
                 # The traffic lights are green: go on (even a little bit further)
@@ -157,20 +121,17 @@ class Car:
                 # They are red: stop
                 obstacle = self.location.length
         else:
-            # L'obstacle est la voiture devant
-            # CONVENTION SENSITIVE
             obstacle_is_light = False
             obstacle = self.location.cars[rank + 1].position - self.location.cars[rank + 1].length / 2
-        
-        next_position = self.position + self.speed * delta_t
-        
+
+        return obstacle, obstacle_is_light
+    
+    def _act_smartly(self, rank, obstacle, obstacle_is_light, next_position):
         #   No obstacle
         if next_position + self.length / 2 + self.headway < obstacle:
             # « 1 trait danger, 2 traits sécurité : je fonce ! »
             self.position = next_position
             
-            # EXPERIMENTAL: accounting for the physics of acceleration
-            #   I assume this is no more experimental since it runs pretty well :D -- Ch@hine
             if self.speed + self.acceleration * delta_t >= self.location.max_speed:
                 self.speed = self.location.max_speed
             elif self.speed < self.location.max_speed:
@@ -210,3 +171,22 @@ class Car:
                 # We have a closed gate in front of us : stop & align
                 self.position = self.location.length - self.headway - self.length / 2
                 self.waiting = True
+
+    def update(self, rank):
+        """
+        Updates the car speed and position, manages blocked pathways and queues.
+            rank    (int)   :   position on the road (0 : last in)
+        """
+        
+        # TODO :
+        #       · (C.U1) resort to more "realistic" physics (e.g. acceleration, braking...)
+        
+        if not isinstance(self.location, Road):
+            return None
+        
+        obstacle, obstacle_is_light = self._next_obstacle(rank)
+        
+        next_position = self.position + self.speed * delta_t
+
+        self._act_smartly(rank, obstacle, obstacle_is_light, next_position)
+        

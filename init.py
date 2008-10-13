@@ -34,14 +34,13 @@ except NameError:
     NODE_RADIUS_DEFAULT = 10
 
     ROAD_COLOR  = WHITE
-    
-    NODE        = "Node"
-    ROAD        = "Road"
+   
     
     DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
 
     from os     import getcwd   # standard python library, ne pas tout prendre, c'est plus propre :-)
     from track  import Track
+    from track  import Track_Parser
     from car    import Car 
     from road   import Road
     from node   import Node
@@ -52,19 +51,20 @@ except NameError:
         """
         Adds a car on the demo track
         """
-        
-        new_car = Car([], track.roads[road_number])
-        new_car.join(track.roads[road_number], position)
+
+        new_car = Car([], track.roads[road_number], position)
+        #new_car.join(track.roads[road_number], position)
     
     def load_demo_track():
         # Temporary testing zone
-        track.load_from_file("track_default.txt")
+        track_parser = Track_Parser(track)
+        track_parser.load_from_file("track_default.txt")
         # Attention à l'ordre dans lequel on place les voitures ! si ce n'est pas dans lordre décroissant par position, tout le reste du programme est gêné !
         # (un tri, tout au début devrait résoudre ce bug issue2)
         # Évitez les doublons aussi, tant que possible ! -- Sharayanan
         # CONVENTION SENSITIVE
         add_demo_car(3,5)
-        add_demo_car(6,500)
+        add_demo_car(6,50)
         add_demo_car(6,30)
         add_demo_car(6,10)
         add_demo_car(7,40)

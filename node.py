@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 File        :   node.py
 Description :   defines the class "Node"
@@ -12,34 +11,32 @@ from random import randint
 
 LEAVING_GATE    = 1
 INCOMING_GATE   = 0
-SPAWN_TIME      = 5000
+SPAWN_TIME      = 1000
 
 class Node:
     """
     Crossroads of our city ; may host several roads.
     """
     
-    def __init__(self, new_coordinates, new_spawning = False, radius = init.NODE_RADIUS_DEFAULT):
+    def __init__(self, new_x, new_y, new_spawning=False, radius=init.NODE_RADIUS_DEFAULT):
         """
         Constructor method : creates a new node.
             new_coordinates (list) : the coordinates [x, y] for the node
         """
         
-        self.x, self.y      = new_coordinates[0], new_coordinates[1]
+        self.x, self.y      = new_x, new_y
         self.incoming_roads = []
         self.leaving_roads  = []
         self.cars           = []
         self.spawning       = new_spawning
         self.spawn_timer    = time.get_ticks()
-        
-        # Maximum available space to host cars : perimeter divided by cars' width
-        # Nombre maximum de cases disponibles pour héberger les voitures : périmètre divisé par la longueur des voitures
-        
-        # TEMPORARY
-        #self.max_cars      = int(2 * pi * radius / car.CAR_DEFAULT_LENGTH)
-        self.max_cars = 10
+        self.max_cars = 42
+        self.slots = [(None, None) for i in range(self.max_cars)]
     
-    def update_gate(self, road, waiting_cars):
+    def add_me(self, object):
+        pass
+
+    def _update_gate(self, road, waiting_cars):
         """
         Road-specific gate handling
             road (Road) : the road whose traffic ligths are to be handled
@@ -70,13 +67,13 @@ class Node:
         for road in self.incoming_roads:
             
             # BEGINNING OF ROAD-SPECIFIC GATE HANDLING
-            self.update_gate(road, num_waiting)
+            self._update_gate(road, num_waiting)
             # END OF GATE HANDLING
         
         # Do not add anything after this: it ensures the node closes when full!
         if self.is_full:
-            for i in range(len(self.leaving_roads)):
-                self.set_gate(self.leaving_roads[i], False)
+            for road in self.leaving_roads:
+                self.set_gate(road, False)
     
     def update_car(self, car):
         """
@@ -105,8 +102,8 @@ class Node:
                 self.spawn_timer = time.get_ticks()
                 
                 chosen_road = self.leaving_roads[randint(0, len(self.leaving_roads) - 1)]
-                new_car = init.new_car([], None)
-                new_car.join(chosen_road)
+                if chosen_road.is_free:
+                    new_car = init.new_car([], chosen_road)
         
         for car in self.cars:
             self.update_car(car)
@@ -139,4 +136,4 @@ class Node:
 
     @property
     def coords(self):
-        return (int(self.x), int(self.y))
+        return (self.x, self.y)

@@ -5,8 +5,7 @@ File        :   track.py
 Description :   defines the class "Track"
 """
 
-import init 
-import string
+import init
 
 class Track:
     """
@@ -29,59 +28,18 @@ class Track:
             self.roads = []
         else:
             self.roads = new_roads
-    
-    def add_element(self, elements):
+   
+
+class Track_Parser:
+
+    NODE        = "Node"
+    ROAD        = "Road"
+
+    def __init__(self, track):
         """
-        Adds an element to the track, once it's been checked and validated.
-            elements    (list)      :   a list describing the element [type, arg1, arg2…]
         """
-        
-        if (elements[0] == init.NODE):
-            self.nodes.append(init.new_node([elements[1], elements[2]], bool(elements[3])))
-        elif (elements[0] == init.ROAD):
-            new_road = init.new_road(self.nodes[elements[1]], self.nodes[elements[2]])
-            self.roads += [new_road]
-            new_road.connect(self.nodes[elements[1]], self.nodes[elements[2]])
-        else:
-            print "ERROR : unknown element type '" + elements[0] + "'."
-    
-    def parse_line(self, line):
-        """
-        Parses a line in a track description file.
-            line    (string)    :   the line of text to be parsed
-        """
-        
-        elements        = string.replace(line, ",", " ").split()
-        kind            = ""
-        total_arguments = 0
-        
-        #   Get element type
-        if len(elements) != 0:
-            kind = elements[0]
-        
-        #   Define how many arguments are expected
-        if (kind == init.NODE):
-            total_arguments = 3 #   abscissa, ordinate, spawning mode
-        elif (kind == init.ROAD):
-            total_arguments = 2 #   starting node, ending node and length
-        else:
-            print "ERROR : unknown element type '" + kind + "' !"
-            
-        #   Add the specified element to the track, if everything is OK
-        if (len(elements) == 1 + total_arguments):
-            try:
-                for i in range(1, total_arguments + 1):
-                    elements[i] = int(elements[i])
-                self.add_element(elements)
-            except Exception, exc:
-                print "ERROR : in parsing the following line : "
-                print elements
-                print exc 
-                
-        else:
-            print "ERROR : wrong parameters given for the element '" + kind + "'."
-            print elements
-    
+        self.track = track
+
     def load_from_file(self, file_name):
         """
         Loads a track from a textfile, checks its validity, parses it
@@ -93,20 +51,30 @@ class Track:
         #       · (T.LFF1) try to figure out a way to force the current directory to be the correct one (especially on Windows), since it raises an error when cwd isn't init.py's directory.
         
         try:
-            # Attempts to load & read the file
-            file_data   = open(file_name)
-            lines       = []
-            
-            for line in file_data:
-                lines += [line.strip()]
-            
-        except Exception, exc:
-            # The file doesn't exists or any other error
-            print "ERROR : the file " + file_name + " cannot be loaded."
-            print "Current directory is : " + getcwd() 
-            print exc 
-            
-            exit()
+            file_data   = file(file_name)
+        except IOError:
+            raise Exception("%s cannot be loaded (current directory is : %s)" % (file_name, getcwd())) 
         
-        for line in lines:
+        for line in file_data:
+            line = line.strip()
+            if line.startswith('#') or not line:
+                continue
             self.parse_line(line)
+
+    def parse_line(self, line):
+        """
+        Parses a line in a track description file.
+            line    (string)    :   the line of text to be parsed
+        """
+        parse_errors = []
+        elements = line.replace(',', ' ').split()
+        if elements[0] == self.NODE:
+            args = [int(item) for item in elements[1:]]
+            node = init.new_node(*args)
+            self.track.nodes.append(node)
+        elif elements[0] == self.ROAD:
+            args = [int(item) for item in elements[1:]]
+            new_road = init.new_road(self.track.nodes[args[0]], self.track.nodes[args[1]])
+            self.track.roads.append(new_road)
+        else:
+            raise Exception("ERROR : unknown element type '" + kind + "' !")

@@ -37,20 +37,13 @@ class Road:
         
         # TEMPORARY
         self.vecs = False # indicates whether the vectors have been calculated
-    
-    def connect(self, starting_node, ending_node):
-        """
-        Connects the road to 2 nodes.
-        """
-        
-        # TODO :
-        #       · (N.AR1) add error handlers in order not to crash on misformed track files
-        
-        self.begin                  =   starting_node
-        self.end                    =   ending_node
-        ending_node.incoming_roads  +=  [self]
-        starting_node.leaving_roads +=  [self]
-    
+
+        self.end.incoming_roads.append(self)
+        self.begin.leaving_roads.append(self)
+
+        self.end.add_me(self)
+        self.begin.add_me(self)
+
     def update(self):
         """
         Updates the road (will update the cars on the road).
@@ -74,15 +67,13 @@ class Road:
             return True
         else:
             # CONVENTION SENSITIVE
-            return(self.cars[0].position > self.cars[0].length/2 + self.cars[0].headway)
+            return(self.cars[0].position > self.cars[0].length / 2 + self.cars[0].headway)
     
     def last_gate_update(self, gate):
         """
         Return the time (in milliseconds) since the last update of a gate (0 or 1).
         """
-        
-        #   Isn't that useless ? Maybe I've not understood the meaning of the following line -- Ch@hine
-        # I fixed it, it should now be quite clear! -- Sharayanan
+
         current_time = get_ticks()
         return (current_time - self.gates_update[gate])
     
