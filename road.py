@@ -55,6 +55,7 @@ class Road:
             
             for i in range(queue_length):
                 self.cars[queue_length -1-i].update(queue_length - 1-i)
+        
 
     @property
     def is_free(self):
@@ -74,7 +75,7 @@ class Road:
         Return the time (in milliseconds) since the last update of a gate (0 or 1).
         """
 
-        current_time = get_ticks()
+        current_time = time.get_ticks()
         return (current_time - self.gates_update[gate])
     
     @property

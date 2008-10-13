@@ -33,8 +33,10 @@ class Node:
         self.max_cars = 42
         self.slots = [(None, None) for i in range(self.max_cars)]
     
-    def add_me(self, object):
+    def add_me(self, object): #cet ajout doit se faire de facon géométrique ?
         pass
+    def am_i_at_the_beginning(self,road):
+        return id(road.begin) == id(self)
 
     def _update_gate(self, road, waiting_cars):
         """
@@ -42,15 +44,14 @@ class Node:
             road (Road) : the road whose traffic ligths are to be handled
             waiting_cars (int) : the *total* number or cars waiting for the node
         """
-        
-        # TESTING ONLY: there has to be at least 2 waiting cars for the node to open, 
-        # otherwise we wait 1 second and close the gates!
-        # We may put some very complex behavior in this!
-        if road.total_waiting_cars > 1:
+
+        if road.total_waiting_cars > 8 and am_i_at_the_beginning(road): # priorité  1- pas trop de queue pour partir
             self.set_gate(road, True)
-        else:
-            if road.gates_update[1] > 1000:
-                self.set_gate(road, False)
+        if road.total_waiting_cars > 8 and (not am_i_at_the_beginning(road)): # priorité  1- pas trop de queue pour rentrer sur le carrefour
+            self.set_gate(road, True)
+   
+        if road.last_gate_update(1) > 10000: # priorité 1- pas trop d'attente
+            self.set_gate(road, True)
     
     def update_gates(self):
         """
@@ -66,12 +67,10 @@ class Node:
         # CAUTION: this *has* to be in a separate loop !
         for road in self.incoming_roads:
             
-            # BEGINNING OF ROAD-SPECIFIC GATE HANDLING
             self._update_gate(road, num_waiting)
-            # END OF GATE HANDLING
+            
         
-        # Do not add anything after this: it ensures the node closes when full!
-        if self.is_full:
+        if self.is_full: # priorité 0
             for road in self.leaving_roads:
                 self.set_gate(road, False)
     
@@ -119,12 +118,12 @@ class Node:
             # The road begins on the node: there is a gate to  before leaving
             if road.gates[INCOMING_GATE] != state:
                 road.gates[INCOMING_GATE] = state
-                road.gates_update[INCOMING_GATE] = time.get_ticks()
+                if road.gates[INCOMING_GATE] != state: road.gates_update[INCOMING_GATE] = time.get_ticks()
         else:
             # The road ends on the road: there is a gate to  to enter
             if road.gates[LEAVING_GATE] != state:
                 road.gates[LEAVING_GATE] = state
-                road.gates_update[LEAVING_GATE] = time.get_ticks()
+                if road.gates[LEAVING_GATE] != state: road.gates_update[LEAVING_GATE] = time.get_ticks()
 
     @property
     def is_full(self):
