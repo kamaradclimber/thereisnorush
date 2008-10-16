@@ -70,9 +70,9 @@ class Node:
             waiting_cars (int) : the *total* number or cars waiting for the node
         """
 
-        if road.total_waiting_cars > 8 and am_i_at_the_beginning(road): # priorité  1- pas trop de queue pour partir
+        if road.total_waiting_cars > 8 and self.am_i_at_the_beginning(road): # priorité  1- pas trop de queue pour partir
             self.set_gate(road, True)
-        if road.total_waiting_cars > 8 and (not am_i_at_the_beginning(road)): # priorité  1- pas trop de queue pour rentrer sur le carrefour
+        if road.total_waiting_cars > 8 and (not self.am_i_at_the_beginning(road)): # priorité  1- pas trop de queue pour rentrer sur le carrefour
             self.set_gate(road, True)
         
         if road.last_gate_update(LEAVING_GATE) > 10000 and not road.gates[LEAVING_GATE] and road.total_waiting_cars > 0: # priorité 1- pas trop d'attente
@@ -112,10 +112,14 @@ class Node:
         # TEMPORARY : go to where you want
         next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
         car_slot = my_kingdom_for_a_key(self.slots_cars,car)
-        if (self.leaving_roads[next_way].is_free) and self.slots_roads[car_slot] == self.leaving_roads[next_way]: #la route sur laquelle on veut aller est vidéeet surtout _en face_  du slot de la voiture
-
-            car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # No need for remaining_points since we start from *zero*
-    
+        
+        if car_slot:
+            # There is an issue with the car_slot thing : it never points to the good road!
+            if (self.leaving_roads[next_way].is_free) and self.slots_roads[car_slot] == self.leaving_roads[next_way]: #la route sur laquelle on veut aller est vidéeet surtout _en face_  du slot de la voiture
+                car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # No need for remaining_points since we start from *zero*
+            elif (self.leaving_roads[next_way].is_free):
+                print "Aïe ! J'ai pas de car_slot ! Mais comment je suis arrivée là, moi ? Sauvons-nous !"
+                car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # No need for remaining_points since we start from *zero*
     def update(self):
         """
         Updates the node: rotate the cars, dispatch them...

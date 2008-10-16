@@ -134,6 +134,9 @@ class Car:
         next_position               = self.position + self.speed * delta_t
         obstacle, obstacle_is_light = self._next_obstacle(rank)
         
+        self.waiting = False
+        self.acceleration = self.CAR_DEFAULT_ACCEL
+        
         #   No obstacle
         if next_position + self.length / 2 + self.headway < obstacle:
             # « 1 trait danger, 2 traits sécurité : je fonce ! »
@@ -171,15 +174,19 @@ class Car:
         
         #   Obstacle = light
         elif next_position + self.length / 2 + self.headway >= obstacle:
-            id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
-            if self.location.gates[1] and not self.location.end.slots_cars.has_key(id_slot): #le slot correspondant est vide
+            
+            if self.location.gates[1] :
                 # Everything's ok, let's go !
+                id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
+                #if and not self.location.end.slots_cars.has_key(id_slot): #le slot correspondant est vide
                 self.waiting = False
                 self.join(self.location.end)
             else:
                 # We have a closed gate in front of us : stop & align or the fronted (the 'en-face') slot is full
                 self.position = self.location.length - self.headway - self.length / 2
                 self.waiting = True
+                self.acceleration = 0
+                self.speed = 0
 
     def update(self, rank):
         """
