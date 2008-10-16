@@ -60,9 +60,13 @@ class Vector:
         self.y = y
     
     def normalize(self):
-        if (self.x or self.y):
-            self.x /= abs(self)
-            self.y /= abs(self)
+        dist = float(abs(self))
+        if dist > 0:
+            self.x = float(self.x)/dist
+            self.y = float(self.y)/dist
+        else:
+            self.x, self.y = 0.0, 0.0
+        return self 
     
     def get_orthogonal(self):
         if (self.x or self.y):

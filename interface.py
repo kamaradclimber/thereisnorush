@@ -39,6 +39,9 @@ def draw_node(node):
     if node.cars:
         # There are cars on the node, we may want to draw them
         # albeit we can't use draw_car here...
+        
+        #TEMPORARY : the number of cars on the node is written
+        draw_text(node.position.x + 10, node.position.y + 10, str(len(node.cars)))
         pass
 
 def draw_car(car):
@@ -52,6 +55,7 @@ def draw_car(car):
     
     d_position = car.location.begin.position
     a_position = car.location.end.position
+    direction  = (a_position - d_position)
     
     length_covered = float(int(car.position)) / float(int(car.location.length))
     
@@ -60,17 +64,19 @@ def draw_car(car):
     scale_factor = 1
     
     # Coordinates for the center
-    center_position = d_position + (a_position - d_position) * length_covered
+    center_position = d_position + direction * length_covered
     
     # Relative size of the car
     (r_width, r_length) = (car.width * scale_factor, car.length * scale_factor)
     
-    # Get the coordinates for the endpoints
-    # ToDo : use relative sizes to respect the roads' scales
-    position1 = center_position - car.location.parallel * r_length/2 - car.location.orthogonal * r_width/2
-    position2 = center_position + car.location.parallel * r_length/2 - car.location.orthogonal * r_width/2
-    position3 = center_position + car.location.parallel * r_length/2 + car.location.orthogonal * r_width/2
-    position4 = center_position - car.location.parallel * r_length/2 + car.location.orthogonal * r_width/2
+    # Get the appropriate vectors once
+    parallel   = car.location.parallel
+    orthogonal = car.location.orthogonal
+    
+    position1 = center_position - parallel * r_length/2 - orthogonal * r_width/2
+    position2 = center_position + parallel * r_length/2 - orthogonal * r_width/2
+    position3 = center_position + parallel * r_length/2 + orthogonal * r_width/2
+    position4 = center_position - parallel * r_length/2 + orthogonal * r_width/2
     
     # Change the color in case the car is waiting    
     color = car.color
