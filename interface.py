@@ -31,10 +31,10 @@ def draw_node(node):
     # TODO :
     #       · (DN1) draw the cars on the node, or alter the node drawing procedure to show there are cars, whatever
     
-    pygame.draw.circle(screen, init.NODE_COLOR, (int(node.x), int(node.y)), init.NODE_WIDTH)
+    pygame.draw.circle(screen, init.NODE_COLOR, node.position.ceil().get_tuple(), init.NODE_WIDTH)
     
     # Nodes should be drawn as rotating crossroads, in order to draw the cars that rotate in ; the problem is that roads must not be drawn from the center of the node anymore
-    pygame.draw.circle(screen, init.NODE_COLOR, (int(node.x), int(node.y)), init.NODE_WIDTH * 4, 1)
+    pygame.draw.circle(screen, init.NODE_COLOR, node.position.ceil().get_tuple(), init.NODE_WIDTH * 4, 1)
     
     if node.cars:
         # There are cars on the node, we may want to draw them
@@ -50,10 +50,9 @@ def draw_car(car):
         car (Car) : la voiture sus-citée.
     """
     
-    (xd, yd) = car.location.begin.coords
-    (xa, ya) = car.location.end.coords
+    d_position = car.location.begin.position
+    a_position = car.location.end.position
     
-    (para_x, para_y, perp_x, perp_y) = car.location.get_vectors
     length_covered = float(int(car.position)) / float(int(car.location.length))
     
     # EXPERIMENTAL: draw the cars at a scale consistent with the road
@@ -61,17 +60,17 @@ def draw_car(car):
     scale_factor = 1
     
     # Coordinates for the center
-    (cx, cy) = (xd + length_covered * (xa - xd), yd + length_covered * (ya - yd))
+    center_position = d_position + (a_position - d_position) * length_covered
     
     # Relative size of the car
     (r_width, r_length) = (car.width * scale_factor, car.length * scale_factor)
     
     # Get the coordinates for the endpoints
     # ToDo : use relative sizes to respect the roads' scales
-    (x1, y1) = (cx - para_x * r_length/2 - perp_x * r_width/2, cy - para_y * r_length/2 - perp_y * r_width/2)
-    (x2, y2) = (cx + para_x * r_length/2 - perp_x * r_width/2, cy + para_y * r_length/2 - perp_y * r_width/2)
-    (x3, y3) = (cx + para_x * r_length/2 + perp_x * r_width/2, cy + para_y * r_length/2 + perp_y * r_width/2)
-    (x4, y4) = (cx - para_x * r_length/2 + perp_x * r_width/2, cy - para_y * r_length/2 + perp_y * r_width/2)
+    position1 = center_position - car.location.parallel * r_length/2 - car.location.orthogonal * r_width/2
+    position2 = center_position + car.location.parallel * r_length/2 - car.location.orthogonal * r_width/2
+    position3 = center_position + car.location.parallel * r_length/2 + car.location.orthogonal * r_width/2
+    position4 = center_position - car.location.parallel * r_length/2 + car.location.orthogonal * r_width/2
     
     # Change the color in case the car is waiting    
     color = car.color
@@ -79,7 +78,7 @@ def draw_car(car):
         color = init.GRAY
 
     # Draw the car 
-    pygame.draw.polygon(screen, color, ((x1, y1), (x2, y2), (x3, y3), (x4, y4)), 0)
+    pygame.draw.polygon(screen, color, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()), 0)
 
 def draw_text(x = screen.get_rect().centerx, y = screen.get_rect().centery, message = "", text_color = init.WHITE, back_color = init.BLACK, font = None, anti_aliasing = True):
     """
@@ -108,23 +107,22 @@ def draw_arrow(road):
     """
     Draws lil' cuty arrows along the roads to know where they're going
     """
-    
-    para_x, para_y, perp_x, perp_y = road.get_vectors
-    
-    x_start, y_start = road.begin.coords
-    x_end, y_end     = road.end.coords
+    (start_position, end_position) = (road.begin.position, road.end.position)
 
     # Get the midpoint of the road
-    mid_x, mid_y = (x_start + x_end)/2, (y_start + y_end)/2
+    mid_position = (start_position + end_position)/2
     
     # Draw an arrow on the left side!
-    x_arrow_start, y_arrow_start = mid_x - perp_x * 4 - para_x * 4, mid_y - perp_y * 4 - para_y * 4
-    x_arrow_end, y_arrow_end     = mid_x - perp_x * 4 + para_x * 4, mid_y - perp_y * 4 + para_y * 4
+    arrow_start_position        = mid_position - road.orthogonal * 4 - road.parallel * 4
+    arrow_end_position          = mid_position - road.orthogonal * 4 + road.parallel * 4
     
-    pygame.draw.line(screen, init.ROAD_COLOR, (x_arrow_start, y_arrow_start), (x_arrow_end, y_arrow_end), 1)
-    pygame.draw.line(screen, init.ROAD_COLOR, (x_arrow_end - perp_x - para_x, y_arrow_end - perp_y - para_y), (x_arrow_end + perp_x - para_x, y_arrow_end + perp_y - para_y), 1)
+    arrow_head_start_position   = arrow_end_position - road.orthogonal - road.parallel
+    arrow_head_end_position     = arrow_end_position + road.orthogonal - road.parallel
+    
+    pygame.draw.line(screen, init.ROAD_COLOR, arrow_start_position.get_tuple(), arrow_end_position.get_tuple(), 1)
+    pygame.draw.line(screen, init.ROAD_COLOR, arrow_head_start_position.get_tuple(), arrow_head_end_position.get_tuple(), 1)
 
-def draw_traffic_light(x, y, road, gate):
+def draw_traffic_light(position, road, gate):
     """
     Draws a traffic light…
         x, y : coordinates
@@ -135,10 +133,8 @@ def draw_traffic_light(x, y, road, gate):
     TF_RADIUS = 2
     state = road.gates[gate]
     
-    para_x, para_y, perp_x, perp_y = road.get_vectors
-    
-    x_start, y_start = x + 4 * perp_x - 8 * para_x, y + 4 * perp_y - 8 * para_y
-    dx, dy = -para_x * TF_RADIUS*2, -para_y*TF_RADIUS*2
+    start_position  = position + road.orthogonal * 4 - road.parallel * 8
+    d_position      = -road.parallel * TF_RADIUS*2
     
     for i in range(3):
         if (state) and (i == 0):
@@ -151,7 +147,8 @@ def draw_traffic_light(x, y, road, gate):
             color = init.GRAY
             width = 1
         
-        pygame.draw.circle(screen, color, [x_start + i * dx, y_start + i * dy], TF_RADIUS, width)
+        position = start_position + d_position * i
+        pygame.draw.circle(screen, color, position.get_list(), TF_RADIUS, width)
 
 def draw_road(road):
     """
@@ -162,12 +159,11 @@ def draw_road(road):
         road (Road) : la route sus-citée.
     """
     
-    x_start, y_start = int(road.begin.x), int(road.begin.y)
-    x_end, y_end     = int(road.end.x), int(road.end.y)
+    (start_position, end_position) = (road.begin.position.ceil(), road.end.position.ceil())
    
     # This is not perfect… but it's ok for now I guess -- Sharayanan
     #draw_traffic_light(x_start + 4, y_start + 4, road.gates[0])
-    draw_traffic_light(x_end, y_end, road, 1)
+    draw_traffic_light(end_position, road, 1)
    
     # EXPERIMENTAL: color the road from green (empty) to red (full)
     # Model : color key proportional to traffic density (N_cars/L_road)
@@ -183,7 +179,7 @@ def draw_road(road):
         if key > 255: key = 255
         color = [key, 255 - key, 0]
     
-    pygame.draw.line(screen, color, (x_start, y_start), (x_end, y_end), 1) # EXPERIMENTAL
+    pygame.draw.line(screen, color, start_position.get_tuple(), end_position.get_tuple(), 1) # EXPERIMENTAL
     
     # Draw an arrow pointing at where we go
     draw_arrow(road)

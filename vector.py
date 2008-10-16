@@ -53,16 +53,56 @@ class Vector:
         # Calculate cartesian coordinates
         self.x = mag * cos(f)
         self.y = mag * sin(f)
-
-    def add(self, b):
-        """Add b to self, where b is another Vector."""
-        self.x += b.x
-        self.y += b.y
-        
+    
+    def __init__(self, x = 0.0, y = 0.0):
+        """Create a Vector, given cartesian coordinates."""
+        self.x = x
+        self.y = y
+    
+    def normalize(self):
+        if (self.x or self.y):
+            self.x /= abs(self)
+            self.y /= abs(self)
+    
+    def get_orthogonal(self):
+        if (self.x or self.y):
+            return Vector(-self.y, self.x)
+    
+    def get_list(self):
+        return [self.x, self.y]
+    
+    def get_tuple(self):
+        return (self.x, self.y)
+    
+    def ceil(self):
+        return Vector(int(self.x), int(self.y))
+    
+    #   Operators
+    def __add__(self, vector):
+        return Vector(self.x + vector.x, self.y + vector.y)
+    
+    def __neg__(self):
+        return Vector(-self.x, -self.y)
+    
+    def __sub__(self, vector):
+        return Vector(self.x - vector.x, self.y - vector.y)
+    
+    #   Be careful about the order : you may not write "<scale> * <vector>", but "<vector> * <scale>" !
+    def __mul__(self, scale):
+        return Vector(scale*self.x, scale*self.y)
+    
+    def __div__(self, scale):
+        return Vector(self.x/scale, self.y/scale)
+    
+    def __eq__(self, vector):
+        return (self.x == vector.x) and (self.y == vector.y)
+    
+    def __abs__(self):
+        return hypot(self.x, self.y)
+    
+    def __str__(self):
+        return '(' + str(self.x) + ', ' + str(self.y) + ')'
+    
     def heading(self):
         """Return the direction of the Vector in radians."""
         return direction(self.x, self.y)
-        
-    def mag(self):
-        """Return the magnitude of the Vector."""
-        return hypot(self.x, self.y)

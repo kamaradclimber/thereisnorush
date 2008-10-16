@@ -34,13 +34,14 @@ class Road:
         self.max_speed      = new_max_speed
         self.gates_update   = [time.get_ticks(), time.get_ticks()]
         self.gates          = [True, False]    # [gate at the beginning, gate at the end]
+        self.parallel       = None
+        self.orthogonal     = None
         
-        # TEMPORARY
-        self.vecs = False # indicates whether the vectors have been calculated
-
+        self._set_vectors()
+        
         self.end.incoming_roads.append(self)
         self.begin.leaving_roads.append(self)
-
+        
         self.end.add_me(self)
         self.begin.add_me(self)
 
@@ -84,40 +85,22 @@ class Road:
         Returns the calculated length of the road.
         """
         if (self.begin is not None) and (self.end is not None):
-            return sqrt((self.end.x - self.begin.x)**2 + (self.end.y - self.begin.y)**2)
+            return abs(self.end.position - self.begin.position)
         
         return None
     
-    @property
-    def get_vectors(self):
+    def _set_vectors(self):
         """
         Returns the unit parallel and perpendicular vectors to a the road
         """
-        
         # Do not compute unless necessary
-        if not self.vecs:
-            # Get the begin and endpoints of the road
-            x_start, y_start = self.begin.coords
-            x_end, y_end     = self.end.coords
+        if self.parallel is None or self.orthogonal is None:
+            # Get the normalized parallel vector to the road
+            self.parallel = self.end.position - self.begin.position
+            self.parallel.normalize()
             
-            # Get the vector parallel to the road
-            para_y, para_x = y_end - y_start, x_end - x_start
-            para_len = sqrt(para_x**2 + para_y**2)
-            
-            # Normalize it
-            para_x, para_y = para_x / para_len, para_y / para_len
-            
-            # Get the unit vector perpendicular to the road (CCW)
-            perp_x, perp_y = -para_y, para_x
-         
-            self.perp_x = perp_x
-            self.perp_y = perp_y
-            self.para_x = para_x
-            self.para_y = para_y
-            
-            self.vecs = True
-        
-        return self.para_x, self.para_y, self.perp_x, self.perp_y
+            # Get the normalized orthogonal vector to the road
+            self.orthogonal = self.parallel.get_orthogonal()
     
     @property
     def total_waiting_cars(self):
