@@ -4,18 +4,16 @@ File        :   car.py
 Description :   defines the class "Car"
 """
 
-delta_t = 0.01  # TEMPORARY
+delta_t = 0.01
 
 from random import randint
-
-from road import Road
-from node import Node
+from road   import Road
+from node   import Node
 
 class Car:
     """
     Those which will crowd our city >_< .
     """
-    
     CAR_DEFAULT_LENGTH  = 5
     CAR_DEFAULT_WIDTH   = 4
     CAR_DEFAULT_HEADWAY = CAR_DEFAULT_LENGTH    # marge de sécurité
@@ -31,9 +29,8 @@ class Car:
         headway: Desired headway to the preceding car / Distance souhaitée par rapport à la voiture devant
         Définie par la liste de ses directions successives, pour le moment cette liste est fixe.
         """
-
         self.path           = []
-        self.waiting        = False         
+        self.waiting        = False
         self.length         = self.CAR_DEFAULT_LENGTH
         self.width          = self.CAR_DEFAULT_WIDTH
         self.speed          = self.CAR_DEFAULT_SPEED 
@@ -63,11 +60,10 @@ class Car:
             new_location    (Road or Node)  :   road or node that will host, if possible, the car
             new_position    (list)          :   position in the road or in the node (note that the meaning of the position depends on the kind of location)
         """
-        
         if self.location and self in self.location.cars:
             self.location.cars.remove(self)
         else:
-            raise Except("erreur je ne suis nulle part")
+            raise Except("WARNING : a car had no location !")
         
         self.position   =   new_position
         old_location    =   self.location
@@ -88,22 +84,22 @@ class Car:
             new_location.glue_to_slot(self, old_location)
             new_location.update_gates()
         else:
-            raise Exception('ERROR (in join()): the car is teleporting !')
+            raise Exception('ERROR (in join()) : the car is teleporting !')
     
     def die(self):
         """
         Kills the car, which simply disappear ; may be mostly used in dead-ends.
         """
-        
         if self.location.cars:
             if car in self.location.cars:
                 self.location.cars.remove(car)
+            else:
+                raise Except("WARNING : a car had no location !")
     
     def next_way(self, read_only=False):
         """
         Expresses the cars' wishes :P
         """
-        
         # TEMPORARY 
         if len(self.path) == 0:
             return 0
@@ -128,14 +124,14 @@ class Car:
             obstacle_is_light = False
             obstacle = self.location.cars[rank + 1].position - self.location.cars[rank + 1].length / 2
 
-        return obstacle, obstacle_is_light
+        return (obstacle, obstacle_is_light)
     
     def _act_smartly(self, rank):
         next_position               = self.position + self.speed * delta_t
         obstacle, obstacle_is_light = self._next_obstacle(rank)
         
-        self.waiting = False
-        self.acceleration = self.CAR_DEFAULT_ACCEL
+        self.waiting                = False
+        self.acceleration           = self.CAR_DEFAULT_ACCEL
         
         #   No obstacle
         if next_position + self.length / 2 + self.headway < obstacle:
@@ -160,9 +156,7 @@ class Car:
                         self.speed = (self.speed - self.location.cars[rank + 1].speed) / 2 + self.location.cars[rank + 1].speed
         
         #   Obstacle = previous car
-        elif not obstacle_is_light:
-            # On s'arrête au prochain obstacle
-            
+        elif not obstacle_is_light: 
             if not self.waiting:
                 self.position = obstacle - self.length/2 - self.headway
             #CONVENTION SENSITIVE
@@ -174,7 +168,6 @@ class Car:
         
         #   Obstacle = light
         elif next_position + self.length / 2 + self.headway >= obstacle:
-            
             if self.location.gates[1] :
                 # Everything's ok, let's go !
                 id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
@@ -193,7 +186,6 @@ class Car:
         Updates the car speed and position, manages blocked pathways and queues.
             rank    (int)   :   position on the road (0 : last in)
         """
-        
         # TODO :
         #       · (C.U1) resort to more "realistic" physics (e.g. acceleration, braking...)
         
@@ -201,4 +193,3 @@ class Car:
             return None
         
         self._act_smartly(rank)
-        

@@ -27,7 +27,6 @@ def draw_node(node):
     Dessine un carrefour donné à l'écran.
         node (Node) : le carrefour sus-cité.
     """
-    
     # TODO :
     #       · (DN1) draw the cars on the node, or alter the node drawing procedure to show there are cars, whatever
     
@@ -52,7 +51,6 @@ def draw_car(car):
     Dessine une voiture donnée à l'écran.
         car (Car) : la voiture sus-citée.
     """
-    
     d_position = car.location.begin.position
     a_position = car.location.end.position
     direction  = (a_position - d_position)
@@ -61,22 +59,22 @@ def draw_car(car):
     
     # EXPERIMENTAL: draw the cars at a scale consistent with the road
     #scale_factor = car.location.length / math.sqrt((xa-xd)**2 + (ya-yd)**2)
-    scale_factor = 1
-    
-    # Coordinates for the center
-    center_position = d_position + direction * length_covered
+    #scale_factor = 1
     
     # Relative size of the car
-    (r_width, r_length) = (car.width * scale_factor, car.length * scale_factor)
+    #(r_width, r_length) = (car.width * scale_factor, car.length * scale_factor)
+
+    # Coordinates for the center
+    center_position = d_position + direction * length_covered
     
     # Get the appropriate vectors once
     parallel   = car.location.parallel
     orthogonal = car.location.orthogonal
     
-    position1 = center_position - parallel * r_length/2 - orthogonal * r_width/2
-    position2 = center_position + parallel * r_length/2 - orthogonal * r_width/2
-    position3 = center_position + parallel * r_length/2 + orthogonal * r_width/2
-    position4 = center_position - parallel * r_length/2 + orthogonal * r_width/2
+    position1 = center_position - parallel * car.length/2 - orthogonal * car.width/2
+    position2 = center_position + parallel * car.length/2 - orthogonal * car.width/2
+    position3 = center_position + parallel * car.length/2 + orthogonal * car.width/2
+    position4 = center_position - parallel * car.length/2 + orthogonal * car.width/2
     
     # Change the color in case the car is waiting    
     color = car.color
@@ -118,15 +116,15 @@ def draw_arrow(road):
     # Get the midpoint of the road
     mid_position = (start_position + end_position)/2
     
-    # Draw an arrow on the left side!
+    # Draw an arrow on the left side
     arrow_start_position        = mid_position - road.orthogonal * 4 - road.parallel * 4
     arrow_end_position          = mid_position - road.orthogonal * 4 + road.parallel * 4
     
     arrow_head_start_position   = arrow_end_position - road.orthogonal - road.parallel
     arrow_head_end_position     = arrow_end_position + road.orthogonal - road.parallel
     
-    pygame.draw.line(screen, init.ROAD_COLOR, arrow_start_position.get_tuple(), arrow_end_position.get_tuple(), 1)
-    pygame.draw.line(screen, init.ROAD_COLOR, arrow_head_start_position.get_tuple(), arrow_head_end_position.get_tuple(), 1)
+    pygame.draw.aaline(screen, init.BLUE, arrow_start_position.get_tuple(), arrow_end_position.get_tuple())
+    pygame.draw.aaline(screen, init.BLUE, arrow_head_start_position.get_tuple(), arrow_head_end_position.get_tuple())
 
 def draw_traffic_light(position, road, gate):
     """
@@ -185,7 +183,7 @@ def draw_road(road):
         if key > 255: key = 255
         color = [key, 255 - key, 0]
     
-    pygame.draw.line(screen, color, start_position.get_tuple(), end_position.get_tuple(), 1) # EXPERIMENTAL
+    pygame.draw.aaline(screen, color, start_position.get_tuple(), end_position.get_tuple()) # EXPERIMENTAL
     
     # Draw an arrow pointing at where we go
     draw_arrow(road)
@@ -198,8 +196,7 @@ def draw_scene():
     """
     Draws the complete scene on the screen.
     Dessine la scène entière à l'écran.
-    """
-    
+    """  
     screen.fill(init.BLACK)
     
     for road in init.track.roads:
@@ -215,7 +212,6 @@ def halt():
     Closes properly the simulation.
     Quitte correctement la simulation.
     """
-    
     # TODO :
     #       · (H1) try to avoid "pygame.error: display Surface quit" on exit, by exiting the main loop first
     
@@ -227,7 +223,6 @@ def event_manager():
     Checks for users' actions and call appropriate methods.
     Vérifie les actions de l'utilisateur et réagit en conséquence.
     """
-    
     for event in pygame.event.get():
         if (event.type == pygame.QUIT):
             halt()
@@ -262,7 +257,6 @@ def main_loop():
     Boucle principale : met à jour et affiche la scène pour toujours,
                         jusqu'à ce que quelqu'un appuye sur Esc.
     """
-    
     is_running = True
     
     while is_running:

@@ -4,7 +4,6 @@ File        :   init.py
 Description :   defines the classes and constants needed for the simulation
 """
 
-#   To avoid multiple inclusions
 try:
     INIT_FILE
 except NameError:
@@ -31,8 +30,7 @@ except NameError:
     NODE_COLOR          = RED
     NODE_RADIUS_DEFAULT = 10
 
-    ROAD_COLOR  = WHITE
-   
+    ROAD_COLOR  = WHITE 
     
     DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
 
