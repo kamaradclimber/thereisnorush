@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 File        :   init.py
 Description :   defines the classes and constants needed for the simulation
@@ -12,8 +11,7 @@ except NameError:
     INIT_FILE = True
     
     #   Useful constants
-    
-    delta_t = 0.01  # TEMPORARY
+    delta_t = 0.01
     
     BLACK       = (  0,   0,   0)
     RED         = (255,   0,   0)
@@ -51,14 +49,12 @@ except NameError:
         """
         Adds a car on the demo track
         """
-
         new_car = Car(track.roads[road_number], position)
-        #new_car.join(track.roads[road_number], position)
     
     def load_demo_track():
         # Temporary testing zone
         track_parser = Track_Parser(track)
-        track_parser.load_from_file("track_default.txt")
+        track_parser.load_from_file("demo_track.txt")
         # Attention à l'ordre dans lequel on place les voitures ! si ce n'est pas dans lordre décroissant par position, tout le reste du programme est gêné !
         # (un tri, tout au début devrait résoudre ce bug issue2)
         # Évitez les doublons aussi, tant que possible ! -- Sharayanan
@@ -88,21 +84,18 @@ except NameError:
         """
         Returns a new Car instance (avoid cross-referencing)
         """
-        
         return Car(road)
         
     def new_road(new_begin = None, new_end = None, length = 100):
         """
         Returns a new Road instance (avoid cross-referencing)
         """
-        
         return Road(new_begin, new_end, length)
         
     def new_node(new_coordinates, spawning = False, radius = NODE_RADIUS_DEFAULT):
         """
         Returns a new Node instance (avoid cross-referencing)
         """
-        
         return Node(new_coordinates, spawning, radius)
     
     if (__name__ == '__main__'):

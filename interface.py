@@ -12,9 +12,9 @@ import math     # standard python library
 
 #   Settings
 
-global screen       # Screen object - Objet écran
-global is_running   # Indicates whether the simulation is running - Indique si la simulation tourne
-global debug        # Indicates whether debugging messages are displayed - Indique si les messages de débogage sont affichés
+#screen       # Screen object - Objet écran
+#is_running   # Indicates whether the simulation is running - Indique si la simulation tourne
+#debug        # Indicates whether debugging messages are displayed - Indique si les messages de débogage sont affichés
 
 screen = pygame.display.set_mode(init.RESOLUTION)   # Sets drawing surface - Met en place la surface de dessin
 debug  = True
@@ -38,7 +38,7 @@ def draw_node(node):
     
     if node.cars:
         # There are cars on the node, we may want to draw them
-        # albeit we can't use draw_car here…
+        # albeit we can't use draw_car here...
         pass
 
 def draw_car(car):
@@ -50,10 +50,10 @@ def draw_car(car):
         car (Car) : la voiture sus-citée.
     """
     
-    xd, yd = car.location.begin.coords
-    xa, ya = car.location.end.coords
+    (xd, yd) = car.location.begin.coords
+    (xa, ya) = car.location.end.coords
     
-    para_x, para_y, perp_x, perp_y = car.location.get_vectors
+    (para_x, para_y, perp_x, perp_y) = car.location.get_vectors
     length_covered = float(int(car.position)) / float(int(car.location.length))
     
     # EXPERIMENTAL: draw the cars at a scale consistent with the road
@@ -61,18 +61,17 @@ def draw_car(car):
     scale_factor = 1
     
     # Coordinates for the center
-    cx, cy = xd + length_covered * (xa - xd), yd + length_covered * (ya - yd)
+    (cx, cy) = (xd + length_covered * (xa - xd), yd + length_covered * (ya - yd))
     
     # Relative size of the car
-    r_width     = car.width * scale_factor
-    r_length    = car.length * scale_factor
+    (r_width, r_length) = (car.width * scale_factor, car.length * scale_factor)
     
     # Get the coordinates for the endpoints
     # ToDo : use relative sizes to respect the roads' scales
-    x1, y1 = cx - para_x * r_length/2 - perp_x * r_width/2, cy - para_y * r_length/2 - perp_y * r_width/2
-    x2, y2 = cx + para_x * r_length/2 - perp_x * r_width/2, cy + para_y * r_length/2 - perp_y * r_width/2
-    x3, y3 = cx + para_x * r_length/2 + perp_x * r_width/2, cy + para_y * r_length/2 + perp_y * r_width/2
-    x4, y4 = cx - para_x * r_length/2 + perp_x * r_width/2, cy - para_y * r_length/2 + perp_y * r_width/2
+    (x1, y1) = (cx - para_x * r_length/2 - perp_x * r_width/2, cy - para_y * r_length/2 - perp_y * r_width/2)
+    (x2, y2) = (cx + para_x * r_length/2 - perp_x * r_width/2, cy + para_y * r_length/2 - perp_y * r_width/2)
+    (x3, y3) = (cx + para_x * r_length/2 + perp_x * r_width/2, cy + para_y * r_length/2 + perp_y * r_width/2)
+    (x4, y4) = (cx - para_x * r_length/2 + perp_x * r_width/2, cy - para_y * r_length/2 + perp_y * r_width/2)
     
     # Change the color in case the car is waiting    
     color = car.color
