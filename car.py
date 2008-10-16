@@ -16,12 +16,12 @@ class Car:
     Those which will crowd our city >_< .
     """
     
-    CAR_DEFAULT_LENGTH      = 5
-    CAR_DEFAULT_WIDTH       = 4
-    CAR_DEFAULT_HEADWAY     = CAR_DEFAULT_LENGTH    # marge de sécurité
-    CAR_DEFAULT_SPEED       = 0
-    CAR_DEFAULT_ACCEL       = 50
-    CAR_DEFAULT_COLOR       = ( 64,  64, 255)
+    CAR_DEFAULT_LENGTH  = 5
+    CAR_DEFAULT_WIDTH   = 4
+    CAR_DEFAULT_HEADWAY = CAR_DEFAULT_LENGTH    # marge de sécurité
+    CAR_DEFAULT_SPEED   = 0
+    CAR_DEFAULT_ACCEL   = 50
+    CAR_DEFAULT_COLOR   = ( 64,  64, 255)
 
     def __init__(self, new_location, new_position = 0):
         """
@@ -69,22 +69,22 @@ class Car:
         else:
             raise Except("erreur je ne suis nulle part")
         
-        self.position       =   new_position
-        old_location        =   self.location
-        self.location       =   new_location
+        self.position   =   new_position
+        old_location    =   self.location
+        self.location   =   new_location
         self.location.cars.insert(0, self)
         
         #   Each time a car joins or leaves a node, this one has to update in order to calculate again the best configuration for the gates
-        if isinstance(old_location, Node):
-
+        if isinstance(old_location, Node) and isinstance(new_location, Road):
             old_location.update_gates()
+            self.acceleration = self.CAR_DEFAULT_ACCEL
             def my_kingdom_for_a_key(dict, item): #il faut absolument trouver la methode qui doit deja exister !:!
                 for key in dict.keys():
                     if dict[key] == item: return key
                 return None
 
             del old_location.slots_cars[my_kingdom_for_a_key(old_location.slots_cars,self)] #virer la voiture des slots du carrefour
-        elif isinstance(new_location, Node):
+        elif isinstance(new_location, Node) and isinstance(new_location, Node):
             new_location.glue_to_slot(self, old_location)
             new_location.update_gates()
         else:
@@ -96,9 +96,8 @@ class Car:
         """
         
         if self.location.cars:
-            for car in self.location.cars:
-                if car == self:
-                   self.location.cars.remove(car)
+            if car in self.location.cars:
+                self.location.cars.remove(car)
     
     def next_way(self, read_only=False):
         """
@@ -117,15 +116,13 @@ class Car:
         """
         Returns the position of the obstacle ahead of the car
         """
-        obstacle = 0
-        obstacle_is_light = False
         if rank >= len(self.location.cars) - 1: 
             obstacle_is_light = True
             if self.location.gates[1]:
-                # The traffic lights are green: go on (even a little bit further)
+                # The traffic lights are green : go on (even a little bit further)
                 obstacle = self.location.length + self.headway
             else:
-                # They are red: stop
+                # They are red : stop
                 obstacle = self.location.length
         else:
             obstacle_is_light = False
@@ -133,7 +130,10 @@ class Car:
 
         return obstacle, obstacle_is_light
     
-    def _act_smartly(self, rank, obstacle, obstacle_is_light, next_position):
+    def _act_smartly(self, rank):
+        next_position               = self.position + self.speed * delta_t
+        obstacle, obstacle_is_light = self._next_obstacle(rank)
+        
         #   No obstacle
         if next_position + self.length / 2 + self.headway < obstacle:
             # « 1 trait danger, 2 traits sécurité : je fonce ! »
@@ -141,13 +141,14 @@ class Car:
             
             if self.speed + self.acceleration * delta_t >= self.location.max_speed:
                 self.speed = self.location.max_speed
+                self.acceleration = 0
             elif self.speed < self.location.max_speed:
                 self.speed += self.acceleration * delta_t
             
             #   EXPERIMENTAL : accounting for the deceleration in front of an obstacle
             # There is a problem with this part: imho the car should not decelerate until either the car ahead does, or the traffic lights are red! Plus, this should be done using acceleration, not speed directly-- Sharayanan
             # I've done this because in real life, when a car arrives at a crossroad, it has to decelerate by security and because it cannot turn while moving so fast ; your second point is alright, but more difficult to implement -- Ch@hine
-            if (self.position + self.speed * 30 * delta_t + self.length / 2 + self.headway > obstacle):
+            if (self.position + self.speed * 30 * delta_t + self.length/2 + self.headway > obstacle):
                 if obstacle_is_light:
                     if self.speed > 5:
                         self.speed /= 1.5
@@ -192,9 +193,5 @@ class Car:
         if not isinstance(self.location, Road):
             return None
         
-        obstacle, obstacle_is_light = self._next_obstacle(rank)
-        
-        next_position = self.position + self.speed * delta_t
-
-        self._act_smartly(rank, obstacle, obstacle_is_light, next_position)
+        self._act_smartly(rank)
         
