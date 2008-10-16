@@ -104,7 +104,7 @@ class Node:
                 
                 chosen_road = self.leaving_roads[randint(0, len(self.leaving_roads) - 1)]
                 if chosen_road.is_free:
-                    new_car = init.new_car([], chosen_road)
+                    new_car = init.new_car(chosen_road)
         
         for car in self.cars:
             self.update_car(car)

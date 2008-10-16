@@ -52,7 +52,7 @@ except NameError:
         Adds a car on the demo track
         """
 
-        new_car = Car([], track.roads[road_number], position)
+        new_car = Car(track.roads[road_number], position)
         #new_car.join(track.roads[road_number], position)
     
     def load_demo_track():
@@ -84,12 +84,12 @@ except NameError:
         add_demo_car(14,20)
         add_demo_car(14,10)
     
-    def new_car(new_path, road):
+    def new_car(road):
         """
         Returns a new Car instance (avoid cross-referencing)
         """
         
-        return Car(new_path, road)
+        return Car(road)
         
     def new_road(new_begin = None, new_end = None, length = 100):
         """
