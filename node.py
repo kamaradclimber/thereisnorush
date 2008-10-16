@@ -28,9 +28,11 @@ class Node:
         self.incoming_roads = []
         self.leaving_roads  = []
         self.cars           = []
+        self.cars_slots     = {}
+        self.slots_roads    = []
         self.spawning       = new_spawning
         self.spawn_timer    = time.get_ticks()
-        self.max_cars = 42
+        self.max_cars = 5
         self.slots = [(None, None) for i in range(self.max_cars)]
     
     def add_me(self, object): #cet ajout doit se faire de facon géométrique ?
@@ -49,8 +51,8 @@ class Node:
             self.set_gate(road, True)
         if road.total_waiting_cars > 8 and (not am_i_at_the_beginning(road)): # priorité  1- pas trop de queue pour rentrer sur le carrefour
             self.set_gate(road, True)
-   
-        if road.last_gate_update(1) > 10000: # priorité 1- pas trop d'attente
+        
+        if road.last_gate_update(LEAVING_GATE) > 10000 and not road.gates[LEAVING_GATE] and road.total_waiting_cars > 0: # priorité 1- pas trop d'attente
             self.set_gate(road, True)
     
     def update_gates(self):
