@@ -84,11 +84,11 @@ class Car:
                 return None
 
             del old_location.slots_cars[my_kingdom_for_a_key(old_location.slots_cars,self)] #virer la voiture des slots du carrefour
-        elif isinstance(new_location, Node) and isinstance(new_location, Node):
+        elif isinstance(new_location, Node) and isinstance(old_location, Road):
             new_location.glue_to_slot(self, old_location)
             new_location.update_gates()
         else:
-            raise Exception('ERROR (in join()): the car is teleporting!')
+            raise Exception('ERROR (in join()): the car is teleporting !')
     
     def die(self):
         """
