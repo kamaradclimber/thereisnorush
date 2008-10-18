@@ -29,6 +29,8 @@ class Track:
         else:
             self.roads = new_roads
    
+        # EXPERIMENTAL
+        self.picture = None 
 
 class Track_Parser:
 
@@ -40,7 +42,7 @@ class Track_Parser:
         """
         self.track = track
 
-    def load_from_file(self, file_name):
+    def load_from_file(self, file_name, file_picture = ''):
         """
         Loads a track from a textfile, checks its validity, parses it
         and loads it in the simulation.
@@ -54,6 +56,10 @@ class Track_Parser:
             file_data   = file(file_name)
         except IOError:
             raise Exception("%s cannot be loaded (current directory is : %s)" % (file_name, getcwd())) 
+            
+        if len(file_picture) > 0:
+            import pygame
+            self.track.picture = pygame.image.load(file_picture)
         
         for line in file_data:
             line = line.strip()

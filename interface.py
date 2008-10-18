@@ -199,6 +199,9 @@ def draw_scene():
     """  
     screen.fill(init.BLACK)
     
+    if init.track.picture:
+        screen.blit(init.track.picture, (0,0))
+    
     for road in init.track.roads:
         draw_road(road)
     for node in init.track.nodes:

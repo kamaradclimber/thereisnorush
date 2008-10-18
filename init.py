@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 File        :   init.py
 Description :   defines the classes and constants needed for the simulation
@@ -52,7 +52,7 @@ except NameError:
     def load_demo_track():
         # Temporary testing zone
         track_parser = Track_Parser(track)
-        track_parser.load_from_file("demo_track.txt")
+        track_parser.load_from_file("demo_track.txt", "demo_track.png")
         # CONVENTION SENSITIVE
         add_demo_car(3,5)
         add_demo_car(6,50)
@@ -92,6 +92,16 @@ except NameError:
         Returns a new Node instance (avoid cross-referencing)
         """
         return Node(new_coordinates, spawning, radius)
+    
+    def find_key(dic, val):
+        """
+        Finds the key associated to a value in a dictionnary
+        """
+        candidates = [k for k, v in dic.iteritems() if v == val]
+        if len(candidates) > 0:
+            return candidates[0]
+        else:
+            return None 
     
     if (__name__ == '__main__'):
         print "You should run interface.py instead of this file !"

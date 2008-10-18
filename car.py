@@ -6,6 +6,7 @@ Description :   defines the class "Car"
 
 delta_t = 0.01
 
+import init
 from random import randint
 from road   import Road
 from node   import Node
@@ -19,7 +20,7 @@ class Car:
     CAR_DEFAULT_HEADWAY = CAR_DEFAULT_LENGTH    # marge de sécurité
     CAR_DEFAULT_SPEED   = 0
     CAR_DEFAULT_ACCEL   = 50
-    CAR_DEFAULT_COLOR   = ( 64,  64, 255)
+    CAR_DEFAULT_COLOR   = (255, 255, 255) #( 64,  64, 255)
 
     def __init__(self, new_location, new_position = 0):
         """
@@ -63,7 +64,7 @@ class Car:
         if self.location and self in self.location.cars:
             self.location.cars.remove(self)
         else:
-            raise Except("WARNING : a car had no location !")
+            raise Except("WARNING (in car.join()): a car had no location !")
         
         self.position   =   new_position
         old_location    =   self.location
@@ -74,17 +75,19 @@ class Car:
         if isinstance(old_location, Node) and isinstance(new_location, Road):
             old_location.update_gates()
             self.acceleration = self.CAR_DEFAULT_ACCEL
-            def my_kingdom_for_a_key(dict, item): #il faut absolument trouver la methode qui doit deja exister !:!
-                for key in dict.keys():
-                    if dict[key] == item: return key
-                return None
 
-            del old_location.slots_cars[my_kingdom_for_a_key(old_location.slots_cars,self)] #virer la voiture des slots du carrefour
+            car_slot = init.find_key(old_location.slots_cars, self)
+            
+            if car_slot is None:
+                raise Exception("ERROR (in car.join()): a car had no old_location.slot !")
+            else:
+                #del old_location.slots_cars[car_slot] #virer la voiture des slots du carrefour
+                old_location.slots_cars[car_slot] = None
         elif isinstance(new_location, Node) and isinstance(old_location, Road):
             new_location.glue_to_slot(self, old_location)
             new_location.update_gates()
         else:
-            raise Exception('ERROR (in join()) : the car is teleporting !')
+            raise Exception('ERROR (in car.join()) : the car is teleporting !')
     
     def die(self):
         """
@@ -96,7 +99,7 @@ class Car:
             else:
                 raise Except("WARNING : a car had no location !")
     
-    def next_way(self, read_only=True):
+    def next_way(self, read_only = True):
         """
         Expresses the cars' wishes :P
         """
@@ -171,13 +174,12 @@ class Car:
             if self.location.gates[1] :
                 # Everything's ok, let's go !
                 id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
+                
                 if not self.location.end.slots_cars.has_key(id_slot): #le slot correspondant est vide
                     self.waiting = False
                     self.join(self.location.end)
-                else: #le slot est plein
-                    print "je ne peux pas rentrer dans le carrefour"
             else:
-                # We have a closed gate in front of us : stop & align
+
                 self.position = self.location.length - self.headway - self.length / 2
                 self.waiting = True
                 self.acceleration = 0
