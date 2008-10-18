@@ -96,17 +96,17 @@ class Car:
             else:
                 raise Except("WARNING : a car had no location !")
     
-    def next_way(self, read_only=False):
+    def next_way(self, read_only=True):
         """
         Expresses the cars' wishes :P
         """
-        # TEMPORARY 
         if len(self.path) == 0:
             return 0
         else:
+            next = self.path[0]
             if not read_only:
                 del self.path[0]
-            return self.path[0]
+            return next
 
     def _next_obstacle(self, rank):
         """
@@ -171,11 +171,13 @@ class Car:
             if self.location.gates[1] :
                 # Everything's ok, let's go !
                 id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
-                #if and not self.location.end.slots_cars.has_key(id_slot): #le slot correspondant est vide
-                self.waiting = False
-                self.join(self.location.end)
+                if not self.location.end.slots_cars.has_key(id_slot): #le slot correspondant est vide
+                    self.waiting = False
+                    self.join(self.location.end)
+                else: #le slot est plein
+                    print "je ne peux pas rentrer dans le carrefour"
             else:
-                # We have a closed gate in front of us : stop & align or the fronted (the 'en-face') slot is full
+                # We have a closed gate in front of us : stop & align
                 self.position = self.location.length - self.headway - self.length / 2
                 self.waiting = True
                 self.acceleration = 0

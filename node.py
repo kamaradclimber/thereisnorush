@@ -44,6 +44,7 @@ class Node:
             rand=randint(0,self.max_cars-1)
             if not self.slots_roads[rand]: #l'emplacement est libre
                 self.slots_roads[rand] = road
+                print "attribution d'un slot à une route",id(self),rand,id(road)
                 break
             if i == 99: #on admet que tout est plein mais il faut quand meme ajouter cette route, tant pis, cest qu'on a mal concu le self.max_cars
                 self.max_cars += 1
@@ -103,50 +104,47 @@ class Node:
         """
         Updates a given car on the node
         """
-        # TODO :
-        #       · (N.UC1) check for position on the node to account for rotation (cf. N.U2)
         
         def my_kingdom_for_a_key(dict, item): #il faut absolument trouver la methode qui doit deja exister !:! #doublon mais temporaire
             for key in dict.keys():
                 if dict[key] == item: return key
-        # TEMPORARY : go to where you want
         next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
         car_slot = my_kingdom_for_a_key(self.slots_cars,car)
         
         if car_slot:
             # There is an issue with the car_slot thing : it never points to the good road!
-            if (self.leaving_roads[next_way].is_free) and self.slots_roads[car_slot] == self.leaving_roads[next_way]: #la route sur laquelle on veut aller est vidéeet surtout _en face_  du slot de la voiture
-                car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # No need for remaining_points since we start from *zero*
+            #car_slot does not point to a road but to a slot where the current car is - kamaradclimber
+            if (self.leaving_roads[next_way].is_free) and id(self.slots_roads[car_slot]) == id(self.leaving_roads[next_way]): #vaut-il mieux comparer des objets ou leurs id ? 
+            #la route sur laquelle on veut aller est vidée et surtout _en face_  du slot de la voiture
+                car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # cette fois on fait une lecture destructive
             elif (self.leaving_roads[next_way].is_free):
-                print "Aïe ! J'ai pas de car_slot ! Mais comment je suis arrivée là, moi ? Sauvons-nous !"
-                car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # No need for remaining_points since we start from *zero*
+                print car, car_slot, id(self.leaving_roads[next_way]), id(self.slots_roads[car_slot])
+                pass
     def update(self):
         """
         Updates the node: rotate the cars, dispatch them...
         """
-        # TODO :
-        #       · (N.U2) Implement cars' rotation on the node before calling update_car
-        self.time += 1 #on m'appelle à chaque tour
 
-        #Rotation du carrefour
-        if self.time == 0:
+        self.time += 1 #on m'appelle à chaque tour
+        if self.give_time == 0: #Rotation du carrefour
             def list_rotate(list): return [list[-1]] + list[0:len(list)-1] #implémante la rotation d'une liste # à déplacer
             self.slots_roads =  list_rotate(self.slots_roads)
+            #if len(self.cars) !=0: print "j'ai tourné"
 
-        
         self.update_gates() # first, update gates, unless it should be unnecessary
         
-        # We are a "spawn node" : let's add a car at periodic rates
-        if self.spawning and len(self.leaving_roads):
+        if self.spawning and len(self.leaving_roads): # We are a "spawn node" : let's add a car at periodic rates
             if time.get_ticks() - self.spawn_timer > SPAWN_TIME:
                 self.spawn_timer = time.get_ticks()
                 
                 chosen_road = self.leaving_roads[randint(0, len(self.leaving_roads) - 1)]
                 if chosen_road.is_free:
                     new_car = init.new_car(chosen_road)
-        
-        for car in self.cars:
+
+        for slot,car in self.slots_cars.items():
+
             self.update_car(car)
+
     
     def set_gate(self, road, state):
         """
@@ -175,8 +173,8 @@ class Node:
         return (len(self.cars) >= self.max_cars)
 
     @property
-    def time(self):
+    def give_time(self):
         """
         Donne le 'temps' depuis écoulé depuis la dernière rotation du carrefour.
         """
-        return self.time % 1
+        return self.time % 4
