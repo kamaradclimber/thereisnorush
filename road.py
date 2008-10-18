@@ -5,7 +5,6 @@ File        :   road.py
 Description :   defines the class "Road"
 """
 
-import init
 from pygame import time
 from math   import sqrt
 

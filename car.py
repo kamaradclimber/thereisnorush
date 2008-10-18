@@ -4,7 +4,7 @@ File        :   car.py
 Description :   defines the class "Car"
 """
 
-delta_t = 0.01
+delta_t = 0.1
 
 import init
 from random import randint
@@ -44,7 +44,6 @@ class Car:
         if isinstance(new_location, Road):
             self.location.cars.insert(0, self)
         else:
-            print new_location
             raise ValueError('new_location should be a Road')
         
         self.generate_path()

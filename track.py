@@ -58,8 +58,11 @@ class Track_Parser:
             raise Exception("%s cannot be loaded (current directory is : %s)" % (file_name, getcwd())) 
             
         if len(file_picture) > 0:
-            import pygame
-            self.track.picture = pygame.image.load(file_picture)
+            from pygame import image 
+            try:
+                self.track.picture = image.load(file_picture)
+            except IOError:
+                raise Exception("%s cannot be loaded (current directory is : %s)" % (file_picture, getcwd()))                 
         
         for line in file_data:
             line = line.strip()

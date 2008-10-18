@@ -10,7 +10,7 @@ except NameError:
     INIT_FILE = True
     
     #   Useful constants
-    delta_t = 0.01
+    delta_t = 0.1
     
     BLACK       = (  0,   0,   0)
     RED         = (255,   0,   0)
@@ -30,17 +30,22 @@ except NameError:
     NODE_COLOR          = RED
     NODE_RADIUS_DEFAULT = 10
 
-    ROAD_COLOR  = WHITE 
+    ROAD_COLOR      = WHITE 
     
     DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
-
-    from os     import getcwd   # standard python library, ne pas tout prendre, c'est plus propre :-)
-    from track  import Track
-    from track  import Track_Parser
-    from car    import Car 
-    from road   import Road
-    from node   import Node
     
+    REVISION_NUMBER = 97
+
+    try:
+        from os     import getcwd
+        from track  import Track
+        from track  import Track_Parser
+        from car    import Car 
+        from road   import Road
+        from node   import Node
+    except:
+        pass
+        
     #   TESTING ZONE
     
     def add_demo_car(road_number, position):
@@ -102,9 +107,15 @@ except NameError:
             return candidates[0]
         else:
             return None 
+            
+    def shift_list(list):
+        """
+        Effects a shift on a list 
+        """
+        return [list[-1]] + list[0:len(list)-1]
     
     if (__name__ == '__main__'):
-        print "You should run interface.py instead of this file !"
+        raise Exception("You should run interface.py instead of this file !")
     else:
         track = Track()
         load_demo_track()

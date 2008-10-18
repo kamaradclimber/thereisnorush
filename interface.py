@@ -7,16 +7,8 @@ Description :   Manages the displays and main loop.
 
 import init     # ./init.py
 import pygame   # http://www.pygame.org
-import sys      # standard python library
-import math     # standard python library
 
-#   Settings
-
-#screen       # Screen object - Objet écran
-#is_running   # Indicates whether the simulation is running - Indique si la simulation tourne
-#debug        # Indicates whether debugging messages are displayed - Indique si les messages de débogage sont affichés
-
-screen = pygame.display.set_mode(init.RESOLUTION)   # Sets drawing surface - Met en place la surface de dessin
+screen = pygame.display.set_mode(init.RESOLUTION)
 debug  = True
 
 def draw_node(node):
@@ -28,7 +20,7 @@ def draw_node(node):
         node (Node) : le carrefour sus-cité.
     """
     # TODO :
-    #       · (DN1) draw the cars on the node, or alter the node drawing procedure to show there are cars, whatever
+    #       · (DN1) draw the cars on the node
     
     pygame.draw.circle(screen, init.NODE_COLOR, node.position.ceil().get_tuple(), init.NODE_WIDTH)
     
@@ -57,12 +49,8 @@ def draw_car(car):
     
     length_covered = float(int(car.position)) / float(int(car.location.length))
     
-    # EXPERIMENTAL: draw the cars at a scale consistent with the road
-    #scale_factor = car.location.length / math.sqrt((xa-xd)**2 + (ya-yd)**2)
-    #scale_factor = 1
-    
-    # Relative size of the car
-    #(r_width, r_length) = (car.width * scale_factor, car.length * scale_factor)
+    # Get them once
+    (r_width, r_length) = (car.width, car.length)
 
     # Coordinates for the center
     center_position = d_position + direction * length_covered
@@ -71,10 +59,10 @@ def draw_car(car):
     parallel   = car.location.parallel
     orthogonal = car.location.orthogonal
     
-    position1 = center_position - parallel * car.length/2 - orthogonal * car.width/2
-    position2 = center_position + parallel * car.length/2 - orthogonal * car.width/2
-    position3 = center_position + parallel * car.length/2 + orthogonal * car.width/2
-    position4 = center_position - parallel * car.length/2 + orthogonal * car.width/2
+    position1 = center_position - parallel * r_length/2 - orthogonal * r_width/2
+    position2 = center_position + parallel * r_length/2 - orthogonal * r_width/2
+    position3 = center_position + parallel * r_length/2 + orthogonal * r_width/2
+    position4 = center_position - parallel * r_length/2 + orthogonal * r_width/2
     
     # Change the color in case the car is waiting    
     color = car.color
@@ -96,7 +84,7 @@ def draw_text(x = screen.get_rect().centerx, y = screen.get_rect().centery, mess
     """
     if not pygame.font:
         # The (optional) pygame.font module is not supported, we cannot draw text
-        print "ERROR : the pygame.font module is not supported, cannot draw text."
+        raise Exception("ERROR : the pygame.font module is not supported, cannot draw text.")
     else:
         if not font:
             # We use a default font if none is provided
@@ -135,10 +123,11 @@ def draw_traffic_light(position, road, gate):
     """
     
     TF_RADIUS = 2
-    state = road.gates[gate]
+    width     = 0
+    state     = road.gates[gate]
     
     start_position  = position + road.orthogonal * 4 - road.parallel * 8
-    d_position      = -road.parallel * TF_RADIUS*2
+    d_position      = -road.parallel * TF_RADIUS * 2
     
     for i in range(3):
         if (state) and (i == 0):
@@ -166,12 +155,8 @@ def draw_road(road):
     (start_position, end_position) = (road.begin.position.ceil(), road.end.position.ceil())
    
     # This is not perfect… but it's ok for now I guess -- Sharayanan
-    #draw_traffic_light(x_start + 4, y_start + 4, road.gates[0])
     draw_traffic_light(end_position, road, 1)
    
-    # EXPERIMENTAL: color the road from green (empty) to red (full)
-    # Model : color key proportional to traffic density (N_cars/L_road)
-    
     color = init.GREEN
     key = 0
     if road.cars and init.DISPLAY_DENSITY:
@@ -197,8 +182,13 @@ def draw_scene():
     Draws the complete scene on the screen.
     Dessine la scène entière à l'écran.
     """  
-    screen.fill(init.BLACK)
-    
+    try:
+        screen.fill(init.BLACK)
+    except pygame.error, exc:
+        # Avoid errors during unloading
+        exit()
+        
+    # EXPERIMENTAL
     if init.track.picture:
         screen.blit(init.track.picture, (0,0))
     
@@ -215,9 +205,6 @@ def halt():
     Closes properly the simulation.
     Quitte correctement la simulation.
     """
-    # TODO :
-    #       · (H1) try to avoid "pygame.error: display Surface quit" on exit, by exiting the main loop first
-    
     is_running = False
     pygame.quit()
   
@@ -284,7 +271,7 @@ if __name__ == "__main__":
     #   please do not shout everywhere, i agree on your point, but this particular function may remain, i think -kamaradclimber
     # Please don't *shout*, this is not a function, and this is required here -- Sharayanan
     pygame.init()
-    pygame.display.set_caption("Thereisnorush (unstable)")
+    pygame.display.set_caption("Thereisnorush (unstable) - r" + str(init.REVISION_NUMBER))
     
     # Main loop
     main_loop()
