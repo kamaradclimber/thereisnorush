@@ -6,23 +6,24 @@ Description :   defines the class "Track"
 """
 
 import init
+from roundabout import Roundabout
 
 class Track:
     """
-    Our city model : a mathematical graph made of nodes, linked to each other by roads.
+    Our city model : a mathematical graph made of roundabouts, linked to each other by roads.
     """
     
-    def __init__(self, new_nodes = [], new_roads = []):
+    def __init__(self, new_roundabouts = [], new_roads = []):
         """
-        Constructor method : creates a track given the nodes and roads, if any.
-            new_nodes   (list)  :   a list of the nodes
+        Constructor method : creates a track given the roundabouts and roads, if any.
+            new_roundabouts   (list)  :   a list of the roundabouts
             new_roads   (list)  :   a list of the roads
         """
         
-        if not isinstance(new_nodes, list):
-            self.nodes = []
+        if not isinstance(new_roundabouts, list):
+            self.roundabouts = []
         else:
-            self.nodes = new_nodes
+            self.roundabouts = new_roundabouts
         
         if not isinstance(new_roads, list):
             self.roads = []
@@ -34,7 +35,7 @@ class Track:
 
 class Track_Parser:
 
-    NODE        = "Node"
+    ROUNDABOUT  = "Roundabout"
     ROAD        = "Road"
 
     def __init__(self, track):
@@ -77,13 +78,13 @@ class Track_Parser:
         """
         parse_errors = []
         elements = line.replace(',', ' ').split()
-        if elements[0] == self.NODE:
+        if elements[0] == self.ROUNDABOUT:
             args = [int(item) for item in elements[1:]]
-            node = init.new_node(*args)
-            self.track.nodes.append(node)
+            roundabout = Roundabout(*args)
+            self.track.roundabouts.append(roundabout)
         elif elements[0] == self.ROAD:
             args = [int(item) for item in elements[1:]]
-            new_road = init.new_road(self.track.nodes[args[0]], self.track.nodes[args[1]])
+            new_road = init.new_road(self.track.roundabouts[args[0]], self.track.roundabouts[args[1]])
             self.track.roads.append(new_road)
         else:
-            raise Exception("ERROR : unknown element type '" + kind + "' !")
+            raise Exception("ERROR : unknown element type '" + elements[0] + "' !")

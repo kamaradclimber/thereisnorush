@@ -1,26 +1,21 @@
 # -*- coding: utf-8 -*-
-
 """
 File        :   road.py
 Description :   defines the class "Road"
 """
 
+import __init__
 from pygame import time
 from math   import sqrt
-
-ROAD_DEFAULT_MAX_SPEED  = 50
-ROAD_DEFAULT_LENGTH     = 100
-ROAD_DEFAULT_WIDTH      = 5
 
 class Road:
     """
     Connection between 2 nodes ; one-way only.
     """
-    
     def __init__(   self,
                     new_begin       = None,
                     new_end         = None,
-                    new_max_speed   = ROAD_DEFAULT_MAX_SPEED):
+                    new_max_speed   = __init__.ROAD_DEFAULT_MAX_SPEED):
         """
         Constructor method : creates a new road.
             new_begin  (Node)    : starting point for the road
@@ -36,9 +31,7 @@ class Road:
         self.gates          = [True, False]    # [gate at the beginning, gate at the end]
         self.parallel       = None
         self.orthogonal     = None
-        self.width          = ROAD_DEFAULT_WIDTH
-        
-        self._set_vectors()
+        self.width          = __init__.ROAD_DEFAULT_WIDTH
         
         self.end.incoming_roads.append(self)
         self.begin.leaving_roads.append(self)
@@ -90,25 +83,25 @@ class Road:
         
         return None
     
-    def _set_vectors(self):
+    @property
+    def reference(self):
         """
         Returns the unit parallel and perpendicular vectors to a the road
         """
-        # Do not compute unless necessary
-        if self.parallel is None or self.orthogonal is None:
-            # Get the normalized parallel vector to the road
-            self.parallel = self.end.position - self.begin.position
-            self.parallel.normalize()
-            
-            # Get the normalized orthogonal vector to the road
-            self.orthogonal = self.parallel.get_orthogonal()
+        #   Normalized parallel vector
+        parallel = self.end.position - self.begin.position
+        parallel.normalize()
+        
+        #   Normalized orthogonal vector
+        orthogonal = parallel.get_orthogonal()
+
+        return (parallel, orthogonal)
     
     @property
     def total_waiting_cars(self):
         """
         Returns the number of waiting cars on the road.
         """
-        
         total = 0
         if self.cars:
             for car in self.cars:

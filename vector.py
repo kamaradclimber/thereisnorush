@@ -2,18 +2,6 @@
 """
 File        :   vector.py
 Description :   a simple physics 2D vector class
-
-Licence: Public Domain
-Author: Chris Wood (http://grace.2ya.com)
-    20 September 2002
-
-Any game involving 2D physics could do with a class similar to this one. This
-class is as fast as possible while still providing all the functionality you
-would commonly need.
-
-Note that storing the vector as cartesian coordinates (rather than polar or
-both) makes for faster for vector addition. It is assumed that you won't often
-need the polar coordinates.
 """
 
 from math import sin, cos, atan, hypot

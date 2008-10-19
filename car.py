@@ -6,45 +6,40 @@ Description :   defines the class "Car"
 
 delta_t = 0.1
 
+import __init__
 import init
-from random import randint
-from road   import Road
-from node   import Node
+from random     import randint
+from road       import Road
+from roundabout import Roundabout
 
 class Car:
     """
     Those which will crowd our city >_< .
     """
-    CAR_DEFAULT_LENGTH  = 5
-    CAR_DEFAULT_WIDTH   = 4
-    CAR_DEFAULT_HEADWAY = CAR_DEFAULT_LENGTH    # marge de sécurité
-    CAR_DEFAULT_SPEED   = 0
-    CAR_DEFAULT_ACCEL   = 50
-    CAR_DEFAULT_COLOR   = (255, 255, 255) #( 64,  64, 255)
 
     def __init__(self, new_location, new_position = 0):
         """
         Constructor method : a car is provided a (for now unmutable) sequence of directions.
             new_path (list)  :   a list of waypoints
-            new_road (Road) :   the road where the car originates (for now, let's forbid the original location to be a node)
+            new_road (Road) :   the road where the car originates (for now, let's forbid the original location to be a roundabout)
         headway: Desired headway to the preceding car / Distance souhaitée par rapport à la voiture devant
         Définie par la liste de ses directions successives, pour le moment cette liste est fixe.
         """
         self.path           = []
         self.waiting        = False
-        self.length         = self.CAR_DEFAULT_LENGTH
-        self.width          = self.CAR_DEFAULT_WIDTH
-        self.speed          = self.CAR_DEFAULT_SPEED 
+        self.length         = __init__.CAR_DEFAULT_LENGTH
+        self.width          = __init__.CAR_DEFAULT_WIDTH
+        self.speed          = __init__.CAR_DEFAULT_SPEED 
         self.position       = new_position               
-        self.headway        = self.CAR_DEFAULT_HEADWAY
-        self.color          = self.CAR_DEFAULT_COLOR 
-        self.acceleration   = self.CAR_DEFAULT_ACCEL     
+        self.headway        = __init__.CAR_DEFAULT_HEADWAY
+        self.color          = __init__.CAR_DEFAULT_COLOR 
+        self.acceleration   = __init__.CAR_DEFAULT_ACCEL     
         self.location       = new_location
 
         if isinstance(new_location, Road):
             self.location.cars.insert(0, self)
         else:
-            raise ValueError('new_location should be a Road')
+            raise ValueError('ERROR (in car.__init__()) : new cars must be created in a road !') # An "ERROR" is a problem that cannot be ignored : the program must then halt
         
         self.generate_path()
     
@@ -56,38 +51,62 @@ class Car:
     
     def join(self, new_location, new_position = 0):
         """
-        Allocate the car to the given location. The concept of location makes it possible to use this code for either a road or a node.
-            new_location    (Road or Node)  :   road or node that will host, if possible, the car
-            new_position    (list)          :   position in the road or in the node (note that the meaning of the position depends on the kind of location)
+        Allocate the car to the given location. The concept of location makes it possible to use this code for either a road or a roundabout.
+            new_location    (Road or Roundabout)  :   road or roundabout that will host, if possible, the car
+            new_position    (list)          :   position in the road or in the roundabout (note that the meaning of the position depends on the kind of location)
         """
         if self.location and self in self.location.cars:
             self.location.cars.remove(self)
         else:
-            raise Except("WARNING (in car.join()): a car had no location !")
+            raise Except("WARNING (in car.join()) : a car had no location !") # A "WARNING" is a problem that doesn't prevent the program to keep running, but that should not happen
         
-        self.position   =   new_position
-        old_location    =   self.location
-        self.location   =   new_location
-        self.location.cars.insert(0, self)
-        
-        #   Each time a car joins or leaves a node, this one has to update in order to calculate again the best configuration for the gates
-        if isinstance(old_location, Node) and isinstance(new_location, Road):
-            old_location.update_gates()
-            self.acceleration = self.CAR_DEFAULT_ACCEL
+        #   Each time a car joins or leaves a roundabout, this one has to update in order to calculate again the best configuration for the gates
 
-            car_slot = init.find_key(old_location.slots_cars, self)
+        #   Roundabout -> road
+        if isinstance(self.location, Roundabout) and isinstance(new_location, Road):
+            car_slot = init.find_key(self.location.slots_cars, self)
             
+            #   Remove car from its slot
             if car_slot is None:
-                raise Exception("ERROR (in car.join()): a car had no old_location.slot !")
+                raise Exception("WARNING (in car.join()) : a car had no old_location.slot !")
             else:
-                #del old_location.slots_cars[car_slot] #virer la voiture des slots du carrefour
-                old_location.slots_cars[car_slot] = None
-        elif isinstance(new_location, Node) and isinstance(old_location, Road):
-            new_location.glue_to_slot(self, old_location)
+                self.location.slots_cars[car_slot] = None
+
+            self.location.update_gates() # this update has to be after removing the car from the roundabout
+            self.acceleration = __init__.CAR_DEFAULT_ACCEL
+
+        #   Road -> roundabout
+        elif isinstance(new_location, Roundabout) and isinstance(self.location, Road):
+            self.catch_slot(new_location)
             new_location.update_gates()
+
+        #   Road -> road OR roundabout -> roundabout : ERROR
         else:
-            raise Exception('ERROR (in car.join()) : the car is teleporting !')
+            raise Exception('ERROR (in car.join()) : road to road OR roundabout to roundabout joining !')
+        
+        #   Update data
+        self.position = new_position
+        self.location = new_location
+        self.location.cars.insert(0, self)
     
+    def catch_slot(self, roundabout):
+        """
+        Ajoute la voiture sur le carrefour en l'ajoutant sur le slot (supposé vide) en face de la route d'où elle vient
+        """
+        if self.location in roundabout.slots_roads:
+            id_slot = roundabout.slots_roads.index(self.location)
+    
+            if not roundabout.slots_cars.has_key(id_slot):
+                roundabout.slots_cars[id_slot] = self
+            else:
+                if roundabout.slots_cars[id_slot] is None:
+                    roundabout.slots_cars[id_slot] = self
+                elif roundabout.slots_cars[id_slot] != self:
+                    # The slot is not empty AND this is a different car that wants to go on it
+                    raise Exception("ERROR (in roundabout.glue_to_slot()) : slots_cars[id_slot] should be empty, be is not !")
+        else:
+            raise Exception("ERROR (in roundabout.glue_to_slot()) : Je viens d'un endroit inconnu !")
+
     def die(self):
         """
         Kills the car, which simply disappear ; may be mostly used in dead-ends.
@@ -96,12 +115,13 @@ class Car:
             if car in self.location.cars:
                 self.location.cars.remove(car)
             else:
-                raise Except("WARNING : a car had no location !")
+                raise Except("WARNING (in car.die()) : a car had no location !")
     
     def next_way(self, read_only = True):
         """
         Expresses the cars' wishes :P
         """
+        #   This should be temporary : as soon as the car has reached its last waypoint, it should die -- Ch@hine
         if len(self.path) == 0:
             return 0
         else:
@@ -114,7 +134,7 @@ class Car:
         """
         Returns the position of the obstacle ahead of the car
         """
-        if rank >= len(self.location.cars) - 1: 
+        if rank >= len(self.location.cars) - 1:
             obstacle_is_light = True
             if self.location.gates[1]:
                 # The traffic lights are green : go on (even a little bit further)
@@ -133,7 +153,7 @@ class Car:
         obstacle, obstacle_is_light = self._next_obstacle(rank)
         
         self.waiting                = False
-        self.acceleration           = self.CAR_DEFAULT_ACCEL
+        self.acceleration           = __init__.CAR_DEFAULT_ACCEL
         
         #   No obstacle
         if next_position + self.length / 2 + self.headway < obstacle:
@@ -170,30 +190,33 @@ class Car:
         
         #   Obstacle = light
         elif next_position + self.length / 2 + self.headway >= obstacle:
+            #   Green light
             if self.location.gates[1] :
-                # Everything's ok, let's go !
                 id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
                 
-                if not self.location.end.slots_cars.has_key(id_slot): #The slot doesn't exist, we create it
-                    self.location.end.slots_cars[id_slot] = self 
-                    self.waiting = False
+                #   The slot doesn't exist : creation of the slot
+                if not self.location.end.slots_cars.has_key(id_slot):
+                    self.location.end.slots_cars[id_slot] = None
+
+                #   The slot is free
+                if self.location.end.slots_cars[id_slot] is None:
+                    self.location.end.slots_cars[id_slot]   = self
+                    self.waiting                            = False
                     self.join(self.location.end)
-                else: #The slot exist
-                    if self.location.end.slots_cars[id_slot] is None: # The slot is free
-                        self.location.end.slots_cars[id_slot] = self 
-                        self.waiting = False
-                        self.join(self.location.end)
-                    else:
-                        #The slot is not free
-                        self.position = self.location.length - self.headway - self.length / 2
-                        self.waiting = True
-                        self.acceleration = 0
-                        self.speed = 0
+
+                #   The slot isn't free
+                else:
+                    self.position       = self.location.length - self.headway - self.length/2
+                    self.waiting        = True
+                    self.acceleration   = 0
+                    self.speed          = 0
+
+            #   Red light
             else:
-                self.position = self.location.length - self.headway - self.length / 2
-                self.waiting = True
-                self.acceleration = 0
-                self.speed = 0
+                self.position       = self.location.length - self.headway - self.length/2
+                self.waiting        = True
+                self.acceleration   = 0
+                self.speed          = 0
 
     def update(self, rank):
         """

@@ -1,7 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 """
 File        :   init.py
-Description :   defines the classes and constants needed for the simulation
+Description :   defines the classes needed for the simulation
 """
 
 try:
@@ -9,42 +9,16 @@ try:
 except NameError:
     INIT_FILE = True
     
-    #   Useful constants
-    delta_t = 0.1
-    
-    BLACK       = (  0,   0,   0)
-    RED         = (255,   0,   0)
-    GREEN       = (  0, 255,   0)
-    BLUE        = (  0,   0, 255)
-    WHITE       = (255, 255, 255)
-    GRAY        = (190, 190, 190)
-    
-    LIGHT_RED   = (255,  64,  64)
-    LIGHT_GREEN = ( 64, 255,  64)
-    LIGHT_BLUE  = ( 64,  64, 255)
-    
-    RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (800, 600)
-    
-    NODE_WIDTH          = 3
-    NODE_HEIGHT         = 3
-    NODE_COLOR          = RED
-    NODE_RADIUS_DEFAULT = 10
-
-    ROAD_COLOR      = WHITE 
-    
-    DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
-    
-    REVISION_NUMBER = 98
-
-    try:
-        from os     import getcwd
-        from track  import Track
-        from track  import Track_Parser
-        from car    import Car 
-        from road   import Road
-        from node   import Node
-    except:
-        pass
+    #try:
+    import __init__
+    from os             import getcwd
+    from track          import Track
+    from track          import Track_Parser
+    from car            import Car 
+    from road           import Road
+    from roundabout     import Roundabout 
+    #except:
+        #pass
         
     #   TESTING ZONE
     
@@ -92,17 +66,18 @@ except NameError:
         """
         return Road(new_begin, new_end, length)
         
-    def new_node(new_coordinates, spawning = False, radius = NODE_RADIUS_DEFAULT):
+    def new_roundabout(new_coordinates, spawning = False, radius = __init__.ROUNDABOUT_RADIUS_DEFAULT):
         """
-        Returns a new Node instance (avoid cross-referencing)
+        Returns a new Roundabout instance (avoid cross-referencing)
         """
-        return Node(new_coordinates, spawning, radius)
+        return Roundabout(new_coordinates, spawning, radius)
     
-    def find_key(dic, val):
+    def find_key(dictionnary, value):
         """
-        Finds the key associated to a value in a dictionnary
+        Finds the key associated to a value in a dictionnary.
         """
-        candidates = [k for k, v in dic.iteritems() if v == val]
+        #   Note : if several keys are candidates, the "first" encountered is returned
+        candidates = [k for k, v in dictionnary.iteritems() if v == value]
         if len(candidates) > 0:
             return candidates[0]
         else:

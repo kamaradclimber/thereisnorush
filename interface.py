@@ -1,38 +1,40 @@
 # -*- coding: utf-8 -*-
-
 """
 File        :   interface.py
 Description :   Manages the displays and main loop.
 """
 
+import __init__
 import init     # ./init.py
 import pygame   # http://www.pygame.org
+from vector import Vector
 
-screen = pygame.display.set_mode(init.RESOLUTION)
+screen = pygame.display.set_mode(__init__.RESOLUTION)
 debug  = True
 
-def draw_node(node):
+def draw_roundabout(roundabout):
     """
-    Draws a given node on the screen.
-        node (Node) : the aforementioned node.
+    Draws a given roundabout on the screen.
+        roundabout (Roundabout) : the aforementioned roundabout.
     
     Dessine un carrefour donné à l'écran.
-        node (Node) : le carrefour sus-cité.
+        roundabout (Roundabout) : le carrefour sus-cité.
     """
     # TODO :
-    #       · (DN1) draw the cars on the node
+    #       · (DN1) draw the cars on the roundabout
     
-    pygame.draw.circle(screen, init.NODE_COLOR, node.position.ceil().get_tuple(), init.NODE_WIDTH)
+    pygame.draw.circle(screen, __init__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __init__.ROUNDABOUT_WIDTH)
     
-    # Nodes should be drawn as rotating crossroads, in order to draw the cars that rotate in ; the problem is that roads must not be drawn from the center of the node anymore
-    pygame.draw.circle(screen, init.NODE_COLOR, node.position.ceil().get_tuple(), init.NODE_WIDTH * 4, 1)
+    # Roundabouts should be drawn as rotating crossroads, in order to draw the cars that rotate in ; the problem is that roads must not be drawn from the center of the roundabout anymore
+    #pygame.draw.circle(screen, __init__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __init__.ROUNDABOUT_WIDTH * 4, 1)
     
-    if node.cars:
-        # There are cars on the node, we may want to draw them
+    if roundabout.cars:
+        # There are cars on the roundabout, we may want to draw them
         # albeit we can't use draw_car here...
         
-        #TEMPORARY : the number of cars on the node is written
-        draw_text(node.position.x + 10, node.position.y + 10, str(len(node.cars)))
+        #TEMPORARY : the number of cars on the roundabout is written
+        position = Vector(roundabout.position.x + 10, roundabout.position.y + 10)
+        draw_text(position, str(len(roundabout.cars)))
         pass
 
 def draw_car(car):
@@ -51,9 +53,9 @@ def draw_car(car):
     
     # Get them once
     (r_width, r_length) = (car.width, car.length)
+
     # Get the appropriate vectors once
-    parallel   = car.location.parallel
-    orthogonal = car.location.orthogonal
+    (parallel, orthogonal) = car.location.reference
 
     # Coordinates for the center
     center_position = d_position + direction * length_covered + orthogonal * car.location.width/2
@@ -66,77 +68,79 @@ def draw_car(car):
     # Change the color in case the car is waiting    
     color = car.color
     if car.waiting:
-        color = init.GRAY
+        color = __init__.RED
 
     # Draw the car 
-    pygame.draw.polygon(screen, color, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()), 0)
+    pygame.draw.polygon(screen, color, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()))
+    pygame.draw.polygon(screen, __init__.BLACK, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()), 1)
 
-def draw_text(x = screen.get_rect().centerx, y = screen.get_rect().centery, message = '', text_color = init.WHITE, back_color = init.BLACK, font = None, anti_aliasing = True):
+def draw_text(position = Vector(screen.get_rect().centerx, screen.get_rect().centery), message = '', text_color = __init__.WHITE, back_color = __init__.BLACK, font = None, anti_aliasing = True):
     """
     Draws text on the screen
-        x, y    (int)        :   position where the text is to be written
+        position    (Vector  :   position where the text is to be written
         message (str)        :   the message that is to be written
         text_color (list)    :   the color of the text to be written
         back_color (list)    :   the color on which the text is to be written
         font (pygame.font)   :   the font that will be used for the text to be written
         anti_aliasing (bool) :   whether we should antialias the text to be written
     """
+    #   The (optional) pygame.font module is not supported : cannot draw text
     if not pygame.font:
-        # The (optional) pygame.font module is not supported, we cannot draw text
-        raise Exception("ERROR : the pygame.font module is not supported, cannot draw text.")
+        raise Exception("WARNING (in draw_text()) : the pygame.font module is not supported, cannot draw text.")
     else:
+        #   No font is provided : use of a default font
         if not font:
-            # We use a default font if none is provided
             font = pygame.font.Font(None, 17)
             
         text = font.render(message, anti_aliasing, text_color, back_color)
         textRect = text.get_rect()
-        textRect.x, textRect.y = x, y
+        textRect.x, textRect.y = position.x, position.y
         screen.blit(text, textRect)
         
-def draw_arrow(road):
-    """
-    Draws lil' cuty arrows along the roads to know where they're going
-    """
-    (start_position, end_position) = (road.begin.position, road.end.position)
-
-    # Get the midpoint of the road
-    mid_position = (start_position + end_position)/2
-    
-    # Draw an arrow on the left side
-    arrow_start_position        = mid_position - road.orthogonal * 4 - road.parallel * 4
-    arrow_end_position          = mid_position - road.orthogonal * 4 + road.parallel * 4
-    
-    arrow_head_start_position   = arrow_end_position - road.orthogonal - road.parallel
-    arrow_head_end_position     = arrow_end_position + road.orthogonal - road.parallel
-    
-    pygame.draw.aaline(screen, init.BLUE, arrow_start_position.get_tuple(), arrow_end_position.get_tuple())
-    pygame.draw.aaline(screen, init.BLUE, arrow_head_start_position.get_tuple(), arrow_head_end_position.get_tuple())
+#def draw_arrow(road):
+#    """
+#    Draws lil' cuty arrows along the roads to know where they're going
+#    """
+#    (start_position, end_position) = (road.begin.position, road.end.position)
+#
+#    # Get the midpoint of the road
+#    mid_position = (start_position + end_position)/2
+#    
+#    # Draw an arrow on the left side
+#    arrow_start_position        = mid_position - road.orthogonal * 4 - road.parallel * 4
+#    arrow_end_position          = mid_position - road.orthogonal * 4 + road.parallel * 4
+#    
+#    arrow_head_start_position   = arrow_end_position - road.orthogonal - road.parallel
+#    arrow_head_end_position     = arrow_end_position + road.orthogonal - road.parallel
+#    
+#    pygame.draw.aaline(screen, __init__.BLUE, arrow_start_position.get_tuple(), arrow_end_position.get_tuple())
+#    pygame.draw.aaline(screen, __init__.BLUE, arrow_head_start_position.get_tuple(), arrow_head_end_position.get_tuple())
 
 def draw_traffic_light(position, road, gate):
     """
-    Draws a traffic light…
+    Draws a traffic light...
         x, y : coordinates
         road : the road
         gate : 1 or 0, the gate
     """
     
-    TF_RADIUS = 2
+    TF_RADIUS = 3
     width     = 0
     state     = road.gates[gate]
-    
-    start_position  = position + road.orthogonal * 4 - road.parallel * 8
-    d_position      = -road.parallel * TF_RADIUS * 2
+
+    (parallel, orthogonal) = road.reference   
+    start_position  = position + orthogonal * 6 - parallel * 12
+    d_position      = Vector(0, -1) * TF_RADIUS * 2
     
     for i in range(3):
         if (state) and (i == 0):
-            color = init.LIGHT_GREEN
+            color = __init__.LIGHT_GREEN
             width = 0
         elif (not state) and (i == 2):
-            color = init.LIGHT_RED
+            color = __init__.LIGHT_RED
             width = 0
         else:
-            color = init.GRAY
+            color = __init__.GRAY
             width = 1
         
         position = start_position + d_position * i
@@ -153,12 +157,12 @@ def draw_road(road):
     
     (start_position, end_position) = (road.begin.position.ceil(), road.end.position.ceil())
    
-    # This is not perfect… but it's ok for now I guess -- Sharayanan
-    draw_traffic_light(end_position, road, 1)
-   
-    color = init.GREEN
+    # This is not perfect... but it's ok for now I guess -- Sharayanan
+    draw_traffic_light(end_position, road, __init__.LEAVING_GATE)
+     
+    color = __init__.GREEN
     key = 0
-    if road.cars and init.DISPLAY_DENSITY:
+    if road.cars and __init__.DISPLAY_DENSITY:
         occupation = 0
         for car in road.cars:
             occupation += car.length
@@ -177,30 +181,32 @@ def draw_road(road):
         for car in road.cars:
             draw_car(car)
 
-def draw_info():
-    
-    cars_on_road = 0
-    cars_on_node = 0
-    cars_waiting = 0
-    msg = ['' for i in range(7)]
+def draw_info(): 
+    cars_on_road        = 0
+    cars_on_roundabout  = 0
+    cars_waiting        = 0
+    text                = ['' for i in range(7)]
     
     for road in init.track.roads:
         cars_on_road += len(road.cars)
         cars_waiting += road.total_waiting_cars
-    for node in init.track.nodes:
-        cars_on_node += len(node.cars)
+    for roundabout in init.track.roundabouts:
+        cars_on_roundabout += len(roundabout.cars)
     
-    msg[0] = str(len(init.track.roads)) + " routes"
-    msg[1] = str(len(init.track.nodes)) + " rond-points"
-    msg[2] = ''
+    text[0] = str(len(init.track.roads)) + " roads"
+    text[1] = str(len(init.track.roundabouts)) + " roundabouts"
+    text[2] = ''
     
-    msg[3] = str(cars_on_road + cars_on_node) + " voitures"
-    msg[4] = "  > " + str(cars_on_road) + " sur une route"
-    msg[5] = "  > " + str(cars_on_node) + " sur un rond-point"
-    msg[6] = "  > " + str(cars_waiting) + " en attente"
+    text[3] = str(cars_on_road + cars_on_roundabout) + " cars"
+    text[4] = "  > on roads : " + str(cars_on_road)
+    text[5] = "  > on roundabouts : " + str(cars_on_roundabout)
+    text[6] = "  > waiting : " + str(cars_waiting)
     
-    for i in range(len(msg)):
-        draw_text(640, 4 + 16 * i, msg[i])
+    position = Vector()
+    for i in range(len(text)):
+        position.x = 640
+        position.y = 4 + 16 * i
+        draw_text(position, text[i])
             
 def draw_scene():
     """
@@ -208,7 +214,7 @@ def draw_scene():
     Dessine la scène entière à l'écran.
     """  
     try:
-        screen.fill(init.BLACK)
+        screen.fill(__init__.BLACK)
     except pygame.error, exc:
         # Avoid errors during unloading
         exit()
@@ -219,8 +225,8 @@ def draw_scene():
     
     for road in init.track.roads:
         draw_road(road)
-    for node in init.track.nodes:
-        draw_node(node)
+    for roundabout in init.track.roundabouts:
+        draw_roundabout(roundabout)
         
     draw_info()
     
@@ -251,6 +257,7 @@ def event_manager():
         elif (event.type == pygame.MOUSEBUTTONUP):
             left_button, right_button, middle_button = pygame.mouse.get_pressed()
             x, y = pygame.mouse.get_pos()
+
         #   Keyboard button
         elif (event.type == pygame.KEYDOWN):
             keyb_state = pygame.key.get_pressed()
@@ -263,8 +270,8 @@ def event_manager():
 def update_scene():
     for road in init.track.roads:
         road.update()
-    for node in init.track.nodes:
-        node.update()
+    for roundabout in init.track.roundabouts:
+        roundabout.update()
 
 def main_loop():
     """
@@ -298,7 +305,7 @@ if __name__ == "__main__":
     #   please do not shout everywhere, i agree on your point, but this particular function may remain, i think -kamaradclimber
     # Please don't *shout*, this is not a function, and this is required here -- Sharayanan
     pygame.init()
-    pygame.display.set_caption("Thereisnorush (unstable) - r" + str(init.REVISION_NUMBER))
+    pygame.display.set_caption("Thereisnorush (testing) - r" + str(__init__.REVISION_NUMBER))
     
     # Main loop
     main_loop()
