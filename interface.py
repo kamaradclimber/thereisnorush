@@ -51,13 +51,12 @@ def draw_car(car):
     
     # Get them once
     (r_width, r_length) = (car.width, car.length)
-
-    # Coordinates for the center
-    center_position = d_position + direction * length_covered
-    
     # Get the appropriate vectors once
     parallel   = car.location.parallel
     orthogonal = car.location.orthogonal
+
+    # Coordinates for the center
+    center_position = d_position + direction * length_covered + orthogonal * car.location.width/2
     
     position1 = center_position - parallel * r_length/2 - orthogonal * r_width/2
     position2 = center_position + parallel * r_length/2 - orthogonal * r_width/2
@@ -72,7 +71,7 @@ def draw_car(car):
     # Draw the car 
     pygame.draw.polygon(screen, color, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()), 0)
 
-def draw_text(x = screen.get_rect().centerx, y = screen.get_rect().centery, message = "", text_color = init.WHITE, back_color = init.BLACK, font = None, anti_aliasing = True):
+def draw_text(x = screen.get_rect().centerx, y = screen.get_rect().centery, message = '', text_color = init.WHITE, back_color = init.BLACK, font = None, anti_aliasing = True):
     """
     Draws text on the screen
         x, y    (int)        :   position where the text is to be written
@@ -168,15 +167,41 @@ def draw_road(road):
         if key > 255: key = 255
         color = [key, 255 - key, 0]
     
-    pygame.draw.aaline(screen, color, start_position.get_tuple(), end_position.get_tuple()) # EXPERIMENTAL
+    #pygame.draw.aaline(screen, color, start_position.get_tuple(), end_position.get_tuple()) # EXPERIMENTAL
     
     # Draw an arrow pointing at where we go
-    draw_arrow(road)
+    #draw_arrow(road)
+    
     if road.cars and key < 200:
         # Do not draw cars when density exceeds ~80%
         for car in road.cars:
             draw_car(car)
+
+def draw_info():
     
+    cars_on_road = 0
+    cars_on_node = 0
+    cars_waiting = 0
+    msg = ['' for i in range(7)]
+    
+    for road in init.track.roads:
+        cars_on_road += len(road.cars)
+        cars_waiting += road.total_waiting_cars
+    for node in init.track.nodes:
+        cars_on_node += len(node.cars)
+    
+    msg[0] = str(len(init.track.roads)) + " routes"
+    msg[1] = str(len(init.track.nodes)) + " rond-points"
+    msg[2] = ''
+    
+    msg[3] = str(cars_on_road + cars_on_node) + " voitures"
+    msg[4] = "  > " + str(cars_on_road) + " sur une route"
+    msg[5] = "  > " + str(cars_on_node) + " sur un rond-point"
+    msg[6] = "  > " + str(cars_waiting) + " en attente"
+    
+    for i in range(len(msg)):
+        draw_text(640, 4 + 16 * i, msg[i])
+            
 def draw_scene():
     """
     Draws the complete scene on the screen.
@@ -196,6 +221,8 @@ def draw_scene():
         draw_road(road)
     for node in init.track.nodes:
         draw_node(node)
+        
+    draw_info()
     
     pygame.display.flip()
     pygame.display.update()

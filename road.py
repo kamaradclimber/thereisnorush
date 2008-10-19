@@ -10,6 +10,7 @@ from math   import sqrt
 
 ROAD_DEFAULT_MAX_SPEED  = 50
 ROAD_DEFAULT_LENGTH     = 100
+ROAD_DEFAULT_WIDTH      = 5
 
 class Road:
     """
@@ -35,6 +36,7 @@ class Road:
         self.gates          = [True, False]    # [gate at the beginning, gate at the end]
         self.parallel       = None
         self.orthogonal     = None
+        self.width          = ROAD_DEFAULT_WIDTH
         
         self._set_vectors()
         

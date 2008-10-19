@@ -34,7 +34,7 @@ except NameError:
     
     DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
     
-    REVISION_NUMBER = 97
+    REVISION_NUMBER = 98
 
     try:
         from os     import getcwd

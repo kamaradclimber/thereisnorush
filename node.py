@@ -66,7 +66,9 @@ class Node:
                 if self.slots_cars[id_slot] is None:
                     self.slots_cars[id_slot] = car #on suppose bien entendu que celui ci est vide
                 else:
-                    raise Exception("ERROR (in node.glue_to_slot()): slots_cars[id_slot] is not empty!")
+                    if self.slots_cars[id_slot] != car:
+                        # The slot is not empty AND this is a different car that wants to go on it
+                        raise Exception("ERROR (in node.glue_to_slot()): slots_cars[id_slot] is not empty!")
         else:
             raise Exception("ERROR (in node.glue_to_slot()): Je viens d'un endroit inconnu !")
     

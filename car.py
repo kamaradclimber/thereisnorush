@@ -174,11 +174,22 @@ class Car:
                 # Everything's ok, let's go !
                 id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
                 
-                if not self.location.end.slots_cars.has_key(id_slot): #le slot correspondant est vide
+                if not self.location.end.slots_cars.has_key(id_slot): #The slot doesn't exist, we create it
+                    self.location.end.slots_cars[id_slot] = self 
                     self.waiting = False
                     self.join(self.location.end)
+                else: #The slot exist
+                    if self.location.end.slots_cars[id_slot] is None: # The slot is free
+                        self.location.end.slots_cars[id_slot] = self 
+                        self.waiting = False
+                        self.join(self.location.end)
+                    else:
+                        #The slot is not free
+                        self.position = self.location.length - self.headway - self.length / 2
+                        self.waiting = True
+                        self.acceleration = 0
+                        self.speed = 0
             else:
-
                 self.position = self.location.length - self.headway - self.length / 2
                 self.waiting = True
                 self.acceleration = 0
