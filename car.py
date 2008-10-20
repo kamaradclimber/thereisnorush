@@ -35,6 +35,7 @@ class Car:
         self.color          = __init__.CAR_DEFAULT_COLOR 
         self.acceleration   = __init__.CAR_DEFAULT_ACCEL     
         self.location       = new_location
+        self.angriness      = 0
 
         if isinstance(new_location, Road):
             self.location.cars.insert(0, self)
@@ -47,7 +48,7 @@ class Car:
         """
         Assembles random waypoints into a "path" list.
         """
-        self.path = [randint(0, 128) for i in range(2000)]
+        self.path = [randint(0, 128) for i in range(randint(5,8))]
     
     def join(self, new_location, new_position = 0):
         """
@@ -112,8 +113,9 @@ class Car:
         Kills the car, which simply disappear ; may be mostly used in dead-ends.
         """
         if self.location.cars:
-            if car in self.location.cars:
-                self.location.cars.remove(car)
+            if self in self.location.cars:
+                self.location.cars.remove(self)
+                print "enfin arrivée, enervement: ",self.angriness
             else:
                 raise Except("WARNING (in car.die()) : a car had no location !")
     
@@ -123,7 +125,7 @@ class Car:
         """
         #   This should be temporary : as soon as the car has reached its last waypoint, it should die -- Ch@hine
         if len(self.path) == 0:
-            return 0
+            return None
         else:
             next = self.path[0]
             if not read_only:
@@ -165,9 +167,6 @@ class Car:
             elif self.speed < self.location.max_speed:
                 self.speed += self.acceleration * delta_t
             
-            #   EXPERIMENTAL : accounting for the deceleration in front of an obstacle
-            # There is a problem with this part: imho the car should not decelerate until either the car ahead does, or the traffic lights are red! Plus, this should be done using acceleration, not speed directly-- Sharayanan
-            # I've done this because in real life, when a car arrives at a crossroad, it has to decelerate by security and because it cannot turn while moving so fast ; your second point is alright, but more difficult to implement -- Ch@hine
             if (self.position + self.speed * 30 * delta_t + self.length/2 + self.headway > obstacle):
                 if obstacle_is_light:
                     if self.speed > 5:
@@ -216,6 +215,8 @@ class Car:
                 self.waiting        = True
                 self.acceleration   = 0
                 self.speed          = 0
+        #experimental - angriness
+        if self.waiting : self.angriness +=1
 
     def update(self, rank):
         """

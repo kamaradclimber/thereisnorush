@@ -108,23 +108,25 @@ class Roundabout:
         """
         Updates a given car on the roundabout 
         """
-        next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
-        car_slot = init.find_key(self.slots_cars, car)
-        
-        if car_slot is None:
-            #The car wasn't found!
-            raise Exception("ERROR (in roundabout.update_car()) : a car has no slot !")
-        
-        if self.slots_roads[car_slot] in self.leaving_roads or self.slots_roads[car_slot] in self.incoming_roads:            
-            # The slots_cars[car_slot] points to an existing road
-            #car_slot does not point to a road but to a slot where the current car is - kamaradclimber
-            if (self.leaving_roads[next_way].is_free) and id(self.slots_roads[car_slot]) == id(self.leaving_roads[next_way]): #vaut-il mieux comparer des objets ou leurs id ? 
-            #la route sur laquelle on veut aller est vidée et surtout _en face_  du slot de la voiture
-                car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # cette fois on fait une lecture destructive
-        else:
-            # There is an issue ; either the slot is None, or it points to the wrong thing
-            if self.slots_roads[car_slot] is not None:
-                raise Exception("ERROR: slots_roads[car_slot] points to a road that doesn't exist!")
+        if not(car.next_way(True) is None):
+            next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
+            car_slot = init.find_key(self.slots_cars, car)
+            if car_slot is None:
+                #The car wasn't found!
+                raise Exception("ERROR (in roundabout.update_car()) : a car has no slot !")
+            
+            if self.slots_roads[car_slot] in self.leaving_roads or self.slots_roads[car_slot] in self.incoming_roads:            
+                # The slots_cars[car_slot] points to an existing road
+                #car_slot does not point to a road but to a slot where the current car is - kamaradclimber
+                if (self.leaving_roads[next_way].is_free) and id(self.slots_roads[car_slot]) == id(self.leaving_roads[next_way]): #vaut-il mieux comparer des objets ou leurs id ? 
+                #la route sur laquelle on veut aller est vidée et surtout _en face_  du slot de la voiture
+                    car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # cette fois on fait une lecture destructive
+            else:
+                # There is an issue ; either the slot is None, or it points to the wrong thing
+                if self.slots_roads[car_slot] is not None:
+                    raise Exception("ERROR: slots_roads[car_slot] points to a road that doesn't exist!")
+        else : #la voiture n'a pas d'endroit où aller : on la met dans le couloir de la mort
+            __init__.to_kill.append(car)
 
     def update(self):
         """

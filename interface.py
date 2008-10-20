@@ -272,6 +272,8 @@ def update_scene():
         road.update()
     for roundabout in init.track.roundabouts:
         roundabout.update()
+    for car in __init__.to_kill: car.die()
+    __init__.to_kill = []
 
 def main_loop():
     """

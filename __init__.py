@@ -53,3 +53,4 @@ except NameError:
     LEAVING_GATE    = 1
     INCOMING_GATE   = 0
     SPAWN_TIME      = 100
+    to_kill = [] #contient les voitures qui serront supprimées à la fin du tour, je sais ce n'est pas une constante, donc si vous trouvez un endroit où la stocker, je suis okdu moment que ca marche - kamaradclimber
