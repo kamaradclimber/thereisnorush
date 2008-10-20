@@ -52,4 +52,4 @@ except NameError:
 
     LEAVING_GATE    = 1
     INCOMING_GATE   = 0
-    SPAWN_TIME      = 1000
+    SPAWN_TIME      = 100

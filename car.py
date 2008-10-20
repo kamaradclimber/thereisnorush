@@ -152,7 +152,6 @@ class Car:
         next_position               = self.position + self.speed * delta_t
         obstacle, obstacle_is_light = self._next_obstacle(rank)
         
-        self.waiting                = False
         self.acceleration           = __init__.CAR_DEFAULT_ACCEL
         
         #   No obstacle

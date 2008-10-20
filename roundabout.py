@@ -46,16 +46,17 @@ class Roundabout:
         for i in range(len(self.slots_roads)):
             if self.slots_roads[i] is None:
                 total_free_slots += 1
-        
-        #   Choose a random free slot to allocate for the road
-        rand = randint(0, total_free_slots - 1)
-        i    = 0
-        while i < len(self.slots_roads) and rand >= 0:
-            if self.slots_roads[i] is None:
-                rand -= 1
-                break
-            i += 1
-
+        if total_free_slots:
+            #   Choose a random free slot to allocate for the road
+            rand = randint(0, total_free_slots - 1)
+            i    = 0
+            while i < len(self.slots_roads) and rand >= 0:
+                if self.slots_roads[i] is None:
+                    rand -= 1
+                    break
+                i += 1
+        else:
+            raise Exception('pas assez de place pour inserer la route')
         #   Allocate the road   
         self.slots_roads[i] = road
         self.slots_cars[i]  = None
@@ -87,7 +88,6 @@ class Roundabout:
     def update_gates(self):
         """
         Manages the gates of the roads. This function will be the key part of the code, that's why it is called everytime
-        For now, only closes gates if the roundabout is full.
         """
         # Number of cars that are waiting on all the incoming roads
         num_waiting = 0
@@ -99,8 +99,10 @@ class Roundabout:
             self._update_gate(road, num_waiting)
             
         if self.is_full: # priorité 0
-            for road in self.leaving_roads:
+            for road in self.incoming_roads:
                 self.set_gate(road, False)
+            for road in self.leaving_roads:
+                self.set_gate(road, True)
     
     def update_car(self, car):
         """
