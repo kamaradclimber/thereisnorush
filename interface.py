@@ -10,7 +10,6 @@ import pygame   # http://www.pygame.org
 from vector import Vector
 
 screen = pygame.display.set_mode(constants.RESOLUTION)
-debug  = True
 
 def draw_roundabout(roundabout):
     """
@@ -70,6 +69,10 @@ def draw_car(car):
     if car.waiting:
         color = constants.RED
 
+    # EXPERIMENTAL
+    if car.sight_distance > 1:
+        pygame.draw.circle(screen, color, center_position.get_list(), car.sight_distance, 1)
+        
     # Draw the car 
     pygame.draw.polygon(screen, color, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()))
     pygame.draw.polygon(screen, constants.BLACK, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()), 1)
@@ -97,25 +100,6 @@ def draw_text(position = Vector(screen.get_rect().centerx, screen.get_rect().cen
         textRect.x, textRect.y = position.x, position.y
         screen.blit(text, textRect)
         
-#def draw_arrow(road):
-#    """
-#    Draws lil' cuty arrows along the roads to know where they're going
-#    """
-#    (start_position, end_position) = (road.begin.position, road.end.position)
-#
-#    # Get the midpoint of the road
-#    mid_position = (start_position + end_position)/2
-#    
-#    # Draw an arrow on the left side
-#    arrow_start_position        = mid_position - road.orthogonal * 4 - road.parallel * 4
-#    arrow_end_position          = mid_position - road.orthogonal * 4 + road.parallel * 4
-#    
-#    arrow_head_start_position   = arrow_end_position - road.orthogonal - road.parallel
-#    arrow_head_end_position     = arrow_end_position + road.orthogonal - road.parallel
-#    
-#    pygame.draw.aaline(screen, constants.BLUE, arrow_start_position.get_tuple(), arrow_end_position.get_tuple())
-#    pygame.draw.aaline(screen, constants.BLUE, arrow_head_start_position.get_tuple(), arrow_head_end_position.get_tuple())
-
 def draw_traffic_light(position, road, gate):
     """
     Draws a traffic light...
@@ -201,7 +185,7 @@ def draw_info():
     text.append("  > on roads : " + str(cars_on_road))
     text.append("  > on roundabouts : " + str(cars_on_roundabout))
     text.append("  > waiting : " + str(cars_waiting))
-    text.append("  > stress moyen: " + str(constants.angriness_mean / constants.nb_died))
+    #text.append("  > stress moyen: " + str(constants.angriness_mean / constants.nb_died))
     
     position = Vector()
     for i in range(len(text)):

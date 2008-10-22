@@ -32,7 +32,9 @@ class Roundabout:
         self.spawn_timer    = time.get_ticks()
         self.last_rotation  = time.get_ticks()
         self.rotation_speed = constants.ROUNDABOUT_DEFAULT_ROTATION_SPEED
-
+        
+        self.to_kill = [] 
+        
     def add_me(self, road):
         """
         Connecte, lors d'une initialisation, une route à un slot sur le carrefour.
@@ -111,7 +113,7 @@ class Roundabout:
                 if self.slots_roads[car_slot] is not None:
                     raise Exception("ERROR: slots_roads[car_slot] points to a road that doesn't exist!")
         else : #la voiture n'a pas d'endroit où aller : on la met dans le couloir de la mort
-            constants.to_kill.append(car)
+            self.to_kill.append(car)
 
     def update(self):
         """
@@ -134,12 +136,12 @@ class Roundabout:
         for car in self.cars:
             self.update_car(car)
             
-        for car in constants.to_kill:
+        for car in self.to_kill:
             car_slot = init.find_key(self.slots_cars, car)
             self.slots_cars[car_slot] = None
             car.die()
 
-        constants.to_kill = []
+        self.to_kill = []
     
     def set_gate(self, road, state):
         """

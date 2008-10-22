@@ -36,7 +36,7 @@ class Car:
         self.acceleration   = constants.CAR_DEFAULT_ACCEL     
         self.location       = new_location
         self.stress         = 0
-        self.sight_distance = 3 * constants.CAR_DEFAULT_LENGTH
+        self.sight_distance = 5 * constants.CAR_DEFAULT_LENGTH
 
         if isinstance(new_location, Road):
             self.location.cars.insert(0, self)
@@ -89,6 +89,7 @@ class Car:
         #   Update data
         self.position = new_position
         self.location = new_location
+        self.speed = 0
         self.location.cars.insert(0, self) #CONVENTiON SENSITIVE
     
     def catch_slot(self, roundabout):
@@ -102,7 +103,8 @@ class Car:
                 if roundabout.slots_cars[id_slot] is None:
                     roundabout.slots_cars[id_slot] = self
                 elif roundabout.slots_cars[id_slot] == self:
-                     print "WARNING (in car.catch_slot()) : a car tries to join the slot where it is already !"
+                     #print "WARNING (in car.catch_slot()) : a car tries to join the slot where it is already !"
+                     pass
                 else:
                     raise Exception("ERROR (in car.catch_slot()) : a slot should be empty, but is not !")
             else:
@@ -118,8 +120,8 @@ class Car:
         if self.location.cars:
             if self in self.location.cars:
                 self.location.cars.remove(self)
-                constants.angriness_mean += self.stress
-                constants.nb_died += 1
+                #constants.angriness_mean += self.stress
+                #constants.nb_died += 1
             else:
                 raise Except("WARNING (in car.die()) : a car was not in its place !")
     
@@ -166,15 +168,14 @@ class Car:
         Moves the car, THEN manages its speed, acceleration.
         """
         (obstacle, obstacle_is_light) = self._next_obstacle()
-       
-        #   Move
-        # self.position = min(self.position + self.speed * delta_t, obstacle - self.length/2 - self.headway)
-        
-        #   Update the speed given the acceleration
-        # self.speed = max(min(self.speed + self.acceleration * delta_t, self.location.max_speed), 5)
-        
-        #   Update the acceleration given the context
 
+        #   Update the acceleration given the context
+        
+        # TEMPORARY : simple version that works, ask Sharayanan for explanations
+        # This guarantees that the car will stop at the right location, although this is not 
+        # very realistic, but let's focus on physics first -- Sharayanan
+        self.sight_distance = (self.speed**2)/(2*constants.CAR_DEFAULT_ACCEL)
+        
         #   No obstacle at sight
         if self.position + self.length/2 + self.sight_distance < obstacle:
             # « 1 trait danger, 2 traits sécurité : je fonce ! »
@@ -193,12 +194,17 @@ class Car:
             delta_position  =   obstacle - self.position - self.length/2 - self.headway
             
             self.acceleration   =   0.0
-            self.acceleration   +=  constants.ALPHA * delta_speed
-            self.acceleration   +=  constants.BETA  * delta_position
-            self.acceleration   =   min(self.acceleration, 10)      #   Prevent acceleration from outranging 10
-            self.acceleration   =   max(self.acceleration, -10)     #   Prevent acceleration from outranging -10
-
-
+            #self.acceleration   +=  constants.ALPHA * delta_speed
+            #self.acceleration   +=  constants.BETA  * delta_position
+            #self.acceleration   =   min(self.acceleration, 10)      #   Prevent acceleration from outranging 10
+            #self.acceleration   =   max(self.acceleration, -10)     #   Prevent acceleration from outranging -10
+            
+            # TEMPORARY : Simple version that *works*, ask Sharayanan for explanations
+            if delta_speed < 0:
+                self.acceleration = -constants.CAR_DEFAULT_ACCEL
+            elif delta_speed > 0:
+                self.acceleration = constants.CAR_DEFAULT_ACCEL
+                
             #if (self.position + self.speed * 30 * delta_t + self.length/2 + self.headway > obstacle):
             #    if obstacle_is_light:
             #        if self.speed > 5:

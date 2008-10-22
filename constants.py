@@ -16,6 +16,7 @@ except NameError:
     BLUE        = (  0,   0, 255)
     WHITE       = (255, 255, 255)
     GRAY        = (190, 190, 190)
+    ORANGE      = (255, 128,   0)
     
     LIGHT_RED   = (255,  64,  64)
     LIGHT_GREEN = ( 64, 255,  64)
@@ -26,7 +27,7 @@ except NameError:
     CAR_DEFAULT_WIDTH   = 4
     CAR_DEFAULT_HEADWAY = CAR_DEFAULT_LENGTH    # marge de sécurité
     CAR_DEFAULT_SPEED   = 0
-    CAR_DEFAULT_ACCEL   = 50
+    CAR_DEFAULT_ACCEL   = 10
     CAR_DEFAULT_COLOR   = (255, 255, 255) #( 64,  64, 255)
     
     #   Roundabout constants
@@ -39,7 +40,7 @@ except NameError:
     
     #   Road constants
     ROAD_COLOR              = WHITE
-    ROAD_DEFAULT_MAX_SPEED  = 50
+    ROAD_DEFAULT_MAX_SPEED  = 10
     ROAD_DEFAULT_LENGTH     = 100
     ROAD_DEFAULT_WIDTH      = 5
 
@@ -54,8 +55,5 @@ except NameError:
     LEAVING_GATE    = 1
     INCOMING_GATE   = 0
     SPAWN_TIME      = 100
-    to_kill = [] #contient les voitures qui serront supprimées à la fin du tour, je sais ce n'est pas une constante, donc si vous trouvez un endroit où la stocker, je suis ok du moment que ca marche - kamaradclimber
-    angriness_mean = 0
-    nb_died = 1
     ALPHA = 1
     BETA  = 1
