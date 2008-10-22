@@ -4,7 +4,7 @@ File        :   road.py
 Description :   defines the class "Road"
 """
 
-import __init__
+import constants
 from pygame import time
 from math   import sqrt
 
@@ -15,7 +15,7 @@ class Road:
     def __init__(   self,
                     new_begin       = None,
                     new_end         = None,
-                    new_max_speed   = __init__.ROAD_DEFAULT_MAX_SPEED):
+                    new_max_speed   = constants.ROAD_DEFAULT_MAX_SPEED):
         """
         Constructor method : creates a new road.
             new_begin  (Node)    : starting point for the road
@@ -31,7 +31,7 @@ class Road:
         self.gates          = [True, False]    # [gate at the beginning, gate at the end]
         self.parallel       = None
         self.orthogonal     = None
-        self.width          = __init__.ROAD_DEFAULT_WIDTH
+        self.width          = constants.ROAD_DEFAULT_WIDTH
         
         self.end.incoming_roads.append(self)
         self.begin.leaving_roads.append(self)

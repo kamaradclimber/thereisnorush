@@ -10,7 +10,7 @@ except NameError:
     INIT_FILE = True
     
     #try:
-    import __init__
+    import constants
     from os             import getcwd
     from track          import Track
     from track          import Track_Parser
@@ -66,7 +66,7 @@ except NameError:
         """
         return Road(new_begin, new_end, length)
         
-    def new_roundabout(new_coordinates, spawning = False, radius = __init__.ROUNDABOUT_RADIUS_DEFAULT):
+    def new_roundabout(new_coordinates, spawning = False, radius = constants.ROUNDABOUT_RADIUS_DEFAULT):
         """
         Returns a new Roundabout instance (avoid cross-referencing)
         """

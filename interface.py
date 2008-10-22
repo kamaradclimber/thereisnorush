@@ -4,12 +4,12 @@ File        :   interface.py
 Description :   Manages the displays and main loop.
 """
 
-import __init__
+import constants
 import init     # ./init.py
 import pygame   # http://www.pygame.org
 from vector import Vector
 
-screen = pygame.display.set_mode(__init__.RESOLUTION)
+screen = pygame.display.set_mode(constants.RESOLUTION)
 debug  = True
 
 def draw_roundabout(roundabout):
@@ -23,10 +23,10 @@ def draw_roundabout(roundabout):
     # TODO :
     #       · (DN1) draw the cars on the roundabout
     
-    pygame.draw.circle(screen, __init__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __init__.ROUNDABOUT_WIDTH)
+    pygame.draw.circle(screen, constants.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), constants.ROUNDABOUT_WIDTH)
     
     # Roundabouts should be drawn as rotating crossroads, in order to draw the cars that rotate in ; the problem is that roads must not be drawn from the center of the roundabout anymore
-    #pygame.draw.circle(screen, __init__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __init__.ROUNDABOUT_WIDTH * 4, 1)
+    #pygame.draw.circle(screen, constants.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), constants.ROUNDABOUT_WIDTH * 4, 1)
     
     if roundabout.cars:
         # There are cars on the roundabout, we may want to draw them
@@ -68,13 +68,13 @@ def draw_car(car):
     # Change the color in case the car is waiting    
     color = car.color
     if car.waiting:
-        color = __init__.RED
+        color = constants.RED
 
     # Draw the car 
     pygame.draw.polygon(screen, color, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()))
-    pygame.draw.polygon(screen, __init__.BLACK, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()), 1)
+    pygame.draw.polygon(screen, constants.BLACK, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()), 1)
 
-def draw_text(position = Vector(screen.get_rect().centerx, screen.get_rect().centery), message = '', text_color = __init__.WHITE, back_color = __init__.BLACK, font = None, anti_aliasing = True):
+def draw_text(position = Vector(screen.get_rect().centerx, screen.get_rect().centery), message = '', text_color = constants.WHITE, back_color = constants.BLACK, font = None, anti_aliasing = True):
     """
     Draws text on the screen
         position    (Vector  :   position where the text is to be written
@@ -113,8 +113,8 @@ def draw_text(position = Vector(screen.get_rect().centerx, screen.get_rect().cen
 #    arrow_head_start_position   = arrow_end_position - road.orthogonal - road.parallel
 #    arrow_head_end_position     = arrow_end_position + road.orthogonal - road.parallel
 #    
-#    pygame.draw.aaline(screen, __init__.BLUE, arrow_start_position.get_tuple(), arrow_end_position.get_tuple())
-#    pygame.draw.aaline(screen, __init__.BLUE, arrow_head_start_position.get_tuple(), arrow_head_end_position.get_tuple())
+#    pygame.draw.aaline(screen, constants.BLUE, arrow_start_position.get_tuple(), arrow_end_position.get_tuple())
+#    pygame.draw.aaline(screen, constants.BLUE, arrow_head_start_position.get_tuple(), arrow_head_end_position.get_tuple())
 
 def draw_traffic_light(position, road, gate):
     """
@@ -134,13 +134,13 @@ def draw_traffic_light(position, road, gate):
     
     for i in range(3):
         if (state) and (i == 0):
-            color = __init__.LIGHT_GREEN
+            color = constants.LIGHT_GREEN
             width = 0
         elif (not state) and (i == 2):
-            color = __init__.LIGHT_RED
+            color = constants.LIGHT_RED
             width = 0
         else:
-            color = __init__.GRAY
+            color = constants.GRAY
             width = 1
         
         position = start_position + d_position * i
@@ -158,11 +158,11 @@ def draw_road(road):
     (start_position, end_position) = (road.begin.position.ceil(), road.end.position.ceil())
    
     # This is not perfect... but it's ok for now I guess -- Sharayanan
-    draw_traffic_light(end_position, road, __init__.LEAVING_GATE)
+    draw_traffic_light(end_position, road, constants.LEAVING_GATE)
      
-    color = __init__.GREEN
+    color = constants.GREEN
     key = 0
-    if road.cars and __init__.DISPLAY_DENSITY:
+    if road.cars and constants.DISPLAY_DENSITY:
         occupation = 0
         for car in road.cars:
             occupation += car.length
@@ -214,7 +214,7 @@ def draw_scene():
     Dessine la scène entière à l'écran.
     """  
     try:
-        screen.fill(__init__.BLACK)
+        screen.fill(constants.BLACK)
     except pygame.error, exc:
         # Avoid errors during unloading
         exit()
@@ -272,8 +272,8 @@ def update_scene():
         road.update()
     for roundabout in init.track.roundabouts:
         roundabout.update()
-    for car in __init__.to_kill: car.die()
-    __init__.to_kill = []
+    for car in constants.to_kill: car.die()
+    constants.to_kill = []
 
 def main_loop():
     """
@@ -307,7 +307,7 @@ if __name__ == "__main__":
     #   please do not shout everywhere, i agree on your point, but this particular function may remain, i think -kamaradclimber
     # Please don't *shout*, this is not a function, and this is required here -- Sharayanan
     pygame.init()
-    pygame.display.set_caption("Thereisnorush (testing) - r" + str(__init__.REVISION_NUMBER))
+    pygame.display.set_caption("Thereisnorush (testing) - r" + str(constants.REVISION_NUMBER))
     
     # Main loop
     main_loop()

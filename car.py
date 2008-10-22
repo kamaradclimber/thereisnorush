@@ -6,7 +6,7 @@ Description :   defines the class "Car"
 
 delta_t = 0.1
 
-import __init__
+import constants
 import init
 from random     import randint
 from road       import Road
@@ -27,15 +27,16 @@ class Car:
         """
         self.path           = []
         self.waiting        = False
-        self.length         = __init__.CAR_DEFAULT_LENGTH
-        self.width          = __init__.CAR_DEFAULT_WIDTH
-        self.speed          = __init__.CAR_DEFAULT_SPEED 
+        self.length         = constants.CAR_DEFAULT_LENGTH
+        self.width          = constants.CAR_DEFAULT_WIDTH
+        self.speed          = constants.CAR_DEFAULT_SPEED 
         self.position       = new_position               
-        self.headway        = __init__.CAR_DEFAULT_HEADWAY
-        self.color          = __init__.CAR_DEFAULT_COLOR 
-        self.acceleration   = __init__.CAR_DEFAULT_ACCEL     
+        self.headway        = constants.CAR_DEFAULT_HEADWAY
+        self.color          = constants.CAR_DEFAULT_COLOR 
+        self.acceleration   = constants.CAR_DEFAULT_ACCEL     
         self.location       = new_location
-        self.angriness      = 0
+        self.stress         = 0
+        self.sight_distance = 3 * constants.CAR_DEFAULT_LENGTH
 
         if isinstance(new_location, Road):
             self.location.cars.insert(0, self)
@@ -44,11 +45,11 @@ class Car:
         
         self.generate_path()
     
-    def generate_path(self):
+    def generate_path(self, minimum = 5, maximum = 8):
         """
         Assembles random waypoints into a "path" list.
         """
-        self.path = [randint(0, 128) for i in range(randint(5,8))]
+        self.path = [randint(0, 128) for i in range(randint(minimum, maximum))]
     
     def join(self, new_location, new_position = 0):
         """
@@ -59,7 +60,7 @@ class Car:
         if self.location and self in self.location.cars:
             self.location.cars.remove(self)
         else:
-            raise Except("WARNING (in car.join()) : a car had no location !") # A "WARNING" is a problem that doesn't prevent the program to keep running, but that should not happen
+            print "WARNING (in car.join()) : a car had no location !"
         
         #   Each time a car joins or leaves a roundabout, this one has to update in order to calculate again the best configuration for the gates
 
@@ -69,12 +70,12 @@ class Car:
             
             #   Remove car from its slot
             if car_slot is None:
-                raise Exception("WARNING (in car.join()) : a car had no old_location.slot !")
+                raise Exception("WARNING (in car.join()) : a car leaving from a roundabout had no slot !")
             else:
                 self.location.slots_cars[car_slot] = None
 
-            self.location.update_gates() # this update has to be after removing the car from the roundabout
-            self.acceleration = __init__.CAR_DEFAULT_ACCEL
+            self.location.update_gates()
+            self.acceleration = constants.CAR_DEFAULT_ACCEL
 
         #   Road -> roundabout
         elif isinstance(new_location, Roundabout) and isinstance(self.location, Road):
@@ -83,7 +84,7 @@ class Car:
 
         #   Road -> road OR roundabout -> roundabout : ERROR
         else:
-            raise Exception('ERROR (in car.join()) : road to road OR roundabout to roundabout joining !')
+            raise Exception('ERROR (in car.join()) : road to road OR roundabout to roundabout junction is forbidden !')
         
         #   Update data
         self.position = new_position
@@ -96,127 +97,157 @@ class Car:
         """
         if self.location in roundabout.slots_roads:
             id_slot = roundabout.slots_roads.index(self.location)
-    
-            if not roundabout.slots_cars.has_key(id_slot):
-                roundabout.slots_cars[id_slot] = self
-            else:
+            
+            if roundabout.slots_cars.has_key(id_slot):
                 if roundabout.slots_cars[id_slot] is None:
                     roundabout.slots_cars[id_slot] = self
-                elif roundabout.slots_cars[id_slot] != self:
-                    # The slot is not empty AND this is a different car that wants to go on it
-                    raise Exception("ERROR (in roundabout.glue_to_slot()) : slots_cars[id_slot] should be empty, be is not !")
+                elif roundabout.slots_cars[id_slot] == self:
+                     print "WARNING (in car.catch_slot()) : a car tries to join the slot where it is already !"
+                else:
+                    raise Exception("ERROR (in car.catch_slot()) : a slot should be empty, but is not !")
+            else:
+                roundabout.slots_cars[id_slot] = self
+                print "WARNING (in car.catch_slot()) : a slot should have been initialized, but was not !"
         else:
-            raise Exception("ERROR (in roundabout.glue_to_slot()) : Je viens d'un endroit inconnu !")
+            raise Exception("ERROR (in car.catch_slot()) : a road has no slot !")
 
     def die(self):
         """
-        Kills the car, which simply disappear ; may be mostly used in dead-ends.
+        Kills the car, which simply disappear.
         """
         if self.location.cars:
             if self in self.location.cars:
                 self.location.cars.remove(self)
-                print "enfin arrivée, enervement: ",self.angriness
+                print "enfin arrivée, enervement: ",self.stress
             else:
-                raise Except("WARNING (in car.die()) : a car had no location !")
+                raise Except("WARNING (in car.die()) : a car was not in its place !")
     
     def next_way(self, read_only = True):
         """
         Expresses the cars' wishes :P
         """
-        #   This should be temporary : as soon as the car has reached its last waypoint, it should die -- Ch@hine
+        #   End of the path
         if len(self.path) == 0:
             return None
+
         else:
             next = self.path[0]
             if not read_only:
                 del self.path[0]
             return next
 
-    def _next_obstacle(self, rank):
+    def _next_obstacle(self):
         """
         Returns the position of the obstacle ahead of the car
         """
-        if rank >= len(self.location.cars) - 1:
+        #   The car is the first of the queue : the next obstacle is the light
+        if self.rank >= len(self.location.cars) - 1:
             obstacle_is_light = True
-            if self.location.gates[1]:
-                # The traffic lights are green : go on (even a little bit further)
+
+            #   Green light
+            if self.location.gates[constants.LEAVING_GATE]:
                 obstacle = self.location.length + self.headway
+
+            #   Red light
             else:
-                # They are red : stop
                 obstacle = self.location.length
-        else:
-            obstacle_is_light = False
-            obstacle = self.location.cars[rank + 1].position - self.location.cars[rank + 1].length / 2
+
+            return (obstacle, obstacle_is_light)
+
+        #   Otherwise : the next obstacle is the previous car
+        obstacle_is_light = False
+        obstacle = self.location.cars[self.rank + 1].position - self.location.cars[self.rank + 1].length/2
 
         return (obstacle, obstacle_is_light)
     
-    def _act_smartly(self, rank):
-        next_position               = self.position + self.speed * delta_t
-        obstacle, obstacle_is_light = self._next_obstacle(rank)
+    def _act_smartly(self):
+        """
+        Moves the car, THEN manages its speed, acceleration.
+        """
+        (obstacle, obstacle_is_light) = self._next_obstacle()
+       
+        #   Move
+        # self.position = min(self.position + self.speed * delta_t, obstacle - self.length/2 - self.headway)
         
-        self.acceleration           = __init__.CAR_DEFAULT_ACCEL
+        #   Update the speed given the acceleration
+        # self.speed = max(min(self.speed + self.acceleration * delta_t, self.location.max_speed), 5)
         
-        #   No obstacle
-        if next_position + self.length / 2 + self.headway < obstacle:
+        #   Update the acceleration given the context
+
+        #   No obstacle at sight
+        if self.position + self.length/2 + self.sight_distance < obstacle:
             # « 1 trait danger, 2 traits sécurité : je fonce ! »
-            self.position = next_position
+            self.acceleration = constants.CAR_DEFAULT_ACCEL
+
+        #   Visible obstacle
+        else:
+            #   Set the parameters given the kind of obstacle
+            if obstacle_is_light:
+                delta_speed     =   - self.speed
+            else:
+                #   CONVENTION SENSITIVE
+                previous_car    = self.location.cars[self.rank + 1]    
+                delta_speed     =   previous_car.speed - self.speed
             
-            if self.speed + self.acceleration * delta_t >= self.location.max_speed:
-                self.speed = self.location.max_speed
-                self.acceleration = 0
-            elif self.speed < self.location.max_speed:
-                self.speed += self.acceleration * delta_t
+            delta_position  =   obstacle - self.position - self.length/2 - self.headway
             
-            if (self.position + self.speed * 30 * delta_t + self.length/2 + self.headway > obstacle):
-                if obstacle_is_light:
-                    if self.speed > 5:
-                        self.speed /= 1.5
-                else:
-                    if self.speed - self.location.cars[rank + 1].speed > 5:
-                        self.speed = (self.speed - self.location.cars[rank + 1].speed) / 2 + self.location.cars[rank + 1].speed
+            self.acceleration   =   0.0
+            self.acceleration   +=  constants.ALPHA * delta_speed
+            self.acceleration   +=  constants.BETA  * delta_position
+            self.acceleration   =   min(self.acceleration, 10)      #   Prevent acceleration from outranging 10
+            self.acceleration   =   max(self.acceleration, -10)     #   Prevent acceleration from outranging -10
+
+            if self.acceleration < 0:
+                print self.acceleration
+
+            #if (self.position + self.speed * 30 * delta_t + self.length/2 + self.headway > obstacle):
+            #    if obstacle_is_light:
+            #        if self.speed > 5:
+            #            self.speed /= 1.5
+            #    else:
+            #        if self.speed - self.location.cars[self.rank + 1].speed > 5:
+            #            self.speed = (self.speed - self.location.cars[self.rank + 1].speed) / 2 + self.location.cars[self.rank + 1].speed
         
-        #   Obstacle = previous car
-        elif not obstacle_is_light: 
-            if not self.waiting:
-                self.position = obstacle - self.length/2 - self.headway
-            #CONVENTION SENSITIVE
-            self.waiting = self.location.cars[rank + 1].waiting
-            
-            # EXPERIMENTAL : stop the car that is waiting 
-            if self.waiting:
-                self.speed = 0
+        #   Update the position given the speed
+        self.position = min(self.position + self.speed * delta_t, obstacle - self.length/2 - self.headway)
         
-        #   Obstacle = light
-        elif next_position + self.length / 2 + self.headway >= obstacle:
+        #   Update the speed given the acceleration
+        self.speed = max(min(self.speed + self.acceleration * delta_t, self.location.max_speed), 5)
+
+        #   Arrival at a roundabout
+        if self.position >= self.location.length - self.length/2 - self.headway:
             #   Green light
-            if self.location.gates[1] :
+            if self.location.gates[constants.LEAVING_GATE] :
                 id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
                 
                 #   The slot doesn't exist : creation of the slot
                 if not self.location.end.slots_cars.has_key(id_slot):
                     self.location.end.slots_cars[id_slot] = None
-
+                    
                 #   The slot is free
                 if self.location.end.slots_cars[id_slot] is None:
                     self.location.end.slots_cars[id_slot]   = self
                     self.waiting                            = False
                     self.join(self.location.end)
-
+                    
                 #   The slot isn't free
                 else:
-                    self.position       = self.location.length - self.headway - self.length/2
-                    self.waiting        = True
-                    self.acceleration   = 0
-                    self.speed          = 0
-
+                    self.waiting = True
+                    
             #   Red light
             else:
-                self.position       = self.location.length - self.headway - self.length/2
-                self.waiting        = True
-                self.acceleration   = 0
-                self.speed          = 0
-        #experimental - angriness
-        if self.waiting : self.angriness +=1
+                self.waiting = True
+
+        #   Waiting
+        if self.position + self.length/2 + self.sight_distance > obstacle: 
+            if not obstacle_is_light:
+                #CONVENTION SENSITIVE
+                self.waiting = self.location.cars[self.rank + 1].waiting
+            else:
+                self.waiting = True
+        
+        #   experimental - stress
+        if self.waiting : self.stress += 1
 
     def update(self, rank):
         """
@@ -229,4 +260,11 @@ class Car:
         if not isinstance(self.location, Road):
             return None
         
-        self._act_smartly(rank)
+        self._act_smartly()
+
+    @property
+    def rank(self):
+        if self in self.location.cars:
+            return self.location.cars.index(self)
+        else:
+            raise Exception("ERROR (in car.rank) : a car is not in her place !")

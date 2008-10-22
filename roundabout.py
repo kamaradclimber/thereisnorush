@@ -4,7 +4,7 @@ File        :   roundabout.py
 Description :   defines the class "Roundabout"
 """
 
-import __init__
+import constants
 import init
 from math   import pi
 from pygame import time
@@ -15,7 +15,7 @@ class Roundabout:
     """
     Crossroads of our city ; may host several roads.
     """
-    def __init__(self, new_x, new_y, new_spawning=False, radius=__init__.ROUNDABOUT_RADIUS_DEFAULT):
+    def __init__(self, new_x, new_y, new_spawning=False, radius=constants.ROUNDABOUT_RADIUS_DEFAULT):
         """
         Constructor method : creates a new roundabout.
             new_coordinates (list) : the coordinates [x, y] for the roundabout
@@ -31,7 +31,7 @@ class Roundabout:
         self.spawning       = new_spawning
         self.spawn_timer    = time.get_ticks()
         self.time           = 0
-        self.rotation_speed = __init__.ROUNDABOUT_DEFAULT_ROTATION_SPEED
+        self.rotation_speed = constants.ROUNDABOUT_DEFAULT_ROTATION_SPEED
 
     def add_me(self, road):
         """
@@ -82,7 +82,7 @@ class Roundabout:
                 self.set_gate(road, True)
         
         #   Too long waiting time
-        if road.last_gate_update(__init__.LEAVING_GATE) > 10000 and not road.gates[__init__.LEAVING_GATE] and road.total_waiting_cars:
+        if road.last_gate_update(constants.LEAVING_GATE) > 10000 and not road.gates[constants.LEAVING_GATE] and road.total_waiting_cars:
             self.set_gate(road, True)
     
     def update_gates(self):
@@ -126,7 +126,7 @@ class Roundabout:
                 if self.slots_roads[car_slot] is not None:
                     raise Exception("ERROR: slots_roads[car_slot] points to a road that doesn't exist!")
         else : #la voiture n'a pas d'endroit où aller : on la met dans le couloir de la mort
-            __init__.to_kill.append(car)
+            constants.to_kill.append(car)
 
     def update(self):
         """
@@ -140,7 +140,7 @@ class Roundabout:
             
         self.update_gates()
         
-        if self.spawning and len(self.leaving_roads) and (time.get_ticks() - self.spawn_timer > __init__.SPAWN_TIME): # We are a "spawn roundabout" : let's add a car at periodic rates
+        if self.spawning and len(self.leaving_roads) and (time.get_ticks() - self.spawn_timer > constants.SPAWN_TIME): # We are a "spawn roundabout" : let's add a car at periodic rates
             self.spawn_timer = time.get_ticks()
             
             chosen_road = self.leaving_roads[randint(0, len(self.leaving_roads) - 1)]
@@ -159,14 +159,14 @@ class Roundabout:
         
         if (id(road.begin) == id(self)):
             # The road begins on the roundabout: there is a gate to  before leaving
-            if road.gates[__init__.INCOMING_GATE] != state:
-                road.gates[__init__.INCOMING_GATE] = state
-                if road.gates[__init__.INCOMING_GATE] != state: road.gates_update[__init__.INCOMING_GATE] = time.get_ticks()
+            if road.gates[constants.INCOMING_GATE] != state:
+                road.gates[constants.INCOMING_GATE] = state
+                if road.gates[constants.INCOMING_GATE] != state: road.gates_update[constants.INCOMING_GATE] = time.get_ticks()
         else:
             # The road ends on the road: there is a gate to  to enter
-            if road.gates[__init__.LEAVING_GATE] != state:
-                road.gates[__init__.LEAVING_GATE] = state
-                if road.gates[__init__.LEAVING_GATE] != state: road.gates_update[__init__.LEAVING_GATE] = time.get_ticks()
+            if road.gates[constants.LEAVING_GATE] != state:
+                road.gates[constants.LEAVING_GATE] = state
+                if road.gates[constants.LEAVING_GATE] != state: road.gates_update[constants.LEAVING_GATE] = time.get_ticks()
 
     @property
     def is_full(self):

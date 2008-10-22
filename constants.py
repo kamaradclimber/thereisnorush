@@ -48,9 +48,12 @@ except NameError:
 
     DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
     
-    REVISION_NUMBER = 98
+    REVISION_NUMBER = 103
 
     LEAVING_GATE    = 1
     INCOMING_GATE   = 0
     SPAWN_TIME      = 100
     to_kill = [] #contient les voitures qui serront supprimées à la fin du tour, je sais ce n'est pas une constante, donc si vous trouvez un endroit où la stocker, je suis okdu moment que ca marche - kamaradclimber
+
+    ALPHA   = 5
+    BETA    = 1
