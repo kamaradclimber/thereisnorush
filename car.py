@@ -57,7 +57,7 @@ class Car:
             new_location    (Road or Roundabout)  :   road or roundabout that will host, if possible, the car
             new_position    (list)          :   position in the road or in the roundabout (note that the meaning of the position depends on the kind of location)
         """
-        if self.location and self in self.location.cars:
+        if self.location and self in self.location.cars: #i remove myself from my previous location
             self.location.cars.remove(self)
         else:
             print "WARNING (in car.join()) : a car had no location !"
@@ -80,7 +80,7 @@ class Car:
         #   Road -> roundabout
         elif isinstance(new_location, Roundabout) and isinstance(self.location, Road):
             self.catch_slot(new_location)
-            new_location.update_gates()
+            # new_location.update_gates()  -but this not  to you to do this
 
         #   Road -> road OR roundabout -> roundabout : ERROR
         else:
@@ -89,7 +89,7 @@ class Car:
         #   Update data
         self.position = new_position
         self.location = new_location
-        self.location.cars.insert(0, self)
+        self.location.cars.insert(0, self) #CONVENTiON SENSITIVE
     
     def catch_slot(self, roundabout):
         """
@@ -118,7 +118,8 @@ class Car:
         if self.location.cars:
             if self in self.location.cars:
                 self.location.cars.remove(self)
-                print "enfin arrivée, enervement: ",self.stress
+                constants.angriness_mean += self.stress
+                constants.nb_died += 1
             else:
                 raise Except("WARNING (in car.die()) : a car was not in its place !")
     
@@ -197,8 +198,6 @@ class Car:
             self.acceleration   =   min(self.acceleration, 10)      #   Prevent acceleration from outranging 10
             self.acceleration   =   max(self.acceleration, -10)     #   Prevent acceleration from outranging -10
 
-            if self.acceleration < 0:
-                print self.acceleration
 
             #if (self.position + self.speed * 30 * delta_t + self.length/2 + self.headway > obstacle):
             #    if obstacle_is_light:

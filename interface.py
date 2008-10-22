@@ -185,7 +185,7 @@ def draw_info():
     cars_on_road        = 0
     cars_on_roundabout  = 0
     cars_waiting        = 0
-    text                = ['' for i in range(7)]
+    text                = []
     
     for road in init.track.roads:
         cars_on_road += len(road.cars)
@@ -193,14 +193,15 @@ def draw_info():
     for roundabout in init.track.roundabouts:
         cars_on_roundabout += len(roundabout.cars)
     
-    text[0] = str(len(init.track.roads)) + " roads"
-    text[1] = str(len(init.track.roundabouts)) + " roundabouts"
-    text[2] = ''
+    text.append(str(len(init.track.roads)) + " roads")
+    text.append(str(len(init.track.roundabouts)) + " roundabouts")
+    text.append('')
     
-    text[3] = str(cars_on_road + cars_on_roundabout) + " cars"
-    text[4] = "  > on roads : " + str(cars_on_road)
-    text[5] = "  > on roundabouts : " + str(cars_on_roundabout)
-    text[6] = "  > waiting : " + str(cars_waiting)
+    text.append(str(cars_on_road + cars_on_roundabout) + " cars")
+    text.append("  > on roads : " + str(cars_on_road))
+    text.append("  > on roundabouts : " + str(cars_on_roundabout))
+    text.append("  > waiting : " + str(cars_waiting))
+    text.append("  > stress moyen: " + str(constants.angriness_mean / constants.nb_died))
     
     position = Vector()
     for i in range(len(text)):
@@ -272,8 +273,6 @@ def update_scene():
         road.update()
     for roundabout in init.track.roundabouts:
         roundabout.update()
-    for car in constants.to_kill: car.die()
-    constants.to_kill = []
 
 def main_loop():
     """

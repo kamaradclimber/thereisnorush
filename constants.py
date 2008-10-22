@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-File        :   __init__.py
+File        :   constants.py
 Description :   defines the constants
 """
 
@@ -35,6 +35,7 @@ except NameError:
     ROUNDABOUT_COLOR                    = RED
     ROUNDABOUT_RADIUS_DEFAULT           = 10
     ROUNDABOUT_DEFAULT_ROTATION_SPEED   = 10
+    ROUNDABOUT_ROTATION_RATE            = 500
     
     #   Road constants
     ROAD_COLOR              = WHITE
@@ -43,17 +44,18 @@ except NameError:
     ROAD_DEFAULT_WIDTH      = 5
 
     #   Other constants
-    RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (800, 600)
+    RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (1000, 600)
     delta_t = 0.1
 
     DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
     
-    REVISION_NUMBER = 103
+    REVISION_NUMBER = 101
 
     LEAVING_GATE    = 1
     INCOMING_GATE   = 0
     SPAWN_TIME      = 100
-    to_kill = [] #contient les voitures qui serront supprimées à la fin du tour, je sais ce n'est pas une constante, donc si vous trouvez un endroit où la stocker, je suis okdu moment que ca marche - kamaradclimber
-
-    ALPHA   = 5
-    BETA    = 1
+    to_kill = [] #contient les voitures qui serront supprimées à la fin du tour, je sais ce n'est pas une constante, donc si vous trouvez un endroit où la stocker, je suis ok du moment que ca marche - kamaradclimber
+    angriness_mean = 0
+    nb_died = 1
+    ALPHA = 1
+    BETA  = 1
