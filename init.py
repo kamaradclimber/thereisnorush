@@ -31,7 +31,7 @@ except NameError:
     def load_demo_track():
         # Temporary testing zone
         track_parser = Track_Parser(track)
-        track_parser.load_from_file("demo_track.txt", "demo_track.png")
+        track_parser.load_from_file("demo_track.txt")
         # CONVENTION SENSITIVE
         add_demo_car(3,5)
         add_demo_car(6,50)

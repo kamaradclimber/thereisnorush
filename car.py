@@ -37,6 +37,7 @@ class Car:
         self.location       = new_location
         self.stress         = 0
         self.sight_distance = 5 * constants.CAR_DEFAULT_LENGTH
+        self.consecutif_waiting = 0 #ca sera utile: si jattend trop longtemps, jai envie de changer de trajet et de recalculer le trajet pour aller à mon objectif
 
         if isinstance(new_location, Road):
             self.location.cars.insert(0, self)
@@ -252,7 +253,11 @@ class Car:
                 self.waiting = True
         
         #   experimental - stress
-        if self.waiting : self.stress += 1
+        if self.waiting : 
+            self.stress += 1
+            self.consecutif_waiting +=1
+        else:
+            self.consecutif_waiting = 0
 
     def update(self, rank):
         """

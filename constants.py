@@ -45,15 +45,15 @@ except NameError:
     ROAD_DEFAULT_WIDTH      = 5
 
     #   Other constants
-    RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (1000, 600)
+    RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (1000, 750)
     delta_t = 0.1
 
     DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
     
-    REVISION_NUMBER = 101
+    REVISION_NUMBER = 104
 
     LEAVING_GATE    = 1
     INCOMING_GATE   = 0
-    SPAWN_TIME      = 100
+    SPAWN_TIME      = 1700
     ALPHA = 1
     BETA  = 1

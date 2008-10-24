@@ -71,8 +71,8 @@ def draw_car(car):
 
     # EXPERIMENTAL
     if car.sight_distance > 1:
-        pygame.draw.circle(screen, color, center_position.get_list(), car.sight_distance, 1)
-        
+        #pygame.draw.circle(screen, color, center_position.get_list(), car.sight_distance, 1)
+        pass
     # Draw the car 
     pygame.draw.polygon(screen, color, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()))
     pygame.draw.polygon(screen, constants.BLACK, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()), 1)
@@ -155,7 +155,7 @@ def draw_road(road):
         if key > 255: key = 255
         color = [key, 255 - key, 0]
     
-    #pygame.draw.aaline(screen, color, start_position.get_tuple(), end_position.get_tuple()) # EXPERIMENTAL
+    pygame.draw.aaline(screen, color, start_position.get_tuple(), end_position.get_tuple()) # EXPERIMENTAL
     
     # Draw an arrow pointing at where we go
     #draw_arrow(road)

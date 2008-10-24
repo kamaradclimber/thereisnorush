@@ -21,7 +21,7 @@ class Roundabout:
             new_coordinates (list) : the coordinates [x, y] for the roundabout
         """
         
-        self.position       = Vector(new_x, new_y)
+        self.position       = Vector(4*new_x, 4*new_y)
         self.incoming_roads = []
         self.leaving_roads  = []
         self.max_cars       = 5
@@ -95,7 +95,8 @@ class Roundabout:
         """
         Updates a given car on the roundabout 
         """
-        if not(car.next_way(True) is None):
+        
+        if not(car.next_way(True) is None) and self.leaving_roads:
             next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
             car_slot = init.find_key(self.slots_cars, car)
             if car_slot is None:

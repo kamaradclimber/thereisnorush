@@ -1,0 +1,47 @@
+Roundabout 20, 120, 0
+Roundabout 100, 120, 1
+Roundabout 200, 120, 0
+Roundabout 300, 80, 0
+Roundabout 200, 60, 0
+Roundabout 100, 6, 0
+Roundabout 20, 60, 0
+Roundabout 400, 80, 1
+Roundabout 400, 160, 0
+Roundabout 400, 300, 0
+Roundabout 500, 120, 0
+Roundabout 480, 300, 0
+Roundabout 520, 300, 0
+Roundabout 500, 320, 0
+Roundabout 500, 400, 0
+Roundabout 500, 500, 0
+Roundabout 20, 500, 0
+Roundabout 20, 550, 1
+Road 0, 1
+Road 1, 2
+Road 1, 5
+Road 2, 3
+Road 3, 4
+Road 4, 5
+Road 5, 1
+Road 5, 6
+Road 6, 0
+Road 3, 7
+Road 7, 10
+Road 8, 7
+Road 10, 8
+Road 2, 8
+Road 1, 9
+Road 9, 16
+Road 9, 8
+Road 8, 9
+Road 10, 11
+Road 10, 12
+Road 10, 13
+Road 11, 13
+Road 12, 13
+Road 13, 14
+Road 9, 14
+Road 14, 15
+Road 15, 16
+Road 16, 0
+Road 17, 16
