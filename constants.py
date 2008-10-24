@@ -43,6 +43,11 @@ except NameError:
     ROAD_DEFAULT_MAX_SPEED  = 10
     ROAD_DEFAULT_LENGTH     = 100
     ROAD_DEFAULT_WIDTH      = 5
+    
+    # Track constants
+    TRACK_OFFSET_X = 32
+    TRACK_OFFSET_Y = 32
+    TRACK_SCALE = 3.5
 
     #   Other constants
     RESOLUTION  = (WINDOW_WIDTH, WINDOW_HEIGHT) = (1000, 750)
@@ -50,7 +55,7 @@ except NameError:
 
     DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
     
-    REVISION_NUMBER = 104
+    REVISION_NUMBER = 106
 
     LEAVING_GATE    = 1
     INCOMING_GATE   = 0

@@ -21,7 +21,7 @@ class Roundabout:
             new_coordinates (list) : the coordinates [x, y] for the roundabout
         """
         
-        self.position       = Vector(4*new_x, 4*new_y)
+        self.position       = Vector(constants.TRACK_SCALE * new_x + constants.TRACK_OFFSET_X, constants.TRACK_SCALE * new_y + constants.TRACK_OFFSET_Y)
         self.incoming_roads = []
         self.leaving_roads  = []
         self.max_cars       = 5

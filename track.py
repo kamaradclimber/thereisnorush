@@ -6,6 +6,7 @@ Description :   defines the class "Track"
 """
 
 import init
+import constants
 from roundabout import Roundabout
 
 class Track:
@@ -29,9 +30,9 @@ class Track:
             self.roads = []
         else:
             self.roads = new_roads
-   
-        # EXPERIMENTAL
-        self.picture = None 
+  
+        self.picture = None
+        
 
 class Track_Parser:
 

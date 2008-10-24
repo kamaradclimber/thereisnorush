@@ -155,10 +155,8 @@ def draw_road(road):
         if key > 255: key = 255
         color = [key, 255 - key, 0]
     
-    pygame.draw.aaline(screen, color, start_position.get_tuple(), end_position.get_tuple()) # EXPERIMENTAL
-    
-    # Draw an arrow pointing at where we go
-    #draw_arrow(road)
+    if not init.track.picture:
+        pygame.draw.aaline(screen, color, start_position.get_tuple(), end_position.get_tuple()) # EXPERIMENTAL
     
     if road.cars and key < 200:
         # Do not draw cars when density exceeds ~80%
