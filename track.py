@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-
 """
 File        :   track.py
 Description :   defines the class "Track"
 """
 
 import init
-import constants
-from roundabout import Roundabout
+import roundabout   as __roundabout__
+import road         as __road__
+import constants    as __constants__
 
 class Track:
     """
@@ -30,20 +30,18 @@ class Track:
             self.roads = []
         else:
             self.roads = new_roads
-  
+    
         self.picture = None
-        
 
 class Track_Parser:
-
     ROUNDABOUT  = "Roundabout"
     ROAD        = "Road"
-
+    
     def __init__(self, track):
         """
         """
         self.track = track
-
+    
     def load_from_file(self, file_name, file_picture = ''):
         """
         Loads a track from a textfile, checks its validity, parses it
@@ -71,7 +69,7 @@ class Track_Parser:
             if line.startswith('#') or not line:
                 continue
             self.parse_line(line)
-
+    
     def parse_line(self, line):
         """
         Parses a line in a track description file.
@@ -81,11 +79,10 @@ class Track_Parser:
         elements = line.replace(',', ' ').split()
         if elements[0] == self.ROUNDABOUT:
             args = [int(item) for item in elements[1:]]
-            roundabout = Roundabout(*args)
-            self.track.roundabouts.append(roundabout)
+            self.track.roundabouts.append(__roundabout__.Roundabout(*args))
         elif elements[0] == self.ROAD:
             args = [int(item) for item in elements[1:]]
-            new_road = init.new_road(self.track.roundabouts[args[0]], self.track.roundabouts[args[1]])
+            new_road = __road__.Road(self.track.roundabouts[args[0]], self.track.roundabouts[args[1]])
             self.track.roads.append(new_road)
         else:
             raise Exception("ERROR : unknown element type '" + elements[0] + "' !")

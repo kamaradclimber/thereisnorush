@@ -4,13 +4,13 @@ File        :   vector.py
 Description :   a simple physics 2D vector class
 """
 
+global VECTOR_IMPORTED
+VECTOR_IMPORTED = True
+
 from math import sin, cos, atan, hypot
 
 # The quick way to know how big the pie is
 PI = 3.141592653589793238462643383
-TwoPI = PI * 2.0
-HalfPI = PI * 0.5
-OneAndHalfPI = PI * 1.5
 
 # new math function
 def direction(x, y):
@@ -21,14 +21,14 @@ def direction(x, y):
         if y >= 0:
             return atan(y / x)
         else:
-            return atan(y / x) + TwoPI
+            return atan(y / x) + 2.0*PI
     elif x == 0:
         if y > 0:
-            return HalfPI
+            return 0.5 * PI
         elif y == 0:
             return 0
         else:
-            return OneAndHalfPI
+            return 1.5 * PI
     else:
         return atan(y / x) + PI
 

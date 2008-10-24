@@ -4,38 +4,39 @@ File        :   roundabout.py
 Description :   defines the class "Roundabout"
 """
 
-import constants
+import constants    as __constants__
 import init
-from math   import pi
-from pygame import time
-from random import randint
-from vector import Vector
+from math           import pi
+from pygame         import time
+from random         import randint
+from vector         import Vector
+import car          as __car__
 
 class Roundabout:
     """
     Crossroads of our city ; may host several roads.
     """
-    def __init__(self, new_x, new_y, new_spawning=False, radius=constants.ROUNDABOUT_RADIUS_DEFAULT):
+
+    def __init__(self, new_x, new_y, new_spawning=False, radius=__constants__.ROUNDABOUT_RADIUS_DEFAULT):
         """
         Constructor method : creates a new roundabout.
             new_coordinates (list) : the coordinates [x, y] for the roundabout
         """
         
-        self.position       = Vector(constants.TRACK_SCALE * new_x + constants.TRACK_OFFSET_X, constants.TRACK_SCALE * new_y + constants.TRACK_OFFSET_Y)
+        self.position       = Vector(__constants__.TRACK_SCALE * new_x + __constants__.TRACK_OFFSET_X, __constants__.TRACK_SCALE * new_y + __constants__.TRACK_OFFSET_Y)
         self.incoming_roads = []
         self.leaving_roads  = []
-        self.max_cars       = 5
+        self.max_cars       = __constants__.ROUNDABOUT_DEFAULT_MAX_CARS
         self.cars           = []
         self.slots_cars     = {}
         self.slots_roads    = [None for i in range(self.max_cars)]
         self.spawning       = new_spawning
         self.spawn_timer    = time.get_ticks()
         self.last_rotation  = time.get_ticks()
-        self.rotation_speed = constants.ROUNDABOUT_DEFAULT_ROTATION_SPEED
+        self.rotation_speed = __constants__.ROUNDABOUT_DEFAULT_ROTATION_SPEED
+        self.to_kill        = [] 
         
-        self.to_kill = [] 
-        
-    def add_me(self, road):
+    def host_road(self, road):
         """
         Connecte, lors d'une initialisation, une route à un slot sur le carrefour.
         """
@@ -55,37 +56,42 @@ class Roundabout:
             else:
                 raise Exception("WARNING: There is no slot to host any further roads!")
             
-    def _update_gate(self, road, waiting_cars):
+    def _update_gate(self, road):
         """
         Road-specific gate handling
             road (Road) : the road whose traffic ligths are to be handled
-            waiting_cars (int) : the *total* number or cars waiting for the roundabout
         """
         #   Too many waiting cars
         if road.total_waiting_cars > 8:
+            #   Leaving road : do not send more cars in this road
             if road.begin == self:
+                self.set_gate(road, False)
+
+            #   Incoming road : give higher priority to this road
+            elif road.end == self:
                 self.set_gate(road, True)
-            if road.end == self:
-                self.set_gate(road, True)
+                for other_road in self.incoming_roads:
+                    if other_road.total_waiting_cars <= 8:
+                        self.set_gate(other_road, False)
         
-        #   Too long waiting time
-        if road.last_gate_update(constants.LEAVING_GATE) > 10000 and not road.gates[constants.LEAVING_GATE] and road.total_waiting_cars:
+        #   Too long waiting time : open the gate and close others
+        if road.last_gate_update(__constants__.LEAVING_GATE) > 10000 and not road.gates[__constants__.LEAVING_GATE] and road.total_waiting_cars:
             self.set_gate(road, True)
+
+            for other_road in self.incoming_roads:
+                if other_road.last_gate_update(__constants__.LEAVING_GATE) <= 10000 or not other_road.total_waiting_cars:
+                     self.set_gate(other_road, False)
     
     def update_gates(self):
         """
         Manages the gates of the roads. This function will be the key part of the code, that's why it is called everytime
         """
-        # Number of cars that are waiting on all the incoming roads
-        num_waiting = 0
-        for road in self.incoming_roads:
-            num_waiting += road.total_waiting_cars
-
         # CAUTION: this *has* to be in a separate loop !
         for road in self.incoming_roads:
-            self._update_gate(road, num_waiting)
-            
-        if self.is_full: # priorité 0
+            self._update_gate(road)
+        
+        #   Priority 0
+        if self.is_full:
             for road in self.incoming_roads:
                 self.set_gate(road, False)
             for road in self.leaving_roads:
@@ -99,44 +105,45 @@ class Roundabout:
         if not(car.next_way(True) is None) and self.leaving_roads:
             next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
             car_slot = init.find_key(self.slots_cars, car)
+
+            #   The car has lost its slot   
             if car_slot is None:
-                #The car wasn't found!
                 raise Exception("ERROR (in roundabout.update_car()) : a car has no slot !")
             
-            if self.slots_roads[car_slot] in self.leaving_roads or self.slots_roads[car_slot] in self.incoming_roads:            
-                # The slots_cars[car_slot] points to an existing road
-                #car_slot does not point to a road but to a slot where the current car is - kamaradclimber
+            #   The car's slot is in front of a leaving road
+            if self.slots_roads[car_slot] in self.leaving_roads:            
                 if (self.leaving_roads[next_way].is_free) and self.slots_roads[car_slot] == self.leaving_roads[next_way]:
                 #la route sur laquelle on veut aller est vidée et surtout _en face_  du slot de la voiture
                     car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # cette fois on fait une lecture destructive
-            else:
-                # There is an issue ; either the slot is None, or it points to the wrong thing
-                if self.slots_roads[car_slot] is not None:
-                    raise Exception("ERROR: slots_roads[car_slot] points to a road that doesn't exist!")
-        else : #la voiture n'a pas d'endroit où aller : on la met dans le couloir de la mort
+
+        #la voiture n'a pas d'endroit où aller : on la met dans le couloir de la mort
+        else:
             self.to_kill.append(car)
 
     def update(self):
         """
         Updates the roundabout : rotate the cars, dispatch them...
         """
-
-
-        if time.get_ticks() - self.last_rotation > constants.ROUNDABOUT_ROTATION_RATE:
+        #   Make the cars rotate
+        if time.get_ticks() - self.last_rotation > __constants__.ROUNDABOUT_ROTATION_RATE:
             self.last_rotation = time.get_ticks()
             self.slots_roads = init.shift_list(self.slots_roads)
-            
+        
+        #   Update gates
         self.update_gates()
         
-        if self.spawning and len(self.leaving_roads) and (time.get_ticks() - self.spawn_timer > constants.SPAWN_TIME): # We are a "spawn roundabout" : let's add a car at periodic rates
+        #   Spawning mode
+        if self.spawning and len(self.leaving_roads) and (time.get_ticks() - self.spawn_timer > __constants__.SPAWN_TIME):
             self.spawn_timer = time.get_ticks()
             chosen_road = self.leaving_roads[randint(0, len(self.leaving_roads) - 1)]
             if chosen_road.is_free:
-                new_car = init.new_car(chosen_road)
-
+                new_car = __car__.Car(chosen_road)
+        
+        #   Update cars
         for car in self.cars:
             self.update_car(car)
-            
+        
+        #   Kill cars that have reached their destination
         for car in self.to_kill:
             car_slot = init.find_key(self.slots_cars, car)
             self.slots_cars[car_slot] = None
@@ -150,17 +157,17 @@ class Roundabout:
             road    (Road)  :   the road whose gates are affected
             state   (bool)   :   the state (False = red, True = green) of the gate
         """
-        
+        #   Leaving road
         if (id(road.begin) == id(self)):
-            # The road begins on the roundabout: there is a gate to  before leaving
-            if road.gates[constants.INCOMING_GATE] != state:
-                road.gates[constants.INCOMING_GATE] = state
-                if road.gates[constants.INCOMING_GATE] != state: road.gates_update[constants.INCOMING_GATE] = time.get_ticks()
+            if road.gates[__constants__.INCOMING_GATE] != state:
+                road.gates[__constants__.INCOMING_GATE] = state
+                if road.gates[__constants__.INCOMING_GATE] != state: road.gates_update[__constants__.INCOMING_GATE] = time.get_ticks()
+        
+        #   Incoming road
         else:
-            # The road ends on the road: there is a gate to  to enter
-            if road.gates[constants.LEAVING_GATE] != state:
-                road.gates[constants.LEAVING_GATE] = state
-                if road.gates[constants.LEAVING_GATE] != state: road.gates_update[constants.LEAVING_GATE] = time.get_ticks()
+            if road.gates[__constants__.LEAVING_GATE] != state:
+                road.gates[__constants__.LEAVING_GATE] = state
+                if road.gates[__constants__.LEAVING_GATE] != state: road.gates_update[__constants__.LEAVING_GATE] = time.get_ticks()
 
     @property
     def is_full(self):
@@ -168,3 +175,14 @@ class Roundabout:
         Returns whether there is no place left on the roundabout.
         """
         return (len(self.cars) >= self.max_cars)
+
+    @property
+    def total_waiting_cars(self):
+        """
+        Returns the number of cars waiting on all the incoming roads connected to this roudabout.
+        """
+        total = 0
+        for road in self.incoming_roads:
+            total += road.total_waiting_cars
+
+        return total
