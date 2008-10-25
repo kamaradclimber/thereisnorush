@@ -44,7 +44,7 @@ class Car:
         
         self.generate_path()
     
-    def generate_path(self, minimum = 5, maximum = 8):
+    def generate_path(self, minimum = 8, maximum = 11):
         """
         Assembles random waypoints into a "path" list.
         """
@@ -74,7 +74,6 @@ class Car:
             else:
                 self.location.slots_cars[car_slot] = None
 
-            self.location.update_gates()
             self.acceleration = __constants__.CAR_DEFAULT_ACCEL
 
         #   Road -> roundabout
@@ -238,6 +237,8 @@ class Car:
         if self.position + self.length/2 + self.sight_distance > obstacle: 
             if not obstacle_is_light:
                 self.waiting = self.location.cars[self.rank + 1].waiting    # CONVENTION SENSITIVE
+            elif self.location.gates[__constants__.LEAVING_GATE]:
+                self.waiting = False
             else:
                 self.waiting = True
         

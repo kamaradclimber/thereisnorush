@@ -66,7 +66,9 @@ def draw_car(car):
     
     # Change the color in case the car is waiting    
     color = car.color
-    if car.waiting:
+    if car.acceleration > 0:
+        color = __constants__.BLUE
+    elif car.acceleration < 0:
         color = __constants__.RED
 
     # DEBUG
@@ -75,7 +77,12 @@ def draw_car(car):
         
     # Draw the car 
     pygame.draw.polygon(screen, color, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()))
-    pygame.draw.polygon(screen, __constants__.BLACK, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()), 1)
+    pygame.draw.aaline(screen, __constants__.BLACK, position1.get_tuple(), position2.get_tuple())
+    pygame.draw.aaline(screen, __constants__.BLACK, position2.get_tuple(), position3.get_tuple())
+    pygame.draw.aaline(screen, __constants__.BLACK, position3.get_tuple(), position4.get_tuple())
+    pygame.draw.aaline(screen, __constants__.BLACK, position4.get_tuple(), position1.get_tuple())
+    
+   # pygame.draw.polygon(screen, __constants__.BLACK, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()), 1)
 
 def draw_text(position = Vector(screen.get_rect().centerx, screen.get_rect().centery), message = '', text_color = __constants__.WHITE, back_color = __constants__.BLACK, font = None, anti_aliasing = True):
     """

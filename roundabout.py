@@ -32,7 +32,7 @@ class Roundabout:
         self.slots_roads    = [None for i in range(self.max_cars)]
         self.spawning       = new_spawning
         self.spawn_timer    = time.get_ticks()
-        self.last_rotation  = time.get_ticks()
+        self.last_shift     = time.get_ticks()
         self.rotation_speed = __constants__.ROUNDABOUT_DEFAULT_ROTATION_SPEED
         self.to_kill        = [] 
         
@@ -48,13 +48,13 @@ class Roundabout:
 
         if total_free_slots:
             #   Choose a random free slot to allocate for the road
-            free_slots = [i for (i,slot) in enumerate(self.slots_roads) if slot is None]
+            free_slots = [i for (i, slot) in enumerate(self.slots_roads) if slot is None]
 
             if free_slots:
                 self.slots_roads[free_slots[0]] = road
                 self.slots_cars[free_slots[0]]  = None
             else:
-                raise Exception("WARNING: There is no slot to host any further roads!")
+                print "WARNING (in Rooundabout.host_road()) : there is no slot to host any further roads !"
             
     def _update_gate(self, road):
         """
@@ -62,35 +62,27 @@ class Roundabout:
             road (Road) : the road whose traffic ligths are to be handled
         """
         #   Too many waiting cars
-        if road.total_waiting_cars > 8:
+        if road.total_waiting_cars > __constants__.WAITING_CARS_LIMIT:
             #   Leaving road : do not send more cars in this road
-            if road.begin == self:
+            if road in self.leaving_roads:
                 self.set_gate(road, False)
 
             #   Incoming road : give higher priority to this road
-            elif road.end == self:
+            else:
                 self.set_gate(road, True)
                 for other_road in self.incoming_roads:
-                    if other_road.total_waiting_cars <= 8:
+                    if other_road.total_waiting_cars <= __constants__.WAITING_CARS_LIMIT:
                         self.set_gate(other_road, False)
         
         #   Too long waiting time : open the gate and close others
-        if road.last_gate_update(__constants__.LEAVING_GATE) > 10000 and not road.gates[__constants__.LEAVING_GATE] and road.total_waiting_cars:
+        if road in self.incoming_roads and road.last_gate_update(__constants__.LEAVING_GATE) > __constants__.WAITING_TIME_LIMIT and road.total_waiting_cars:
             self.set_gate(road, True)
 
             for other_road in self.incoming_roads:
-                if other_road.last_gate_update(__constants__.LEAVING_GATE) <= 10000 or not other_road.total_waiting_cars:
+                if (other_road.last_gate_update(__constants__.LEAVING_GATE) <= __constants__.WAITING_TIME_LIMIT or not other_road.total_waiting_cars) and id(other_road) != id(road):
                      self.set_gate(other_road, False)
-    
-    def update_gates(self):
-        """
-        Manages the gates of the roads. This function will be the key part of the code, that's why it is called everytime
-        """
-        # CAUTION: this *has* to be in a separate loop !
-        for road in self.incoming_roads:
-            self._update_gate(road)
-        
-        #   Priority 0
+
+        #   Full roundabout : close all incoming roads, open all leaving roads
         if self.is_full:
             for road in self.incoming_roads:
                 self.set_gate(road, False)
@@ -108,7 +100,7 @@ class Roundabout:
 
             #   The car has lost its slot   
             if car_slot is None:
-                raise Exception("ERROR (in roundabout.update_car()) : a car has no slot !")
+                raise Exception("ERROR (in Roundabout.update_car()) : a car has no slot !")
             
             #   The car's slot is in front of a leaving road
             if self.slots_roads[car_slot] in self.leaving_roads:            
@@ -125,13 +117,15 @@ class Roundabout:
         Updates the roundabout : rotate the cars, dispatch them...
         """
         #   Make the cars rotate
-        if time.get_ticks() - self.last_rotation > __constants__.ROUNDABOUT_ROTATION_RATE:
-            self.last_rotation = time.get_ticks()
+        if time.get_ticks() - self.last_shift > __constants__.ROUNDABOUT_ROTATION_RATE:
+            self.last_shift = time.get_ticks()
             self.slots_roads = init.shift_list(self.slots_roads)
         
+        #   I've put the gates update after the cars update, but I'm not sure that it is the best configuration... What do you think ? -- Ch@hine
         #   Update gates
-        self.update_gates()
-        
+        #for road in self.incoming_roads:
+        #    self._update_gate(road)
+
         #   Spawning mode
         if self.spawning and len(self.leaving_roads) and (time.get_ticks() - self.spawn_timer > __constants__.SPAWN_TIME):
             self.spawn_timer = time.get_ticks()
@@ -142,6 +136,12 @@ class Roundabout:
         #   Update cars
         for car in self.cars:
             self.update_car(car)
+
+        #   Update gates
+        for road in self.incoming_roads:
+            self._update_gate(road)
+        for road in self.leaving_roads:
+            self._update_gate(road)
         
         #   Kill cars that have reached their destination
         for car in self.to_kill:
@@ -157,17 +157,16 @@ class Roundabout:
             road    (Road)  :   the road whose gates are affected
             state   (bool)   :   the state (False = red, True = green) of the gate
         """
-        #   Leaving road
-        if (id(road.begin) == id(self)):
-            if road.gates[__constants__.INCOMING_GATE] != state:
-                road.gates[__constants__.INCOMING_GATE] = state
-                if road.gates[__constants__.INCOMING_GATE] != state: road.gates_update[__constants__.INCOMING_GATE] = time.get_ticks()
-        
-        #   Incoming road
+        #   Set which gate is to be updated
+        if id(road.begin) == id(self):
+            current_gate = __constants__.INCOMING_GATE
         else:
-            if road.gates[__constants__.LEAVING_GATE] != state:
-                road.gates[__constants__.LEAVING_GATE] = state
-                if road.gates[__constants__.LEAVING_GATE] != state: road.gates_update[__constants__.LEAVING_GATE] = time.get_ticks()
+            current_gate = __constants__.LEAVING_GATE
+        
+        #   Update if necessary
+        if road.gates[current_gate] != state:
+            road.gates_update[current_gate] = time.get_ticks()
+            road.gates[current_gate]        = state
 
     @property
     def is_full(self):
