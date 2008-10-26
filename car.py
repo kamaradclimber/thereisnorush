@@ -4,9 +4,9 @@ File        :   car.py
 Description :   defines the class "Car"
 """
 
-import constants    as __constants__
 import init
 from random         import randint
+import constants    as __constants__
 import road         as __road__
 import roundabout   as __roundabout__
 
@@ -20,29 +20,50 @@ class Car:
         Constructor method : a car is provided a (for now unmutable) sequence of directions.
             new_path (list)  :   a list of waypoints
             new_road (Road) :   the road where the car originates (for now, let's forbid the original location to be a roundabout)
-        headway: Desired headway to the preceding car / Distance souhaitée par rapport à la voiture devant
-        Définie par la liste de ses directions successives, pour le moment cette liste est fixe.
         """
         self.path               = []
         self.waiting            = False
         self.length             = __constants__.CAR_DEFAULT_LENGTH
         self.width              = __constants__.CAR_DEFAULT_WIDTH
         self.speed              = __constants__.CAR_DEFAULT_SPEED 
-        self.position           = new_position               
         self.headway            = __constants__.CAR_DEFAULT_HEADWAY
         self.color              = __constants__.CAR_DEFAULT_COLOR 
-        self.acceleration       = __constants__.CAR_DEFAULT_ACCEL     
+        self.force              = __constants__.CAR_DEFAULT_FORCE
+        self.mass               = __constants__.CAR_DEFAULT_MASS
         self.location           = new_location
+        self.position           = new_position
+        self.acceleration       = 0
         self.stress             = 0
         self.sight_distance     = 5 * __constants__.CAR_DEFAULT_LENGTH
-        self.consecutif_waiting = 0 #ca sera utile: si jattend trop longtemps, jai envie de changer de trajet et de recalculer le trajet pour aller à mon objectif
+        self.consecutif_waiting = 0
 
         if isinstance(new_location, __road__.Road):
             self.location.cars.insert(0, self)
         else:
-            raise ValueError('ERROR (in car.__init__()) : new cars must be created in a road !') # An "ERROR" is a problem that cannot be ignored : the program must then halt
+            raise ValueError('ERROR (in car.__init__()) : new cars must be created on a road !')
         
         self.generate_path()
+        self.generate_random_vehicle()
+    
+    
+    def generate_random_vehicle(self):
+        """
+        Generates car's and driver's properties
+        EXPERIMENTAL
+        """
+        
+        # EXPERIMENTAL
+        vehicle_type = randint(0, 1)
+        
+        # Standard car
+        if vehicle_type == 0:
+            pass
+        # Truck
+        elif vehicle_type == 1:    
+            self.length             = 3   * __constants__.CAR_DEFAULT_LENGTH
+            self.force              = 5   * __constants__.CAR_DEFAULT_FORCE
+            self.mass               = 30  * __constants__.CAR_DEFAULT_MASS
+            self.color              =       __constants__.LIGHT_BLUE
     
     def generate_path(self, minimum = 8, maximum = 11):
         """
@@ -60,9 +81,7 @@ class Car:
         if self.location and self in self.location.cars:
             self.location.cars.remove(self)
         else:
-            print "WARNING (in car.join()) : a car had no location !"
-        
-        #   Each time a car joins or leaves a roundabout, this one has to update in order to calculate again the best configuration for the gates
+            raise Exception("WARNING (in car.join()) : a car had no location !")
 
         #   Roundabout -> road
         if isinstance(self.location, __roundabout__.Roundabout) and isinstance(new_location, __road__.Road):
@@ -74,12 +93,11 @@ class Car:
             else:
                 self.location.slots_cars[car_slot] = None
 
-            self.acceleration = __constants__.CAR_DEFAULT_ACCEL
+            self.acceleration = self.force/self.mass
 
         #   Road -> roundabout
         elif isinstance(new_location, __roundabout__.Roundabout) and isinstance(self.location, __road__.Road):
             self.catch_slot(new_location)
-            # new_location.update_gates()  -but this not  to you to do this
 
         #   Road -> road OR roundabout -> roundabout : ERROR
         else:
@@ -108,19 +126,17 @@ class Car:
                     raise Exception("ERROR (in car.catch_slot()) : a slot should be empty, but is not !")
             else:
                 roundabout.slots_cars[id_slot] = self
-                print "WARNING (in car.catch_slot()) : a slot should have been initialized, but was not !"
+                raise Exception("WARNING (in car.catch_slot()) : a slot should have been initialized, but was not !")
         else:
             raise Exception("ERROR (in car.catch_slot()) : a road has no slot !")
 
     def die(self):
         """
-        Kills the car, which simply disappear.
+        Kills the car, which simply disappears.
         """
         if self.location.cars:
             if self in self.location.cars:
                 self.location.cars.remove(self)
-                #__constants__.angriness_mean += self.stress
-                #__constants__.nb_died += 1
             else:
                 raise Except("WARNING (in car.die()) : a car was not in its place !")
     
@@ -131,7 +147,6 @@ class Car:
         #   End of the path
         if len(self.path) == 0:
             return None
-
         else:
             next = self.path[0]
             if not read_only:
@@ -140,7 +155,7 @@ class Car:
 
     def _next_obstacle(self):
         """
-        Returns the position of the obstacle ahead of the car
+        Returns the position of the obstacle ahead of the car, (obstacle, obstacle_is_light)
         """
         #   The car is the first of the queue : the next obstacle is the light
         if self.rank >= len(self.location.cars) - 1:
@@ -149,7 +164,6 @@ class Car:
             #   Green light
             if self.location.gates[__constants__.LEAVING_GATE]:
                 obstacle = self.location.length + self.headway
-
             #   Red light
             else:
                 obstacle = self.location.length
@@ -167,6 +181,7 @@ class Car:
         Moves the car, THEN manages its speed, acceleration.
         """
         if not isinstance(self.location, __road__.Road):
+            # We only manage cars on roads, we don't care about rndabts
             return None
 
         (obstacle, obstacle_is_light) = self._next_obstacle()
@@ -176,12 +191,12 @@ class Car:
         # TEMPORARY : simple version that works, ask Sharayanan for explanations
         # This guarantees that the car will stop at the right location, although this is not 
         # very realistic, but let's focus on physics first -- Sharayanan
-        self.sight_distance = (self.speed**2)/(2*__constants__.CAR_DEFAULT_ACCEL)
+        self.sight_distance = (self.speed**2)/(2*self.force/self.mass)
         
         #   No obstacle at sight
         if self.position + self.length/2 + self.sight_distance < obstacle:
             # « 1 trait danger, 2 traits sécurité : je fonce ! »
-            self.acceleration = __constants__.CAR_DEFAULT_ACCEL
+            self.acceleration = self.force/self.mass
 
         #   Visible obstacle
         else:
@@ -201,7 +216,7 @@ class Car:
             
             # TEMPORARY : Simple version that *works*, ask Sharayanan for explanations
             if delta_speed:
-                self.acceleration = __constants__.CAR_DEFAULT_ACCEL * delta_speed/abs(delta_speed)
+                self.acceleration = self.force/self.mass * delta_speed/abs(delta_speed)
                 
         #   Update the position given the speed
         self.position = min(self.position + self.speed * __constants__.delta_t, obstacle - self.length/2 - self.headway)

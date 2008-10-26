@@ -4,9 +4,9 @@ File        :   road.py
 Description :   defines the class "Road"
 """
 
-import constants
-from pygame import time
-from math   import sqrt
+import constants    as __constants__
+from pygame         import time
+from math           import sqrt
 
 class Road:
     """
@@ -15,7 +15,7 @@ class Road:
     def __init__(   self,
                     new_begin       = None,
                     new_end         = None,
-                    new_max_speed   = constants.ROAD_DEFAULT_MAX_SPEED):
+                    new_max_speed   = __constants__.ROAD_DEFAULT_MAX_SPEED):
         """
         Constructor method : creates a new road.
             new_begin  (Node)    : starting point for the road
@@ -30,7 +30,7 @@ class Road:
         self.gates          = [True, False]    # [gate at the beginning, gate at the end]
         self.parallel       = None
         self.orthogonal     = None
-        self.width          = constants.ROAD_DEFAULT_WIDTH
+        self.width          = __constants__.ROAD_DEFAULT_WIDTH
         
         self.end.incoming_roads.append(self)
         self.begin.leaving_roads.append(self)
@@ -49,6 +49,13 @@ class Road:
             for i in range(queue_length):
                 self.cars[queue_length - 1 - i].act()
         
+    def last_gate_update(self, gate):
+        """
+        Return the time (in milliseconds) since the last update of a gate (0 or 1).
+        """
+        current_time = time.get_ticks()
+        return (current_time - self.gates_update[gate])
+    
     @property
     def is_free(self):
         """
@@ -59,14 +66,7 @@ class Road:
             return True
         else:
             # CONVENTION SENSITIVE
-            return(self.cars[0].position > self.cars[0].length/2 + self.cars[0].headway)
-    
-    def last_gate_update(self, gate):
-        """
-        Return the time (in milliseconds) since the last update of a gate (0 or 1).
-        """
-        current_time = time.get_ticks()
-        return (current_time - self.gates_update[gate])
+            return(self.cars[0].position > self.cars[0].length + self.cars[0].headway)
     
     @property
     def length(self):
@@ -79,16 +79,23 @@ class Road:
         return None
     
     @property
-    def reference(self):
+    def unit_vectors(self):
         """
         Returns the unit parallel and perpendicular vectors to a the road
         """
-        #   Normalized parallel vector
-        parallel = self.end.position - self.begin.position
-        parallel.normalize()
         
-        #   Normalized orthogonal vector
-        orthogonal = parallel.get_orthogonal()
+        # Avoid recomputing them each time
+        if self.parallel and self.orthogonal:
+            parallel = self.parallel
+            orthogonal = self.orthogonal
+        else:
+            #   Normalized parallel and orthogonal vectors
+            parallel = self.end.position - self.begin.position
+            parallel.normalize()
+            orthogonal = parallel.get_orthogonal()
+            
+            self.parallel = parallel
+            self.orthogonal = orthogonal
 
         return (parallel, orthogonal)
     
@@ -97,9 +104,6 @@ class Road:
         """
         Returns the number of waiting cars on the road.
         """
-        total = 0
-        if self.cars:
-            for car in self.cars:
-                if car.waiting:
-                    total += 1
-        return total
+        if not self.cars:
+            return 0
+        return len([0 for car in self.cars if car.waiting])    

@@ -4,9 +4,6 @@ File        :   vector.py
 Description :   a simple physics 2D vector class
 """
 
-global VECTOR_IMPORTED
-VECTOR_IMPORTED = True
-
 from math import sin, cos, atan, hypot
 
 # The quick way to know how big the pie is
@@ -14,7 +11,8 @@ PI = 3.141592653589793238462643383
 
 # new math function
 def direction(x, y):
-    """Return the direction component of a vector (in radians), given
+    """
+    Return the direction component of a vector (in radians), given
     cartesian coordinates.
     """
     if x > 0:

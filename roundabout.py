@@ -4,57 +4,64 @@ File        :   roundabout.py
 Description :   defines the class "Roundabout"
 """
 
-import constants    as __constants__
 import init
 from math           import pi
 from pygame         import time
 from random         import randint
 from vector         import Vector
 import car          as __car__
+import constants    as __constants__
 
 class Roundabout:
     """
     Crossroads of our city ; may host several roads.
     """
 
-    def __init__(self, new_x, new_y, new_spawning=False, radius=__constants__.ROUNDABOUT_RADIUS_DEFAULT):
+    def __init__(self, 
+                 new_x, 
+                 new_y, 
+                 new_spawning = False, 
+                 radius       =__constants__.ROUNDABOUT_RADIUS_DEFAULT):
         """
         Constructor method : creates a new roundabout.
             new_coordinates (list) : the coordinates [x, y] for the roundabout
         """
         
         self.position       = Vector(__constants__.TRACK_SCALE * new_x + __constants__.TRACK_OFFSET_X, __constants__.TRACK_SCALE * new_y + __constants__.TRACK_OFFSET_Y)
+        
         self.incoming_roads = []
         self.leaving_roads  = []
-        self.max_cars       = __constants__.ROUNDABOUT_DEFAULT_MAX_CARS
         self.cars           = []
+        self.to_kill        = [] 
         self.slots_cars     = {}
-        self.slots_roads    = [None for i in range(self.max_cars)]
+        
+        self.max_cars       = __constants__.ROUNDABOUT_DEFAULT_MAX_CARS
+        self.rotation_speed = __constants__.ROUNDABOUT_DEFAULT_ROTATION_SPEED
+        
         self.spawning       = new_spawning
         self.spawn_timer    = time.get_ticks()
         self.last_shift     = time.get_ticks()
-        self.rotation_speed = __constants__.ROUNDABOUT_DEFAULT_ROTATION_SPEED
-        self.to_kill        = [] 
         
+        self.slots_roads    = [None for i in range(self.max_cars)]
+
     def host_road(self, road):
         """
+        Connects a road to a slot, must be called during initialization.
         Connecte, lors d'une initialisation, une route à un slot sur le carrefour.
         """
+        
         if road in self.slots_roads:
             return None
         
-        #   How many free slots there are
-        total_free_slots = len([slot for slot in self.slots_roads if slot is None])
+        # List of free slots  How many free slots there are
+        free_slots = [i for (i, slot) in enumerate(self.slots_roads) if slot is None]
 
-        if total_free_slots:
+        if len(free_slots) > 0:
             #   Choose a random free slot to allocate for the road
-            free_slots = [i for (i, slot) in enumerate(self.slots_roads) if slot is None]
-
-            if free_slots:
-                self.slots_roads[free_slots[0]] = road
-                self.slots_cars[free_slots[0]]  = None
-            else:
-                print "WARNING (in Rooundabout.host_road()) : there is no slot to host any further roads !"
+            self.slots_roads[free_slots[0]] = road
+            self.slots_cars[free_slots[0]]  = None
+        else:
+            raise Exception("ERROR (in Roundabout.host_road()) : there is no slot to host any further roads !")
             
     def _update_gate(self, road):
         """
@@ -63,7 +70,7 @@ class Roundabout:
         """
         #   Too many waiting cars
         if road.total_waiting_cars > __constants__.WAITING_CARS_LIMIT:
-            #   Leaving road : do not send more cars in this road
+            #   Leaving road : do not allow any further car on this road
             if road in self.leaving_roads:
                 self.set_gate(road, False)
 
@@ -120,11 +127,6 @@ class Roundabout:
         if time.get_ticks() - self.last_shift > __constants__.ROUNDABOUT_ROTATION_RATE:
             self.last_shift = time.get_ticks()
             self.slots_roads = init.shift_list(self.slots_roads)
-        
-        #   I've put the gates update after the cars update, but I'm not sure that it is the best configuration... What do you think ? -- Ch@hine
-        #   Update gates
-        #for road in self.incoming_roads:
-        #    self._update_gate(road)
 
         #   Spawning mode
         if self.spawning and len(self.leaving_roads) and (time.get_ticks() - self.spawn_timer > __constants__.SPAWN_TIME):
@@ -132,16 +134,16 @@ class Roundabout:
             chosen_road = self.leaving_roads[randint(0, len(self.leaving_roads) - 1)]
             if chosen_road.is_free:
                 new_car = __car__.Car(chosen_road)
-        
-        #   Update cars
-        for car in self.cars:
-            self.update_car(car)
 
         #   Update gates
         for road in self.incoming_roads:
             self._update_gate(road)
         for road in self.leaving_roads:
             self._update_gate(road)
+                
+        #   Update cars
+        for car in self.cars:
+            self.update_car(car)
         
         #   Kill cars that have reached their destination
         for car in self.to_kill:

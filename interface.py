@@ -22,10 +22,8 @@ def draw_roundabout(roundabout):
     # TODO :
     #       · (DN1) draw the cars on the roundabout
     
-    pygame.draw.circle(screen, __constants__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __constants__.ROUNDABOUT_WIDTH)
-    
-    # Roundabouts should be drawn as rotating crossroads, in order to draw the cars that rotate in ; the problem is that roads must not be drawn from the center of the roundabout anymore
-    #pygame.draw.circle(screen, __constants__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __constants__.ROUNDABOUT_WIDTH * 4, 1)
+    if not init.track.picture:
+        pygame.draw.circle(screen, __constants__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __constants__.ROUNDABOUT_WIDTH)
     
     if roundabout.cars:
         # There are cars on the roundabout, we may want to draw them
@@ -51,38 +49,29 @@ def draw_car(car):
     length_covered = float(int(car.position)) / float(int(car.location.length))
     
     # Get them once
-    (r_width, r_length) = (car.width, car.length)
-
-    # Get the appropriate vectors once
-    (parallel, orthogonal) = car.location.reference
+    (r_width, r_length)    = (car.width, car.length)
+    (parallel, orthogonal) = car.location.unit_vectors
 
     # Coordinates for the center
     center_position = d_position + direction * length_covered + orthogonal * car.location.width/2
     
-    position1 = center_position - parallel * r_length/2 - orthogonal * r_width/2
-    position2 = center_position + parallel * r_length/2 - orthogonal * r_width/2
-    position3 = center_position + parallel * r_length/2 + orthogonal * r_width/2
-    position4 = center_position - parallel * r_length/2 + orthogonal * r_width/2
+    point = []
+    point.append(center_position - parallel * r_length/2 - orthogonal * r_width/2)
+    point.append(center_position + parallel * r_length/2 - orthogonal * r_width/2)
+    point.append(center_position + parallel * r_length/2 + orthogonal * r_width/2)
+    point.append(center_position - parallel * r_length/2 + orthogonal * r_width/2)
     
-    # Change the color in case the car is waiting    
     color = car.color
-    if car.acceleration > 0:
-        color = __constants__.BLUE
-    elif car.acceleration < 0:
-        color = __constants__.RED
-
-    # DEBUG
-    #if car.sight_distance > 1:
-    #    pygame.draw.circle(screen, color, center_position.get_list(), car.sight_distance, 1)
-        
     # Draw the car 
-    pygame.draw.polygon(screen, color, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()))
-    pygame.draw.aaline(screen, __constants__.BLACK, position1.get_tuple(), position2.get_tuple())
-    pygame.draw.aaline(screen, __constants__.BLACK, position2.get_tuple(), position3.get_tuple())
-    pygame.draw.aaline(screen, __constants__.BLACK, position3.get_tuple(), position4.get_tuple())
-    pygame.draw.aaline(screen, __constants__.BLACK, position4.get_tuple(), position1.get_tuple())
-    
-   # pygame.draw.polygon(screen, __constants__.BLACK, (position1.get_tuple(), position2.get_tuple(), position3.get_tuple(), position4.get_tuple()), 1)
+    pygame.draw.polygon(screen, color, [point[i].get_tuple() for i in range(len(point))])
+    draw_aapolygon(screen,  __constants__.BLACK, [point[i].get_tuple() for i in range(len(point))])
+   
+def draw_aapolygon(surface, color, points):
+    """
+    Draw an antialiased hollow polygon
+    """
+    for i in range(len(points)):
+        pygame.draw.aaline(surface, color, points[i], points[(i + 1) % len(points)])
 
 def draw_text(position = Vector(screen.get_rect().centerx, screen.get_rect().centery), message = '', text_color = __constants__.WHITE, back_color = __constants__.BLACK, font = None, anti_aliasing = True):
     """
@@ -119,7 +108,7 @@ def draw_traffic_light(position, road, gate):
     width     = 0
     state     = road.gates[gate]
 
-    (parallel, orthogonal) = road.reference   
+    (parallel, orthogonal) = road.unit_vectors   
     start_position  = position + orthogonal * 6 - parallel * 12
     d_position      = Vector(0, -1) * TF_RADIUS * 2
     
@@ -190,7 +179,6 @@ def draw_info():
     text.append("  > on roads : " + str(cars_on_road))
     text.append("  > on roundabouts : " + str(cars_on_roundabout))
     text.append("  > waiting : " + str(cars_waiting))
-    #text.append("  > stress moyen: " + str(__constants__.angriness_mean / __constants__.nb_died))
     
     position = Vector()
     for i in range(len(text)):
@@ -206,7 +194,6 @@ def draw_scene():
     try:
         screen.fill(__constants__.BLACK)
     except pygame.error, exc:
-        # Avoid errors during unloading
         exit()
         
     # EXPERIMENTAL
@@ -288,14 +275,10 @@ def main_loop():
     halt()
     
 # Bootstrap
-
 if __name__ == "__main__":
     # Before simulation instructions
-    
-    #   please do not shout everywhere, i agree on your point, but this particular function may remain, i think -kamaradclimber
-    # Please don't *shout*, this is not a function, and this is required here -- Sharayanan
     pygame.init()
-    pygame.display.set_caption("Thereisnorush (testing) - r" + str(__constants__.REVISION_NUMBER))
+    pygame.display.set_caption(__constants__.REVISION_NAME + ' - r' + str(__constants__.REVISION_NUMBER))
     
     # Main loop
     main_loop()
