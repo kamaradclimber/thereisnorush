@@ -133,7 +133,15 @@ class Roundabout:
             self.spawn_timer = time.get_ticks()
             chosen_road = self.leaving_roads[randint(0, len(self.leaving_roads) - 1)]
             if chosen_road.is_free:
-                new_car = __car__.Car(chosen_road)
+                temp = randint(0, 3)
+
+                #   Choose a random type (more likely to be a standard car than a truck)
+                if temp < 3:
+                    type = __constants__.STANDARD_CAR
+                else:
+                    type = __constants__.TRUCK
+
+                new_car = __car__.Car(chosen_road, type)
 
         #   Update gates
         for road in self.incoming_roads:

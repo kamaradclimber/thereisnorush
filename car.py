@@ -15,7 +15,7 @@ class Car:
     Those which will crowd our city >_< .
     """
 
-    def __init__(self, new_location, new_position = 0):
+    def __init__(self, new_location, new_type = __constants__.STANDARD_CAR, new_position = 0):
         """
         Constructor method : a car is provided a (for now unmutable) sequence of directions.
             new_path (list)  :   a list of waypoints
@@ -43,27 +43,12 @@ class Car:
             raise ValueError('ERROR (in car.__init__()) : new cars must be created on a road !')
         
         self.generate_path()
-        self.generate_random_vehicle()
-    
-    
-    def generate_random_vehicle(self):
-        """
-        Generates car's and driver's properties
-        EXPERIMENTAL
-        """
-        
-        # EXPERIMENTAL
-        vehicle_type = randint(0, 1)
-        
-        # Standard car
-        if vehicle_type == 0:
-            pass
-        # Truck
-        elif vehicle_type == 1:    
-            self.length             = 3   * __constants__.CAR_DEFAULT_LENGTH
-            self.force              = 5   * __constants__.CAR_DEFAULT_FORCE
-            self.mass               = 30  * __constants__.CAR_DEFAULT_MASS
-            self.color              =       __constants__.LIGHT_BLUE
+
+        if new_type == __constants__.TRUCK:
+            self.length *=  3
+            self.force  *=  5
+            self.mass   *=  30
+            self.color  =   __constants__.LIGHT_BLUE
     
     def generate_path(self, minimum = 8, maximum = 11):
         """

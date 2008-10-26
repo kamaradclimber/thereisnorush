@@ -22,7 +22,7 @@ LIGHT_RED   = (255,  64,  64)
 LIGHT_GREEN = ( 64, 255,  64)
 LIGHT_BLUE  = ( 64,  64, 255)
 
-# Car constants
+# Car
 CAR_DEFAULT_LENGTH  = 5
 CAR_DEFAULT_WIDTH   = 4
 CAR_DEFAULT_HEADWAY = CAR_DEFAULT_LENGTH    # marge de sécurité
@@ -30,8 +30,10 @@ CAR_DEFAULT_SPEED   = 0
 CAR_DEFAULT_FORCE   = 10.0
 CAR_DEFAULT_MASS    = 1.0
 CAR_DEFAULT_COLOR   = (255, 255, 255) 
-    
-# Track constants
+STANDARD_CAR        = 0
+TRUCK               = 1
+
+# Track
 TRACK_OFFSET_X = 32
 TRACK_OFFSET_Y = 32
 TRACK_SCALE    = 3.5
