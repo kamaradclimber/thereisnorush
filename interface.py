@@ -6,8 +6,11 @@ Description :   Manages the displays and main loop.
 
 import constants    as __constants__
 import init     
-import pygame   
-from vector import Vector
+from vector         import Vector
+
+import sys
+from PyQt4          import QtCore, QtGui
+import pygame
 
 screen = pygame.display.set_mode(__constants__.RESOLUTION)
 
@@ -159,33 +162,6 @@ def draw_road(road):
         for car in road.cars:
             draw_car(car)
 
-def draw_info(): 
-    cars_on_road        = 0
-    cars_on_roundabout  = 0
-    cars_waiting        = 0
-    text                = []
-    
-    for road in init.track.roads:
-        cars_on_road += len(road.cars)
-        cars_waiting += road.total_waiting_cars
-    for roundabout in init.track.roundabouts:
-        cars_on_roundabout += len(roundabout.cars)
-    
-    text.append(str(len(init.track.roads)) + " roads")
-    text.append(str(len(init.track.roundabouts)) + " roundabouts")
-    text.append('')
-    
-    text.append(str(cars_on_road + cars_on_roundabout) + " cars")
-    text.append("  > on roads : " + str(cars_on_road))
-    text.append("  > on roundabouts : " + str(cars_on_roundabout))
-    text.append("  > waiting : " + str(cars_waiting))
-    
-    position = Vector()
-    for i in range(len(text)):
-        position.x = 640
-        position.y = 4 + 16 * i
-        draw_text(position, text[i])
-            
 def draw_scene():
     """
     Draws the complete scene on the screen.
@@ -205,8 +181,6 @@ def draw_scene():
     for roundabout in init.track.roundabouts:
         draw_roundabout(roundabout)
         
-    draw_info()
-    
     pygame.display.flip()
     pygame.display.update()
     
@@ -215,72 +189,163 @@ def halt():
     Closes properly the simulation.
     Quitte correctement la simulation.
     """
-    is_running = False
     pygame.quit()
   
-def event_manager():
-    """
-    Checks for users' actions and call appropriate methods.
-    Vérifie les actions de l'utilisateur et réagit en conséquence.
-    """
-    for event in pygame.event.get():
-        if (event.type == pygame.QUIT):
-            halt()
+class ThereIsNoRush(QtGui.QMainWindow):
+    def __init__(self, parent = None):
+        #   Call parent constructor
+        QtGui.QWidget.__init__(self, parent)
         
-        #   Mouse button
-        elif (event.type == pygame.MOUSEBUTTONDOWN):
-            left_button, right_button, middle_button = pygame.mouse.get_pressed()
-            x, y = pygame.mouse.get_pos()
-        elif (event.type == pygame.MOUSEBUTTONUP):
-            left_button, right_button, middle_button = pygame.mouse.get_pressed()
-            x, y = pygame.mouse.get_pos()
+        #   Set the window
+        #self.resize(__constants__.PANEL_WIDTH, __constants__.PANEL_HEIGHT) # (width, height)
+        #self.center()
+        self.setWindowTitle(__constants__.REVISION_NAME + ' - r' + str(__constants__.REVISION_NUMBER))
+        self.setWindowIcon(QtGui.QIcon('icons/window.png'))
+        
+        #   Exit action
+        self.act_exit = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
+        self.act_exit.setShortcut('Ctrl+Q')
+        self.act_exit.setStatusTip('Exit application')
+        self.connect(self.act_exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
+        
+        #   Status bar
+        self.statusBar().showMessage('Ready')
 
-        #   Keyboard button
-        elif (event.type == pygame.KEYDOWN):
-            keyb_state = pygame.key.get_pressed()
-            
-            if keyb_state[pygame.K_ESCAPE]:
-                halt()
+        #   Menu bar
+        menu_bar = self.menuBar()
+        file = menu_bar.addMenu('&File')
+        file.addAction(self.act_exit)
+        
+        #   Toolbar
+        self.toolbar = self.addToolBar('Exit')
+        self.toolbar.addAction(self.act_exit)
+
+        #   Labels
+        lbl_total_roundabouts   = QtGui.QLabel('Total roundabouts :')
+        lbl_total_roads         = QtGui.QLabel('Total roads :')
+        lbl_total_cars          = QtGui.QLabel('Total cars :')
+        lbl_cars_on_roads       = QtGui.QLabel('Cars on roads :')
+        lbl_cars_on_roundabouts = QtGui.QLabel('Cars on roundabouts :')
+        lbl_cars_waiting        = QtGui.QLabel("Cars waiting :")
+        
+        #   Fields
+        self.total_roundabouts      = QtGui.QSpinBox()
+        self.total_roundabouts.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        
+        self.total_roads            = QtGui.QSpinBox()
+        self.total_roads.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+
+        self.total_cars             = QtGui.QSpinBox()
+        self.total_cars.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+
+        self.cars_on_roundabouts    = QtGui.QSpinBox()
+        self.cars_on_roundabouts.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+
+        self.cars_on_roads          = QtGui.QSpinBox()
+        self.cars_on_roads.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+
+        self.cars_waiting           = QtGui.QSpinBox()
+        self.cars_waiting.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+
+        #   Set the display grid
+        grid = QtGui.QGridLayout()
+        #grid.setSpacing(10)
+        
+        grid.addWidget(lbl_total_roundabouts, 0, 0)
+        grid.addWidget(self.total_roundabouts, 0, 1)
+        
+        grid.addWidget(lbl_total_roads, 1, 0)
+        grid.addWidget(self.total_roads, 1, 1)
+        
+        grid.addWidget(lbl_total_cars, 2, 0)
+        grid.addWidget(self.total_cars, 2, 1)
+
+        grid.addWidget(lbl_cars_on_roundabouts, 3, 0)
+        grid.addWidget(self.cars_on_roundabouts, 3, 1)
+
+        grid.addWidget(lbl_cars_on_roads, 4, 0)
+        grid.addWidget(self.cars_on_roads, 4, 1)
+        
+        grid.addWidget(lbl_cars_waiting, 5, 0)
+        grid.addWidget(self.cars_waiting, 5, 1)
+
+        central_widget = QtGui.QWidget()
+        central_widget.setLayout(grid)
+        self.setCentralWidget(central_widget)
+        
+        #   Timer
+        timer = QtCore.QTimer(self)
+        self.connect(timer, QtCore.SIGNAL("timeout()"), self.update)
+        timer.start(__constants__.delta_t * 100.0)
+
+
+    def closeEvent(self, event):
+        """
+        Specifies what has to be done when exiting the application ; this function is automatically called by Qt as soon as the user clicks on the close button (at the top right of the window), that's why you mustn't change its name !
+        """
+        reply = QtGui.QMessageBox.question(self, 'Confirm', "Do you really want to exit ?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+        
+        if reply == QtGui.QMessageBox.Yes:
+            event.accept()
         else:
-            pass 
+            event.ignore()
 
-def update_scene():
-    for road in init.track.roads:
-        road.update()
-    for roundabout in init.track.roundabouts:
-        roundabout.update()
+    def center(self):
+        """
+        Centers the window in the screen.
+        """
+        screen  = QtGui.QDesktopWidget().screenGeometry()
+        size    =  self.geometry()
+        self.move((screen.width() - size.width())/2, (screen.height() - size.height())/2)
 
-def main_loop():
-    """
-    Main loop : keeps updating and displaying the scene forever,
-                unless somebody hits Esc.
-    
-    Boucle principale : met à jour et affiche la scène pour toujours,
-                        jusqu'à ce que quelqu'un appuye sur Esc.
-    """
-    is_running = True
-    
-    while is_running:
-        # Check the users' actions | Vérifie les actions de l'utilisateur
-        event_manager()
+    def keyPressEvent(self, event):
+        """
+        Manages the keyboard events ; the name of the function is set by Qt, so don't change it.
+        """
+        if event.key() == QtCore.Qt.Key_Escape:
+            self.close()
+
+    def update(self):
+        """
+        Updates the simulation.
+        """
+        #   Run the simulation for delta_t
+        for road in init.track.roads:
+            road.update()
+        for roundabout in init.track.roundabouts:
+            roundabout.update()
         
-        # Updates the scene | Met à jour la scène
-        update_scene()
-        
-        # Draw the scene | Dessine la scène
+        #   Update the scene
         draw_scene()
+        
+        #   Update the information
+        self.total_roads.setValue(len(init.track.roads))
+        self.total_roundabouts.setValue(len(init.track.roundabouts))
 
-    # End of simulation instructions
-    # Instructions de fin de simulation
-    halt()
-    
+        self.cars_on_roads.setValue(0)
+        self.cars_on_roundabouts.setValue(0)
+        self.cars_waiting.setValue(0)
+        
+        for road in init.track.roads:
+            self.cars_on_roads.setValue(self.cars_on_roads.value() + len(road.cars))
+            self.cars_waiting.setValue(self.cars_waiting.value() + road.total_waiting_cars)
+        for roundabout in init.track.roundabouts:
+            self.cars_on_roundabouts.setValue(self.cars_on_roundabouts.value() + len(roundabout.cars))
+        
+        self.total_cars.setValue(self.cars_on_roads.value() + self.cars_on_roundabouts.value())
+
 # Bootstrap
 if __name__ == "__main__":
     # Before simulation instructions
     pygame.init()
     pygame.display.set_caption(__constants__.REVISION_NAME + ' - r' + str(__constants__.REVISION_NUMBER))
     
-    # Main loop
-    main_loop()
+    application = QtGui.QApplication(sys.argv)
 
+    panel = ThereIsNoRush()
+    panel.show()
+    
+    #   Main loop
+    sys.exit(application.exec_())
+    
 # Don't write anything after that !

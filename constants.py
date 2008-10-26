@@ -56,12 +56,12 @@ WAITING_CARS_LIMIT = 8
 WAITING_TIME_LIMIT = 10000
 
 #   Other
-RESOLUTION      = (WINDOW_WIDTH, WINDOW_HEIGHT) = (1000, 750)
+RESOLUTION          = (WINDOW_WIDTH, WINDOW_HEIGHT) = (1000, 750)
+PANEL_RESOLUTION    = (PANEL_WIDTH, PANEL_HEIGHT)   = (500, 150)
+delta_t             = 0.1
 
-delta_t         = 0.1
+DISPLAY_DENSITY     = False # You may de-activate per-density coloring (+ fps)
 
-DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
-
-LEAVING_GATE    = 1
-INCOMING_GATE   = 0
-SPAWN_TIME      = 1700
+LEAVING_GATE        = 1
+INCOMING_GATE       = 0
+SPAWN_TIME          = 1700
