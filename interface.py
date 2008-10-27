@@ -63,8 +63,8 @@ class ThereIsNoRush(QtGui.QMainWindow):
         lbl_cars_on_roads       = QtGui.QLabel('Cars on roads :')
         lbl_cars_on_roundabouts = QtGui.QLabel('Cars on roundabouts :')
         lbl_cars_waiting        = QtGui.QLabel("Cars waiting :")
-        
-        #   Fields
+
+        #   Statistics fields
         self.total_roundabouts      = QtGui.QSpinBox()
         self.total_roundabouts.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
         
@@ -83,27 +83,54 @@ class ThereIsNoRush(QtGui.QMainWindow):
         self.cars_waiting           = QtGui.QSpinBox()
         self.cars_waiting.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
 
-        #   Set the display grid
+        #   Options boxes
+        self.entrance_lights        = QtGui.QCheckBox("Display entrance lights")
+        #self.entrance_lights.setCheckState(QtGui.QCheckBox.Unchecked)
+
+        self.exit_lights            = QtGui.QCheckBox("Display exit lights")
+        #self.exit_lights.setCheckState(QtGui.QCheckBox.Checked)
+
+        self.roundabouts_indices    = QtGui.QCheckBox("Display roundabouts indices")
+        #self.roundabouts_indices.setCheckState(QtGui.QCheckBox.Unchecked)
+        
+        #   Statistics panel
+        lay_stats = QtGui.QGridLayout()
+        
+        lay_stats.addWidget(lbl_total_roundabouts, 0, 0)
+        lay_stats.addWidget(self.total_roundabouts, 0, 1)
+        
+        lay_stats.addWidget(lbl_total_roads, 1, 0)
+        lay_stats.addWidget(self.total_roads, 1, 1)
+        
+        lay_stats.addWidget(lbl_total_cars, 2, 0)
+        lay_stats.addWidget(self.total_cars, 2, 1)
+
+        lay_stats.addWidget(lbl_cars_on_roundabouts, 3, 0)
+        lay_stats.addWidget(self.cars_on_roundabouts, 3, 1)
+
+        lay_stats.addWidget(lbl_cars_on_roads, 4, 0)
+        lay_stats.addWidget(self.cars_on_roads, 4, 1)
+        
+        lay_stats.addWidget(lbl_cars_waiting, 5, 0)
+        lay_stats.addWidget(self.cars_waiting, 5, 1)
+        
+        stats = QtGui.QGroupBox("Statistics", self)
+        stats.setLayout(lay_stats)
+        
+        #   Options panel
+        lay_options = QtGui.QVBoxLayout()
+        
+        lay_options.addWidget(self.entrance_lights)
+        lay_options.addWidget(self.exit_lights)
+        lay_options.addWidget(self.roundabouts_indices)
+
+        options = QtGui.QGroupBox("Options", self)
+        options.setLayout(lay_options)
+
+        #   Main grid
         grid = QtGui.QGridLayout()
-        #grid.setSpacing(10)
-        
-        grid.addWidget(lbl_total_roundabouts, 0, 0)
-        grid.addWidget(self.total_roundabouts, 0, 1)
-        
-        grid.addWidget(lbl_total_roads, 1, 0)
-        grid.addWidget(self.total_roads, 1, 1)
-        
-        grid.addWidget(lbl_total_cars, 2, 0)
-        grid.addWidget(self.total_cars, 2, 1)
-
-        grid.addWidget(lbl_cars_on_roundabouts, 3, 0)
-        grid.addWidget(self.cars_on_roundabouts, 3, 1)
-
-        grid.addWidget(lbl_cars_on_roads, 4, 0)
-        grid.addWidget(self.cars_on_roads, 4, 1)
-        
-        grid.addWidget(lbl_cars_waiting, 5, 0)
-        grid.addWidget(self.cars_waiting, 5, 1)
+        grid.addWidget(stats, 0, 0)
+        grid.addWidget(options, 1, 0)
 
         central_widget = QtGui.QWidget()
         central_widget.setLayout(grid)
@@ -269,7 +296,10 @@ class ThereIsNoRush(QtGui.QMainWindow):
         (start_position, end_position) = (road.begin.position.ceil(), road.end.position.ceil())
     
         # This is not perfect... but it's ok for now I guess -- Sharayanan
-        self.draw_traffic_light(end_position, road, __constants__.LEAVING_GATE)
+        if self.exit_lights.isChecked():
+            self.draw_traffic_light(end_position, road, __constants__.LEAVING_GATE)
+        if self.entrance_lights.isChecked():
+            self.draw_traffic_light(start_position, road, __constants__.INCOMING_GATE)
         
         color = __constants__.GREEN
         key = 0
