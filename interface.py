@@ -5,37 +5,21 @@ Description :   Manages the displays and main loop.
 """
 
 import constants    as __constants__
-import init     
+import init         as init
 from vector         import Vector
 
 import sys
-from PyQt4          import QtCore, QtGui
-import pygame
+from PyQt4          import QtCore, QtGui, Qt
 
-
-def draw_aapolygon(surface, color, points):
-    """
-    Draw an antialiased hollow polygon
-    """
-    for i in range(len(points)):
-        pygame.draw.aaline(surface, color, points[i], points[(i + 1) % len(points)])
-    
-def halt():
-    """
-    Closes properly the simulation.
-    Quitte correctement la simulation.
-    """
-    pygame.quit()
-  
-class ThereIsNoRush(QtGui.QMainWindow):
+class win_control(QtGui.QMainWindow):
     def __init__(self, parent = None):
         #   Call parent constructor
-        QtGui.QWidget.__init__(self, parent)
+        QtGui.QMainWindow.__init__(self, parent)
         
         #   Set the window
         #self.resize(__constants__.PANEL_WIDTH, __constants__.PANEL_HEIGHT) # (width, height)
         #self.center()
-        self.setWindowTitle(__constants__.REVISION_NAME + ' - r' + str(__constants__.REVISION_NUMBER))
+        self.setWindowTitle('Contrôle')
         self.setWindowIcon(QtGui.QIcon('icons/window.png'))
         
         #   Exit action
@@ -88,7 +72,7 @@ class ThereIsNoRush(QtGui.QMainWindow):
         #self.entrance_lights.setCheckState(QtGui.QCheckBox.Unchecked)
 
         self.exit_lights            = QtGui.QCheckBox("Display exit lights")
-        #self.exit_lights.setCheckState(QtGui.QCheckBox.Checked)
+        self.exit_lights.setCheckState(2)
 
         self.roundabouts_indices    = QtGui.QCheckBox("Display roundabouts indices")
         #self.roundabouts_indices.setCheckState(QtGui.QCheckBox.Unchecked)
@@ -136,25 +120,6 @@ class ThereIsNoRush(QtGui.QMainWindow):
         central_widget.setLayout(grid)
         self.setCentralWidget(central_widget)
         
-        #   Open scene window
-        self.screen = pygame.display.set_mode(__constants__.RESOLUTION)
-
-        #   Timer
-        timer = QtCore.QTimer(self)
-        self.connect(timer, QtCore.SIGNAL("timeout()"), self.update)
-        timer.start(__constants__.delta_t * 100.0)
-
-    def closeEvent(self, event):
-        """
-        Specifies what has to be done when exiting the application ; this function is automatically called by Qt as soon as the user clicks on the close button (at the top right of the window), that's why you mustn't change its name !
-        """
-        reply = QtGui.QMessageBox.question(self, 'Confirm', "Do you really want to exit ?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-        
-        if reply == QtGui.QMessageBox.Yes:
-            event.accept()
-        else:
-            event.ignore()
-
     def center(self):
         """
         Centers the window in the screen.
@@ -168,215 +133,236 @@ class ThereIsNoRush(QtGui.QMainWindow):
         Manages the keyboard events ; the name of the function is set by Qt, so don't change it.
         """
         if event.key() == QtCore.Qt.Key_Escape:
-            self.close()
+            exit()
 
-    def update(self):
-        """
-        Updates the simulation.
-        """
-        #   Run the simulation for delta_t
-        for road in init.track.roads:
-            road.update()
-        for roundabout in init.track.roundabouts:
-            roundabout.update()
-        
-        #   Update the scene
-        self.draw_scene()
-        
-        #   Update the information
-        self.total_roads.setValue(len(init.track.roads))
-        self.total_roundabouts.setValue(len(init.track.roundabouts))
-
-        self.cars_on_roads.setValue(0)
-        self.cars_on_roundabouts.setValue(0)
-        self.cars_waiting.setValue(0)
-        
-        for road in init.track.roads:
-            self.cars_on_roads.setValue(self.cars_on_roads.value() + len(road.cars))
-            self.cars_waiting.setValue(self.cars_waiting.value() + road.total_waiting_cars)
-        for roundabout in init.track.roundabouts:
-            self.cars_on_roundabouts.setValue(self.cars_on_roundabouts.value() + len(roundabout.cars))
-        
-        self.total_cars.setValue(self.cars_on_roads.value() + self.cars_on_roundabouts.value())
-    
     def draw_roundabout(self, roundabout):
         """
         Draws a given roundabout on the screen.
             roundabout (Roundabout) : the aforementioned roundabout.
-        
+
         Dessine un carrefour donné à l'écran.
             roundabout (Roundabout) : le carrefour sus-cité.
         """
         # TODO :
         #       · (DN1) draw the cars on the roundabout
-        
-        if not init.track.picture:
-            pygame.draw.circle(self.screen, __constants__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __constants__.ROUNDABOUT_WIDTH)
-        
+
+#        if not init.track.picture:
+#            pygame.draw.circle(self.screen, __constants__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __constants__.ROUNDABOUT_WIDTH)
+
         if roundabout.cars:
             # There are cars on the roundabout, we may want to draw them
             # albeit we can't use draw_car here...
-            
+
             #TEMPORARY : the number of cars on the roundabout is written
             position = Vector(roundabout.position.x + 10, roundabout.position.y + 10)
             self.draw_text(position, str(len(roundabout.cars)))
             pass
 
-    def draw_car(self, car):
+    def closeEvent(self, event):
         """
-        Draws a given car on the screen.
-            car (Car) : the aforementioned car.
-        
-        Dessine une voiture donnée à l'écran.
-            car (Car) : la voiture sus-citée.
+        Specifies what has to be done when exiting the application ; this function is automatically called by Qt as soon as the user clicks on the close button (at the top right of the window), that's why you mustn't change its name !
         """
-        d_position = car.location.begin.position
-        a_position = car.location.end.position
-        direction  = (a_position - d_position)
+        event.ignore()
     
-        length_covered = float(int(car.position)) / float(int(car.location.length))
-    
-        # Get them once
-        (r_width, r_length)    = (car.width, car.length)
-        (parallel, orthogonal) = car.location.unit_vectors
+class win_draw_surface(QtGui.QMainWindow):
+    def __init__(self, control_panel, parent = None):
+        QtGui.QWidget.__init__(self, parent)
 
-        # Coordinates for the center
-        center_position = d_position + direction * length_covered + orthogonal * car.location.width/2
-    
-        point = []
-        point.append(center_position - parallel * r_length/2 - orthogonal * r_width/2)
-        point.append(center_position + parallel * r_length/2 - orthogonal * r_width/2)
-        point.append(center_position + parallel * r_length/2 + orthogonal * r_width/2)
-        point.append(center_position - parallel * r_length/2 + orthogonal * r_width/2)
-        
-        color = car.color
-        # Draw the car 
-        pygame.draw.polygon(self.screen, color, [point[i].get_tuple() for i in range(len(point))])
-        draw_aapolygon(self.screen,  __constants__.BLACK, [point[i].get_tuple() for i in range(len(point))])
+        self.resize(__constants__.WINDOW_WIDTH,__constants__.WINDOW_HEIGHT)
+        self.setWindowTitle(__constants__.REVISION_NAME + ' - r' + str(__constants__.REVISION_NUMBER))
+        self.setWindowIcon(QtGui.QIcon('icons/tinr_logo.png'))
 
-    def draw_traffic_light(self, position, road, gate):
-        """
-        Draws a traffic light...
-            x, y : coordinates
-            road : the road
-            gate : 1 or 0, the gate
-        """
+        self.cpanel = control_panel       
+        self.cpanel.show()
         
-        TF_RADIUS = 3
-        width     = 0
-        state     = road.gates[gate]
-    
-        (parallel, orthogonal) = road.unit_vectors   
-        start_position  = position + orthogonal * 6 - parallel * 12
-        d_position      = Vector(0, -1) * TF_RADIUS * 2
-        
-        for i in range(3):
-            if (state) and (i == 0):
-                color = __constants__.LIGHT_GREEN
-                width = 0
-            elif (not state) and (i == 2):
-                color = __constants__.LIGHT_RED
-                width = 0
-            else:
-                color = __constants__.GRAY
-                width = 1
-            
-            position = start_position + d_position * i
-            pygame.draw.circle(self.screen, color, position.get_list(), TF_RADIUS, width)
+        self.timer = QtCore.QBasicTimer()
+        self.timer.start(10, self)
 
-    def draw_road(self, road):
+    def closeEvent(self, event):
+        """
+        Specifies what has to be done when exiting the application ; this function is automatically called by Qt as soon as the user clicks on the close button (at the top right of the window), that's why you mustn't change its name !
+        """
+        event.accept()
+        exit()
+    
+    def keyPressEvent(self, event):
+        """
+        Manages the keyboard events ; the name of the function is set by Qt, so don't change it.
+        """
+        if event.key() == QtCore.Qt.Key_Escape:
+            exit()
+        
+    def paintEvent(self, event):
+        """
+        Specifies how the control should draw itself
+        """
+        painter = QtGui.QPainter(self)
+        
+        painter.setBrush(QtGui.QColor('blue'))
+        painter.setPen(  QtGui.QColor('black'))
+        painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
+        self.draw_scene(painter)
+        
+        painter.end()
+
+    def draw_scene(self, painter):
+        """
+        Draws the complete scene on the screen.
+        Dessine la scène entière à l'écran.
+        """
+
+        #if init.track.picture:
+        #    self.screen.blit(init.track.picture, (0,0))
+
+        for road in init.track.roads:
+            self.draw_road(painter, road)
+        #for roundabout in init.track.roundabouts:
+            #self.draw_roundabout(painter, roundabout)
+
+    def draw_road(self, painter, road):
         """
         Draws a given road on the screen and all the cars on it.
             road (Road) : the aforementioned road.
-                
+
         Dessine une route donnée à l'écran et toutes les voitures dessus.
             road (Road) : la route sus-citée.
         """
-        
+
         (start_position, end_position) = (road.begin.position.ceil(), road.end.position.ceil())
-    
+
         # This is not perfect... but it's ok for now I guess -- Sharayanan
-        if self.exit_lights.isChecked():
-            self.draw_traffic_light(end_position, road, __constants__.LEAVING_GATE)
-        if self.entrance_lights.isChecked():
-            self.draw_traffic_light(start_position, road, __constants__.INCOMING_GATE)
-        
+        if self.cpanel.exit_lights.isChecked():
+            self.draw_traffic_light(painter, end_position, road, __constants__.LEAVING_GATE)
+        if self.cpanel.entrance_lights.isChecked():
+            self.draw_traffic_light(painter, start_position, road, __constants__.INCOMING_GATE)
+
         color = __constants__.GREEN
         key = 0
         if road.cars and __constants__.DISPLAY_DENSITY:
             occupation = 0
             for car in road.cars:
                 occupation += car.length
-                
+
             key = 2 * (float(occupation)/float(road.length)) * 255
             if key > 255: key = 255
             color = [key, 255 - key, 0]
-        
-        if not init.track.picture:
-            pygame.draw.aaline(screen, color, start_position.get_tuple(), end_position.get_tuple()) # EXPERIMENTAL
-        
+
+#        if not init.track.picture:
+        painter.drawLine(start_position.x, start_position.y, end_position.x, end_position.y)
+
         if road.cars and key < 200:
             # Do not draw cars when density exceeds ~80%
             for car in road.cars:
-                self.draw_car(car)
-        
-    def draw_scene(self):
-        """
-        Draws the complete scene on the screen.
-        Dessine la scène entière à l'écran.
-        """  
-        try:
-            self.screen.fill(__constants__.BLACK)
-        except pygame.error, exc:
-            exit()
-            
-        # EXPERIMENTAL
-        if init.track.picture:
-            self.screen.blit(init.track.picture, (0,0))
-        
-        for road in init.track.roads:
-            self.draw_road(road)
-        for roundabout in init.track.roundabouts:
-            self.draw_roundabout(roundabout)
-            
-        pygame.display.flip()
-        pygame.display.update()
+                self.draw_car(painter, car)
 
-    def draw_text(self, position, message = '', text_color = __constants__.WHITE, back_color = __constants__.BLACK, font = None, anti_aliasing = True):
+    def draw_car(self, painter, car):
         """
-        Draws text on the screen
-            position    (Vector  :   position where the text is to be written
-            message (str)        :   the message that is to be written
-            text_color (list)    :   the color of the text to be written
-            back_color (list)    :   the color on which the text is to be written
-            font (pygame.font)   :   the font that will be used for the text to be written
-            anti_aliasing (bool) :   whether we should antialias the text to be written
+        Draws a given car on the screen.
+            car (Car) : the aforementioned car.
+
+        Dessine une voiture donnée à l'écran.
+            car (Car) : la voiture sus-citée.
         """
-        #   The (optional) pygame.font module is not supported : cannot draw text
-        if not pygame.font:
-            raise Exception("WARNING (in draw_text()) : the pygame.font module is not supported, cannot draw text.")
+        d_position = car.location.begin.position
+        a_position = car.location.end.position
+        direction  = (a_position - d_position)
+
+        length_covered = float(int(car.position)) / float(int(car.location.length))
+
+        # Get them once
+        (r_width, r_length)    = (car.width, car.length)
+        (parallel, orthogonal) = car.location.unit_vectors
+
+        # Coordinates for the center
+        center_position = d_position + direction * length_covered + orthogonal * car.location.width/2
+
+        point = []
+        point.append(center_position - parallel * r_length/2 - orthogonal * r_width/2)
+        point.append(center_position + parallel * r_length/2 - orthogonal * r_width/2)
+        point.append(center_position + parallel * r_length/2 + orthogonal * r_width/2)
+        point.append(center_position - parallel * r_length/2 + orthogonal * r_width/2)
+        
+        polygon = []
+        for i in range(len(point)):
+            polygon.append(QtCore.QPointF(point[i].x, point[i].y))
+
+        color = car.color
+        # Draw the car
+        painter.drawPolygon(polygon[0], polygon[1], polygon[2], polygon[3])
+
+    def draw_traffic_light(self, painter, position, road, gate):
+        """
+        Draws a traffic light...
+            x, y : coordinates
+            road : the road
+            gate : 1 or 0, the gate
+        """
+
+        TF_RADIUS = 3
+        width     = 0
+        state     = road.gates[gate]
+
+        (parallel, orthogonal) = road.unit_vectors
+        start_position  = position + orthogonal * 6 - parallel * 12
+        d_position      = Vector(0, -1) * TF_RADIUS * 2
+
+        for i in range(3):
+            if (state) and (i == 0):
+                painter.setBrush(QtGui.QColor('green'))
+            elif (not state) and (i == 2):
+                painter.setBrush(QtGui.QColor('red'))
+            else:
+                painter.setBrush(QtGui.QColor('black'))
+
+            position = start_position + d_position * i
+            painter.drawEllipse(position.x - TF_RADIUS, position.y - TF_RADIUS, 2 * TF_RADIUS, 2*TF_RADIUS)
+        
+    def timerEvent(self, event):
+        """
+        Passes or uses timer events to update the simulation
+        """
+        if event.timerId() == self.timer.timerId():
+            self.update_simulation()
+            self.update()
+            self.cpanel.update()
         else:
-            #   No font is provided : use of a default font
-            if not font:
-                font = pygame.font.Font(None, 17)
-                
-            text = font.render(message, anti_aliasing, text_color, back_color)
-            textRect = text.get_rect()
-            textRect.x, textRect.y = position.x, position.y
-            self.screen.blit(text, textRect)
+            QtGui.QFrame.timerEvent(self, event)
 
+    def update_simulation(self):
+        """
+        Updates the simulation.
+        """
+        
+        #   Run the simulation for delta_t
+        for road in init.track.roads:
+            road.update()
+        for roundabout in init.track.roundabouts:
+            roundabout.update()
+
+        #   Update the information
+        self.cpanel.total_roads.setValue(len(init.track.roads))
+        self.cpanel.total_roundabouts.setValue(len(init.track.roundabouts))
+
+        self.cpanel.cars_on_roads.setValue(0)
+        self.cpanel.cars_on_roundabouts.setValue(0)
+        self.cpanel.cars_waiting.setValue(0)
+
+        for road in init.track.roads:
+            self.cpanel.cars_on_roads.setValue(self.cpanel.cars_on_roads.value() + len(road.cars))
+            self.cpanel.cars_waiting.setValue(self.cpanel.cars_waiting.value() + road.total_waiting_cars)
+        for roundabout in init.track.roundabouts:
+            self.cpanel.cars_on_roundabouts.setValue(self.cpanel.cars_on_roundabouts.value() + len(roundabout.cars))
+
+        self.cpanel.total_cars.setValue(self.cpanel.cars_on_roads.value() + self.cpanel.cars_on_roundabouts.value())            
+        
 # Bootstrap
 if __name__ == "__main__":
     # Before simulation instructions
-    pygame.init()
-    pygame.display.set_caption(__constants__.REVISION_NAME + ' - r' + str(__constants__.REVISION_NUMBER))
+    app = QtGui.QApplication(sys.argv)
     
-    application = QtGui.QApplication(sys.argv)
+    panel = win_control()
+    draw_surface = win_draw_surface(panel)
+    draw_surface.show() 
 
-    panel = ThereIsNoRush()
-    panel.show()
-    
-    #   Main loop
-    sys.exit(application.exec_())
-    
+    sys.exit(app.exec_())
 # Don't write anything after that !
