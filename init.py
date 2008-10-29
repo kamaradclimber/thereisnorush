@@ -20,7 +20,7 @@ def add_demo_car(road_number, position):
 def load_demo_track():
     # Temporary testing zone
     track_parser = __track__.Track_Parser(track)
-    track_parser.load_from_file("demo_track.txt", "demo_track.png")
+    track_parser.load_from_file('demo_track.txt', 'demo_track.png')
     
 def find_key(dictionnary, value):
     """

@@ -11,173 +11,105 @@ from vector         import Vector
 import sys
 from PyQt4          import QtCore, QtGui, Qt
 
-class win_control(QtGui.QMainWindow):
+class main_window_inherit(QtGui.QMainWindow):
     def __init__(self, parent = None):
-        #   Call parent constructor
         QtGui.QWidget.__init__(self, parent)
-        
-        #   Set the window
-        #self.resize(__constants__.PANEL_WIDTH, __constants__.PANEL_HEIGHT) # (width, height)
-        #self.center()
-        self.setWindowTitle('Contrôle')
-        self.setWindowIcon(QtGui.QIcon('icons/window.png'))
-        
-        #   Exit action
-        self.act_exit = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
-        self.act_exit.setShortcut('Ctrl+Q')
-        self.act_exit.setStatusTip('Exit application')
-        self.connect(self.act_exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
-        
-        #   Status bar
-        self.statusBar().showMessage('Ready')
-
-        #   Menu bar
-        menu_bar = self.menuBar()
-        file = menu_bar.addMenu('&File')
-        file.addAction(self.act_exit)
-        
-        #   Toolbar
-        self.toolbar = self.addToolBar('Exit')
-        self.toolbar.addAction(self.act_exit)
-
-        #   Labels
-        lbl_total_roundabouts   = QtGui.QLabel('Total roundabouts :')
-        lbl_total_roads         = QtGui.QLabel('Total roads :')
-        lbl_total_cars          = QtGui.QLabel('Total cars :')
-        lbl_cars_on_roads       = QtGui.QLabel('Cars on roads :')
-        lbl_cars_on_roundabouts = QtGui.QLabel('Cars on roundabouts :')
-        lbl_cars_waiting        = QtGui.QLabel("Cars waiting :")
-
-        #   Statistics fields
-        self.total_roundabouts      = QtGui.QSpinBox()
-        self.total_roundabouts.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
-        
-        self.total_roads            = QtGui.QSpinBox()
-        self.total_roads.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
-
-        self.total_cars             = QtGui.QSpinBox()
-        self.total_cars.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
-
-        self.cars_on_roundabouts    = QtGui.QSpinBox()
-        self.cars_on_roundabouts.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
-
-        self.cars_on_roads          = QtGui.QSpinBox()
-        self.cars_on_roads.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
-
-        self.cars_waiting           = QtGui.QSpinBox()
-        self.cars_waiting.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
-
-        #   Options boxes
-        self.entrance_lights        = QtGui.QCheckBox("Display entrance lights")
-        #self.entrance_lights.setCheckState(QtGui.QCheckBox.Unchecked)
-
-        self.exit_lights            = QtGui.QCheckBox("Display exit lights")
-        self.exit_lights.setCheckState(2)
-
-        self.roundabouts_indices    = QtGui.QCheckBox("Display roundabouts indices")
-        #self.roundabouts_indices.setCheckState(QtGui.QCheckBox.Unchecked)
-        
-        #   Statistics panel
-        lay_stats = QtGui.QGridLayout()
-        
-        lay_stats.addWidget(lbl_total_roundabouts, 0, 0)
-        lay_stats.addWidget(self.total_roundabouts, 0, 1)
-        
-        lay_stats.addWidget(lbl_total_roads, 1, 0)
-        lay_stats.addWidget(self.total_roads, 1, 1)
-        
-        lay_stats.addWidget(lbl_total_cars, 2, 0)
-        lay_stats.addWidget(self.total_cars, 2, 1)
-
-        lay_stats.addWidget(lbl_cars_on_roundabouts, 3, 0)
-        lay_stats.addWidget(self.cars_on_roundabouts, 3, 1)
-
-        lay_stats.addWidget(lbl_cars_on_roads, 4, 0)
-        lay_stats.addWidget(self.cars_on_roads, 4, 1)
-        
-        lay_stats.addWidget(lbl_cars_waiting, 5, 0)
-        lay_stats.addWidget(self.cars_waiting, 5, 1)
-        
-        stats = QtGui.QGroupBox("Statistics", self)
-        stats.setLayout(lay_stats)
-        
-        #   Options panel
-        lay_options = QtGui.QVBoxLayout()
-        
-        lay_options.addWidget(self.entrance_lights)
-        lay_options.addWidget(self.exit_lights)
-        lay_options.addWidget(self.roundabouts_indices)
-
-        options = QtGui.QGroupBox("Options", self)
-        options.setLayout(lay_options)
-
-        #   Main grid
-        grid = QtGui.QGridLayout()
-        grid.addWidget(stats, 0, 0)
-        grid.addWidget(options, 1, 0)
-
-        central_widget = QtGui.QWidget()
-        central_widget.setLayout(grid)
-        self.setCentralWidget(central_widget)
-        
-    def center(self):
-        """
-        Centers the window in the screen.
-        """
-        screen  = QtGui.QDesktopWidget().screenGeometry()
-        size    =  self.geometry()
-        self.move((screen.width() - size.width())/2, (screen.height() - size.height())/2)
-
-    def keyPressEvent(self, event):
-        """
-        Manages the keyboard events ; the name of the function is set by Qt, so don't change it.
-        """
-        if event.key() == QtCore.Qt.Key_Escape:
-            exit()
-
-    def draw_roundabout(self, roundabout):
-        """
-        Draws a given roundabout on the screen.
-            roundabout (Roundabout) : the aforementioned roundabout.
-
-        Dessine un carrefour donné à l'écran.
-            roundabout (Roundabout) : le carrefour sus-cité.
-        """
-        # TODO :
-        #       · (DN1) draw the cars on the roundabout
-
-#        if not init.track.picture:
-#            pygame.draw.circle(self.screen, __constants__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __constants__.ROUNDABOUT_WIDTH)
-
-        if roundabout.cars:
-            # There are cars on the roundabout, we may want to draw them
-            # albeit we can't use draw_car here...
-
-            #TEMPORARY : the number of cars on the roundabout is written
-            position = Vector(roundabout.position.x + 10, roundabout.position.y + 10)
-            self.draw_text(position, str(len(roundabout.cars)))
-            pass
-
-    def closeEvent(self, event):
-        """
-        Specifies what has to be done when exiting the application ; this function is automatically called by Qt as soon as the user clicks on the close button (at the top right of the window), that's why you mustn't change its name !
-        """
-        event.ignore()
     
-class win_draw_surface(QtGui.QMainWindow):
-    def __init__(self, control_panel = None, parent = None):
-        QtGui.QWidget.__init__(self, parent)
+class main_window_class(QtGui.QMainWindow):
+    def __init__(self, inherit_class = None):
+        QtGui.QWidget.__init__(self, None)
 
-        self.resize(__constants__.WINDOW_WIDTH,__constants__.WINDOW_HEIGHT)
-        self.setWindowTitle(__constants__.REVISION_NAME + ' - r' + str(__constants__.REVISION_NUMBER))
-        self.setWindowIcon(QtGui.QIcon('icons/tinr_logo.png'))
-
-        self.cpanel = control_panel       
-        self.cpanel.show()
+        self.setup_interface()
+        
+        self.inherit = inherit_class
+        self.inherit.show()
         
         self.timer = QtCore.QBasicTimer()
         self.timer.start(10, self)
 
+    def setup_interface(self):
+    
+        width  = __constants__.PANEL_WIDTH
+        height = __constants__.PANEL_HEIGHT
+    
+        self.resize(__constants__.WINDOW_WIDTH,__constants__.WINDOW_HEIGHT)
+        
+        # Main window's content
+        self.setObjectName('main_window_class')
+        self.centralWidget = QtGui.QWidget(self)
+        self.centralWidget.setObjectName('central_widget')
+
+        size_policy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Preferred)
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        
+        # Dockable control window
+        self.control_panel = QtGui.QMainWindow(self) #QtGui.QDockWidget(self)
+        self.control_panel.setSizePolicy(size_policy)
+        self.control_panel.setObjectName('control_panel')
+        self.panel_contents = QtGui.QWidget(self.control_panel)
+        self.panel_contents.setObjectName('panel_contents')
+        
+        self.control_panel.resize(width, height)
+        size_policy.setHeightForWidth(self.control_panel.sizePolicy().hasHeightForWidth())
+        
+        # Tab system
+        self.tab_controls = QtGui.QTabWidget(self.panel_contents)
+        self.tab_controls.setGeometry(QtCore.QRect(4, 4, width - 8, height - 8))
+        self.tab_controls.setTabPosition(QtGui.QTabWidget.East)
+        self.tab_controls.setObjectName('tab_controls')
+        
+        # Tab in tabs
+        self.tab_infos = QtGui.QWidget()
+        self.tab_commands = QtGui.QWidget()
+        self.tab_infos.setObjectName('tab_infos')
+        self.tab_commands.setObjectName('tab_commands')
+        
+        self.tab_controls.addTab(self.tab_infos, '')
+        self.tab_controls.addTab(self.tab_commands, '')
+        self.tab_controls.setCurrentIndex(0)
+        
+        # Information label
+        self.lbl_infos = QtGui.QLabel(self.tab_infos)
+        self.lbl_infos.setGeometry(QtCore.QRect(4,4,width - 8 - 8, height - 8 - 8))
+        self.lbl_infos.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
+        self.lbl_infos.setWordWrap(True)
+        self.lbl_infos.setObjectName('lbl_infos')
+        
+        # Option boxes
+        self.entrance_lights = QtGui.QCheckBox(self.tab_commands)
+        self.exit_lights     = QtGui.QCheckBox(self.tab_commands)
+        
+        self.entrance_lights.setObjectName('entrance_lights')
+        self.exit_lights.setObjectName('exit_lights')
+        
+        self.entrance_lights.move(4,4)
+        self.exit_lights.move(4, 23 + 4)
+        
+        # Default values
+        self.entrance_lights.setChecked(False)
+        self.exit_lights.setChecked(True)
+        
+        # Encapsulation
+        self.control_panel.setCentralWidget(self.panel_contents)
+        
+        # Captions, icons…
+        self.setWindowTitle(__constants__.REVISION_NAME + ' - r' + str(__constants__.REVISION_NUMBER))
+        self.control_panel.setWindowTitle('Controls')
+        self.lbl_infos.setText('<i>Informations</i>')
+        
+        self.tab_controls.setTabText(0, 'Informations')
+        self.tab_controls.setTabText(1, 'Commands')
+        self.entrance_lights.setText('Incoming traffic lights')
+        self.exit_lights.setText('Leaving traffic lights')
+        
+        self.setWindowIcon(QtGui.QIcon('icons/tinr_logo.png'))
+        self.control_panel.setWindowIcon(QtGui.QIcon('icons/window.png'))
+        
+        QtCore.QMetaObject.connectSlotsByName(self)
+        
+        self.control_panel.show()
+        
     def closeEvent(self, event):
         """
         Specifies what has to be done when exiting the application ; this function is automatically called by Qt as soon as the user clicks on the close button (at the top right of the window), that's why you mustn't change its name !
@@ -215,8 +147,8 @@ class win_draw_surface(QtGui.QMainWindow):
 
         for road in init.track.roads:
             self.draw_road(painter, road)
-        #for roundabout in init.track.roundabouts:
-            #self.draw_roundabout(painter, roundabout)
+        for roundabout in init.track.roundabouts:
+            self.draw_roundabout(painter, roundabout)
 
     def draw_road(self, painter, road):
         """
@@ -230,9 +162,9 @@ class win_draw_surface(QtGui.QMainWindow):
         (start_position, end_position) = (road.begin.position.ceil(), road.end.position.ceil())
 
         # This is not perfect... but it's ok for now I guess -- Sharayanan
-        if self.cpanel.exit_lights.isChecked():
+        if self.exit_lights.isChecked():
             self.draw_traffic_light(painter, end_position, road, __constants__.LEAVING_GATE)
-        if self.cpanel.entrance_lights.isChecked():
+        if self.entrance_lights.isChecked():
             self.draw_traffic_light(painter, start_position, road, __constants__.INCOMING_GATE)
 
         color = __constants__.GREEN
@@ -291,6 +223,30 @@ class win_draw_surface(QtGui.QMainWindow):
         painter.setPen(  QtGui.QColor('black'))
         painter.drawPolygon(polygon[0], polygon[1], polygon[2], polygon[3])
 
+    def draw_roundabout(self, painter, roundabout):
+        """
+        Draws a given roundabout on the screen.
+            roundabout (Roundabout) : the aforementioned roundabout.
+
+        Dessine un carrefour donné à l'écran.
+            roundabout (Roundabout) : le carrefour sus-cité.
+        """
+        # TODO :
+        #       · (DN1) draw the cars on the roundabout
+
+        if not init.track.picture:
+            #pygame.draw.circle(self.screen, __constants__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __constants__.ROUNDABOUT_WIDTH)
+            pass
+
+        if roundabout.cars:
+            # There are cars on the roundabout, we may want to draw them
+            # albeit we can't use draw_car here...
+
+            #TEMPORARY : the number of cars on the roundabout is written
+            position = Vector(roundabout.position.x + 10, roundabout.position.y + 10)
+            painter.drawText(position.x, position.y, str(len(roundabout.cars)))
+            pass        
+        
     def draw_traffic_light(self, painter, position, road, gate):
         """
         Draws a traffic light...
@@ -324,8 +280,8 @@ class win_draw_surface(QtGui.QMainWindow):
         """
         if event.timerId() == self.timer.timerId():
             self.update_simulation()
+            self.update_information()
             self.update()
-            self.cpanel.update()
         else:
             QtGui.QFrame.timerEvent(self, event)
 
@@ -333,35 +289,49 @@ class win_draw_surface(QtGui.QMainWindow):
         """
         Updates the simulation.
         """
-        
         #   Run the simulation for delta_t
         for road in init.track.roads:
             road.update()
         for roundabout in init.track.roundabouts:
             roundabout.update()
+        
+    def update_information(self):
+        """
+        """
+        information = ''
+        
+        information += '<b>Roads : </b>' + str(len(init.track.roads)) + '<br/>'
+        information += '<b>Roundabouts : </b>' + str(len(init.track.roundabouts)) + '<br/>'
 
-        #   Update the information
-        self.cpanel.total_roads.setValue(len(init.track.roads))
-        self.cpanel.total_roundabouts.setValue(len(init.track.roundabouts))
-
-        self.cpanel.cars_on_roads.setValue(0)
-        self.cpanel.cars_on_roundabouts.setValue(0)
-        self.cpanel.cars_waiting.setValue(0)
-
+        cars_on_roads = 0
+        cars_waiting  = 0
+        cars_on_roundabouts = 0
+        
         for road in init.track.roads:
-            self.cpanel.cars_on_roads.setValue(self.cpanel.cars_on_roads.value() + len(road.cars))
-            self.cpanel.cars_waiting.setValue(self.cpanel.cars_waiting.value() + road.total_waiting_cars)
+            cars_on_roads += len(road.cars)
+            cars_waiting  += road.total_waiting_cars
         for roundabout in init.track.roundabouts:
-            self.cpanel.cars_on_roundabouts.setValue(self.cpanel.cars_on_roundabouts.value() + len(roundabout.cars))
+            cars_on_roundabouts += len(roundabout.cars)
 
-        self.cpanel.total_cars.setValue(self.cpanel.cars_on_roads.value() + self.cpanel.cars_on_roundabouts.value())            
+        total_cars = cars_on_roads + cars_on_roundabouts
+        
+        information += '<b>Cars</b> (total) : ' + str(total_cars) + '<br/>'
+        information += '(on roads) : '          + str(cars_on_roads) + '<br/>'
+        information += '(on rdabt) : '          + str(cars_on_roundabouts) + '<br/>'
+        information += '(waiting) : '           + str(cars_waiting)
+        
+        self.lbl_infos.setText(information)
+        
+        if not self.control_panel.isVisible():
+            # The control panel has been closed: exit
+            exit()
 
 def main(args):
     app = QtGui.QApplication(args)
     
-    panel = win_control()
-    draw_surface = win_draw_surface(panel)
-    draw_surface.show() 
+    inherit_class = main_window_inherit()
+    main_window = main_window_class(inherit_class)
+    main_window.show() 
 
     sys.exit(app.exec_())
         

@@ -6,7 +6,7 @@ Description :   defines the constants
 
 # Revision information
 
-REVISION_NUMBER = 114
+REVISION_NUMBER = 115
 REVISION_NAME   = 'Thereisnorush (testing)'
 
 # Colors
@@ -59,7 +59,7 @@ WAITING_TIME_LIMIT = 10.000
 
 #   Other
 RESOLUTION          = (WINDOW_WIDTH, WINDOW_HEIGHT) = (1000, 750)
-PANEL_RESOLUTION    = (PANEL_WIDTH, PANEL_HEIGHT)   = (500, 150)
+PANEL_RESOLUTION    = (PANEL_WIDTH, PANEL_HEIGHT)   = (200, 500)
 delta_t             = 0.1
 
 DISPLAY_DENSITY     = False # You may de-activate per-density coloring (+ fps)
