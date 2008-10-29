@@ -6,7 +6,7 @@ Description :   defines the constants
 
 # Revision information
 
-REVISION_NUMBER = 113
+REVISION_NUMBER = 114
 REVISION_NAME   = 'Thereisnorush (testing)'
 
 # Colors
@@ -44,7 +44,7 @@ ROUNDABOUT_HEIGHT                 = 3
 ROUNDABOUT_COLOR                  = RED
 ROUNDABOUT_RADIUS_DEFAULT         = 10
 ROUNDABOUT_DEFAULT_ROTATION_SPEED = 10
-ROUNDABOUT_ROTATION_RATE          = 500
+ROUNDABOUT_ROTATION_RATE          = 0.500
 ROUNDABOUT_DEFAULT_MAX_CARS       = 5
 
 #   Road
@@ -55,7 +55,7 @@ ROAD_DEFAULT_WIDTH     = 5
 
 #   Rules
 WAITING_CARS_LIMIT = 8
-WAITING_TIME_LIMIT = 10000
+WAITING_TIME_LIMIT = 10.000
 
 #   Other
 RESOLUTION          = (WINDOW_WIDTH, WINDOW_HEIGHT) = (1000, 750)
@@ -66,4 +66,4 @@ DISPLAY_DENSITY     = False # You may de-activate per-density coloring (+ fps)
 
 LEAVING_GATE        = 1
 INCOMING_GATE       = 0
-SPAWN_TIME          = 1700
+SPAWN_TIME          = 1.700

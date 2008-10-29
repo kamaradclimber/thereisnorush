@@ -6,7 +6,7 @@ Description :   defines the class "Roundabout"
 
 import init
 from math           import pi
-from pygame         import time
+import              time
 from random         import randint
 from vector         import Vector
 import car          as __car__
@@ -39,8 +39,8 @@ class Roundabout:
         self.rotation_speed = __constants__.ROUNDABOUT_DEFAULT_ROTATION_SPEED
         
         self.spawning       = new_spawning
-        self.spawn_timer    = time.get_ticks()
-        self.last_shift     = time.get_ticks()
+        self.spawn_timer    = time.clock()
+        self.last_shift     = time.clock()
         
         self.slots_roads    = [None for i in range(self.max_cars)]
 
@@ -124,13 +124,12 @@ class Roundabout:
         Updates the roundabout : rotate the cars, dispatch them...
         """
         #   Make the cars rotate
-        if time.get_ticks() - self.last_shift > __constants__.ROUNDABOUT_ROTATION_RATE:
-            self.last_shift = time.get_ticks()
+        if time.clock() - self.last_shift > __constants__.ROUNDABOUT_ROTATION_RATE:
+            self.last_shift = time.clock()
             self.slots_roads = init.shift_list(self.slots_roads)
 
         #   Spawning mode
-        if self.spawning and len(self.leaving_roads) and (time.get_ticks() - self.spawn_timer > __constants__.SPAWN_TIME):
-            self.spawn_timer = time.get_ticks()
+        if self.spawning and len(self.leaving_roads) and (time.clock() - self.spawn_timer > __constants__.SPAWN_TIME):
             chosen_road = self.leaving_roads[randint(0, len(self.leaving_roads) - 1)]
             if chosen_road.is_free:
                 temp = randint(0, 3)
@@ -175,7 +174,7 @@ class Roundabout:
         
         #   Update if necessary
         if road.gates[current_gate] != state:
-            road.gates_update[current_gate] = time.get_ticks()
+            road.gates_update[current_gate] = time.clock()
             road.gates[current_gate]        = state
 
     @property

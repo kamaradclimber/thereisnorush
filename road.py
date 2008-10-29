@@ -5,7 +5,7 @@ Description :   defines the class "Road"
 """
 
 import constants    as __constants__
-from pygame         import time
+import              time
 from math           import sqrt
 
 class Road:
@@ -26,7 +26,7 @@ class Road:
         self.end            = new_end
         self.cars           = []
         self.max_speed      = new_max_speed
-        self.gates_update   = [time.get_ticks(), time.get_ticks()]
+        self.gates_update   = [time.clock(), time.clock()]
         self.gates          = [True, False]    # [gate at the beginning, gate at the end]
         self.parallel       = None
         self.orthogonal     = None
@@ -53,7 +53,7 @@ class Road:
         """
         Return the time (in milliseconds) since the last update of a gate (0 or 1).
         """
-        current_time = time.get_ticks()
+        current_time = time.clock()
         return (current_time - self.gates_update[gate])
     
     @property

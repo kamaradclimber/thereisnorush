@@ -14,7 +14,7 @@ from PyQt4          import QtCore, QtGui, Qt
 class win_control(QtGui.QMainWindow):
     def __init__(self, parent = None):
         #   Call parent constructor
-        QtGui.QMainWindow.__init__(self, parent)
+        QtGui.QWidget.__init__(self, parent)
         
         #   Set the window
         #self.resize(__constants__.PANEL_WIDTH, __constants__.PANEL_HEIGHT) # (width, height)
@@ -165,7 +165,7 @@ class win_control(QtGui.QMainWindow):
         event.ignore()
     
 class win_draw_surface(QtGui.QMainWindow):
-    def __init__(self, control_panel, parent = None):
+    def __init__(self, control_panel = None, parent = None):
         QtGui.QWidget.__init__(self, parent)
 
         self.resize(__constants__.WINDOW_WIDTH,__constants__.WINDOW_HEIGHT)
@@ -196,10 +196,9 @@ class win_draw_surface(QtGui.QMainWindow):
         """
         Specifies how the control should draw itself
         """
+        
         painter = QtGui.QPainter(self)
         
-        painter.setBrush(QtGui.QColor('blue'))
-        painter.setPen(  QtGui.QColor('black'))
         painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
         self.draw_scene(painter)
         
@@ -288,6 +287,8 @@ class win_draw_surface(QtGui.QMainWindow):
 
         color = car.color
         # Draw the car
+        painter.setBrush(QtGui.QColor('blue'))
+        painter.setPen(  QtGui.QColor('black'))
         painter.drawPolygon(polygon[0], polygon[1], polygon[2], polygon[3])
 
     def draw_traffic_light(self, painter, position, road, gate):
@@ -354,15 +355,17 @@ class win_draw_surface(QtGui.QMainWindow):
             self.cpanel.cars_on_roundabouts.setValue(self.cpanel.cars_on_roundabouts.value() + len(roundabout.cars))
 
         self.cpanel.total_cars.setValue(self.cpanel.cars_on_roads.value() + self.cpanel.cars_on_roundabouts.value())            
-        
-# Bootstrap
-if __name__ == "__main__":
-    # Before simulation instructions
-    app = QtGui.QApplication(sys.argv)
+
+def main(args):
+    app = QtGui.QApplication(args)
     
     panel = win_control()
     draw_surface = win_draw_surface(panel)
     draw_surface.show() 
 
     sys.exit(app.exec_())
+        
+# Bootstrap
+if __name__ == "__main__":
+    main(sys.argv)
 # Don't write anything after that !
