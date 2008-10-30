@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 File        :   constants.py
 Description :   defines the constants
@@ -6,21 +6,23 @@ Description :   defines the constants
 
 # Revision information
 
-REVISION_NUMBER = 115
+REVISION_NUMBER = 116
 REVISION_NAME   = 'Thereisnorush (testing)'
 
-# Colors
-BLACK       = (  0,   0,   0)
-RED         = (255,   0,   0)
-GREEN       = (  0, 255,   0)
-BLUE        = (  0,   0, 255)
-WHITE       = (255, 255, 255)
-GRAY        = (190, 190, 190)
-ORANGE      = (255, 128,   0)
+# Colors (R, G, B, [Alpha])
+BLACK       =   0,   0,   0
+RED         = 255,   0,   0
+GREEN       =   0, 255,   0
+BLUE        =   0,   0, 255
+WHITE       = 255, 255, 255
+GRAY        = 190, 190, 190
+ORANGE      = 255, 128,   0
 
-LIGHT_RED   = (255,  64,  64)
-LIGHT_GREEN = ( 64, 255,  64)
-LIGHT_BLUE  = ( 64,  64, 255)
+LIGHT_RED   = 255,  64,  64
+LIGHT_GREEN =  64, 255,  64
+LIGHT_BLUE  =  64,  64, 255
+
+TRANSPARENT = 0, 0, 0, 0
 
 # Car
 CAR_DEFAULT_LENGTH  = 5
@@ -29,7 +31,7 @@ CAR_DEFAULT_HEADWAY = CAR_DEFAULT_LENGTH    # marge de sécurité
 CAR_DEFAULT_SPEED   = 0
 CAR_DEFAULT_FORCE   = 10.0
 CAR_DEFAULT_MASS    = 1.0
-CAR_DEFAULT_COLOR   = (255, 255, 255) 
+CAR_DEFAULT_COLOR   = 255, 255, 255
 STANDARD_CAR        = 0
 TRUCK               = 1
 

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 File        :   car.py
 Description :   defines the class "Car"
@@ -23,33 +23,46 @@ class Car:
         """
         self.path               = []
         self.waiting            = False
-        self.length             = __constants__.CAR_DEFAULT_LENGTH
         self.width              = __constants__.CAR_DEFAULT_WIDTH
         self.speed              = __constants__.CAR_DEFAULT_SPEED 
         self.headway            = __constants__.CAR_DEFAULT_HEADWAY
-        self.color              = __constants__.CAR_DEFAULT_COLOR 
-        self.force              = __constants__.CAR_DEFAULT_FORCE
-        self.mass               = __constants__.CAR_DEFAULT_MASS
         self.location           = new_location
         self.position           = new_position
         self.acceleration       = 0
         self.stress             = 0
         self.sight_distance     = 5 * __constants__.CAR_DEFAULT_LENGTH
-        self.consecutif_waiting = 0
+        self.consecutif_waiting = 0        
+
 
         if isinstance(new_location, __road__.Road):
             self.location.cars.insert(0, self)
         else:
             raise ValueError('ERROR (in car.__init__()) : new cars must be created on a road !')
         
-        self.generate_path()
+        self.generate_path()        
+        self.set_car_properties(new_type)
 
-        if new_type == __constants__.TRUCK:
-            self.length *=  3
-            self.force  *=  5
-            self.mass   *=  30
-            self.color  =   __constants__.LIGHT_BLUE
-    
+    def set_car_properties(self, new_type):
+        """
+        Sets the car's properties, given its type
+        """
+        
+        # isn't there a better solution (I miss switch…)
+        if new_type == __constants__.STANDARD_CAR:
+            self.length = __constants__.CAR_DEFAULT_LENGTH    
+            self.force  = __constants__.CAR_DEFAULT_FORCE    
+            self.mass   = __constants__.CAR_DEFAULT_MASS    
+            self.color  = __constants__.CAR_DEFAULT_COLOR
+        
+        elif new_type == __constants__.TRUCK:
+            self.length =  __constants__.CAR_DEFAULT_LENGTH * 3
+            self.force  =  __constants__.CAR_DEFAULT_FORCE  * 5
+            self.mass   =  __constants__.CAR_DEFAULT_MASS   * 30            # They're ~30 tons heavy =]
+            self.color  =  __constants__.LIGHT_BLUE   # And they're blue !
+        
+        else:
+            raise Exception('ERROR (in car.set_car_properties()): unknown type of vehicle')
+            
     def generate_path(self, minimum = 8, maximum = 11):
         """
         Assembles random waypoints into a "path" list.

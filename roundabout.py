@@ -1,16 +1,16 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 File        :   roundabout.py
 Description :   defines the class "Roundabout"
 """
 
-import init
-from math           import pi
-import              time
-from random         import randint
-from vector         import Vector
-import car          as __car__
-import constants    as __constants__
+import           init
+import           time
+
+from vector      import Vector
+
+import car       as __car__
+import constants as __constants__
 
 class Roundabout:
     """
@@ -28,6 +28,7 @@ class Roundabout:
         """
         
         self.position       = Vector(__constants__.TRACK_SCALE * new_x + __constants__.TRACK_OFFSET_X, __constants__.TRACK_SCALE * new_y + __constants__.TRACK_OFFSET_Y)
+        self.radius         = radius
         
         self.incoming_roads = []
         self.leaving_roads  = []
@@ -130,17 +131,17 @@ class Roundabout:
 
         #   Spawning mode
         if self.spawning and len(self.leaving_roads) and (time.clock() - self.spawn_timer > __constants__.SPAWN_TIME):
-            chosen_road = self.leaving_roads[randint(0, len(self.leaving_roads) - 1)]
+        
+            num_possible_roads    = len(self.leaving_roads)
+            # Possible ways out. NB : the "1000/ " thing ensures *integer* probabilities.
+            possible_roads_events = [(self.leaving_roads[i], 1000/num_possible_roads) for i in range(num_possible_roads)]
+        
+            chosen_road = init.proba_poll(possible_roads_events)
             if chosen_road.is_free:
-                temp = randint(0, 3)
-
-                #   Choose a random type (more likely to be a standard car than a truck)
-                if temp < 3:
-                    type = __constants__.STANDARD_CAR
-                else:
-                    type = __constants__.TRUCK
-
-                new_car = __car__.Car(chosen_road, type)
+                car_type_events = [(__constants__.STANDARD_CAR, 80), 
+                                   (__constants__.TRUCK       , 20)]
+                                   
+                new_car = __car__.Car(chosen_road, init.proba_poll(car_type_events))
 
         #   Update gates
         for road in self.incoming_roads:

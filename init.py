@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+ï»¿# -*- coding: utf-8 -*-
 """
 File        :   init.py
 Description :   defines the classes needed for the simulation
@@ -9,6 +9,7 @@ import track        as __track__
 import car          as __car__ 
 import road         as __road__
 import roundabout   as __roundabout__
+from random         import randint
 from os             import getcwd
 
 def add_demo_car(road_number, position):
@@ -39,6 +40,22 @@ def shift_list(list):
     """
     return [list[-1]] + list[0:len(list)-1]
 
+def proba_poll(events):
+    """
+    Returns an event with a given probability
+        events = [value1, proba1, value2, proba2…]
+        probas should be integer values
+    """
+    list_polls  = []
+    
+    for event in events:
+        list_polls += [event[0] for i in range(event[1])]
+        
+    if len(list_polls) == 0:
+        raise Exception('ERROR (in init.proba_poll()): incorrect data format.')
+    else:
+        return list_polls[randint(0, len(list_polls) - 1)]
+    
 # Bootstrap
 if (__name__ == '__main__'):
     raise Exception("You should run interface.py instead of this file !")

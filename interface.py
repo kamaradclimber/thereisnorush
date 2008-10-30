@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 File        :   interface.py
 Description :   Manages the displays and main loop.
@@ -26,6 +26,8 @@ class main_window_class(QtGui.QMainWindow):
         
         self.timer = QtCore.QBasicTimer()
         self.timer.start(10, self)
+        
+        self.selected_roundabout = None
 
     def setup_interface(self):
     
@@ -123,6 +125,30 @@ class main_window_class(QtGui.QMainWindow):
         """
         if event.key() == QtCore.Qt.Key_Escape:
             exit()
+
+    def mousePressEvent(self, event):
+        """
+        Manages what happens when a mouse button is pressed
+        """
+        
+        # Experimental : select a roundabout
+        self.select_roundabout(event.x(), event.y())
+            
+            
+    def select_roundabout(self, x, y):
+        """
+        Selects the roundabout placed on x, y
+        Deselects if there is none
+        """
+        
+        click_position = Vector(x, y)
+        
+        self.selected_roundabout = None
+        
+        for roundabout in init.track.roundabouts:
+            if abs(roundabout.position - click_position) < roundabout.radius:
+                self.selected_roundabout = roundabout
+                break
         
     def paintEvent(self, event):
         """
@@ -217,10 +243,9 @@ class main_window_class(QtGui.QMainWindow):
         for i in range(len(point)):
             polygon.append(QtCore.QPointF(point[i].x, point[i].y))
 
-        color = car.color
         # Draw the car
-        painter.setBrush(QtGui.QColor('blue'))
-        painter.setPen(  QtGui.QColor('black'))
+        painter.setBrush(QtGui.QColor(*car.color))
+        painter.setPen  (QtGui.QColor('black'))
         painter.drawPolygon(polygon[0], polygon[1], polygon[2], polygon[3])
 
     def draw_roundabout(self, painter, roundabout):
@@ -237,6 +262,12 @@ class main_window_class(QtGui.QMainWindow):
         if not init.track.picture:
             #pygame.draw.circle(self.screen, __constants__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __constants__.ROUNDABOUT_WIDTH)
             pass
+            
+        if self.selected_roundabout == roundabout:
+            # In case this roundabout is selected
+            painter.setPen(QtGui.QColor(*__constants__.ROUNDABOUT_COLOR))
+            painter.setBrush(QtGui.QColor(*__constants__.TRANSPARENT))
+            painter.drawEllipse(roundabout.position.x - roundabout.radius, roundabout.position.y - roundabout.radius, 2 * roundabout.radius, 2 * roundabout.radius)
 
         if roundabout.cars:
             # There are cars on the roundabout, we may want to draw them
@@ -244,6 +275,7 @@ class main_window_class(QtGui.QMainWindow):
 
             #TEMPORARY : the number of cars on the roundabout is written
             position = Vector(roundabout.position.x + 10, roundabout.position.y + 10)
+            painter.setPen(QtGui.QColor('black'))
             painter.drawText(position.x, position.y, str(len(roundabout.cars)))
             pass        
         
@@ -319,6 +351,14 @@ class main_window_class(QtGui.QMainWindow):
         information += '(on roads) : '          + str(cars_on_roads) + '<br/>'
         information += '(on rdabt) : '          + str(cars_on_roundabouts) + '<br/>'
         information += '(waiting) : '           + str(cars_waiting)
+        
+        if self.selected_roundabout is not None:
+            information += '<br/><br/><b>Selected roundabout :</b><br/>'
+            information += 'position : (' + str(self.selected_roundabout.position.x) + ',' + str(self.selected_roundabout.position.y) + ') <br/>'
+            information += 'radius : ' + str(self.selected_roundabout.radius) + '<br/>'
+            information += 'cars : ' + str(len(self.selected_roundabout.cars)) + '<br/>'
+            if self.selected_roundabout.spawning:
+                information += '<b>Spawning node<b>'
         
         self.lbl_infos.setText(information)
         
