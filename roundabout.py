@@ -42,6 +42,7 @@ class Roundabout:
         self.spawning       = new_spawning
         self.spawn_timer    = time.clock()
         self.last_shift     = time.clock()
+        self.selfish_load   = 0
         
         self.slots_roads    = [None for i in range(self.max_cars)]
 
@@ -197,11 +198,18 @@ class Roundabout:
             total += road.total_waiting_cars
 
         return total
-    @property
-    def load(self):
+
+    def selfish_load(self):
         """
         Returns in per cent a number called load (inspired by the load of a Linux station)
         """
         length_sum = sum([road.length for road in self.incoming_roads])
-        return self.total_waiting_cars*50/(length_sum+1) +  len(self.cars)*50 / self.max_cars
-        #dans un futur proche, ceci sera remplacé par un calcul plus complexe qui calculera la charge en fonction des voisins et des voisins des voisins (calculs des arbres malades pour ceux qui connaissent, je men chargerai)
+        self.selfish_load = self.total_waiting_cars*50/(length_sum+1) +  len(self.cars)*50 / self.max_cars
+
+    @property
+    def load(self):
+        load = self.load
+        for road in self.incoming_roads:
+            load += road.begin.selfish_load / road.length
+        for road in self.leaving_roads:
+            load += road.end.selfish_load / road.length

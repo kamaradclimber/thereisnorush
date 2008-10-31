@@ -320,6 +320,8 @@ class MainWindow(QtGui.QMainWindow):
         #   Run the simulation for delta_t
         for road in __track__.track.roads:
             road.update()
+        for roundabout in __track__.track.roundabouts: #oui deux boucles séparées sinon linfo est pas en temps réél (enfin ca serait pas un drame non plus vu l'échelle de delta_t ! )
+            roundabout.selfish_load()
         for roundabout in __track__.track.roundabouts:
             roundabout.update()
         
