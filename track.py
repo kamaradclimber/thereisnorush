@@ -4,10 +4,14 @@ File        :   track.py
 Description :   defines the class "Track"
 """
 
-import init
+from lib            import *
 import roundabout   as __roundabout__
 import road         as __road__
 import constants    as __constants__
+
+#   Bootstrap
+if (__name__ == '__main__'):
+    raise Exception("You should run interface.py instead of this file !")
 
 class Track:
     """
@@ -32,6 +36,12 @@ class Track:
             self.roads = new_roads
     
         self.picture = None
+    
+    def add_car(self, road_number, position):
+        """
+        Adds a car on the track
+        """
+        new_car = __car__.Car(self.roads[road_number], position)
 
 class Track_Parser:
     ROUNDABOUT  = "Roundabout"
@@ -86,3 +96,13 @@ class Track_Parser:
             self.track.roads.append(new_road)
         else:
             raise Exception("ERROR : unknown element type '" + elements[0] + "' !")
+
+def load_demo_track():
+    # Temporary testing zone
+    track_parser = Track_Parser(track)
+    track_parser.load_from_file('demo_track.txt', 'demo_track.png')
+
+track = Track()
+load_demo_track()
+
+

@@ -106,4 +106,4 @@ class Road:
         """
         if not self.cars:
             return 0
-        return len([0 for car in self.cars if car.waiting])    
+        return len([0 for car in self.cars if car.is_waiting])    

@@ -4,7 +4,7 @@ File        :   car.py
 Description :   defines the class "Car"
 """
 
-import init
+from lib            import *
 from random         import randint
 import constants    as __constants__
 import road         as __road__
@@ -22,7 +22,7 @@ class Car:
             new_road (Road) :   the road where the car originates (for now, let's forbid the original location to be a roundabout)
         """
         self.path               = []
-        self.waiting            = False
+        self.is_waiting         = False
         self.width              = __constants__.CAR_DEFAULT_WIDTH
         self.speed              = __constants__.CAR_DEFAULT_SPEED 
         self.headway            = __constants__.CAR_DEFAULT_HEADWAY
@@ -33,16 +33,15 @@ class Car:
         self.sight_distance     = 5 * __constants__.CAR_DEFAULT_LENGTH
         self.consecutif_waiting = 0        
 
-
         if isinstance(new_location, __road__.Road):
             self.location.cars.insert(0, self)
         else:
             raise ValueError('ERROR (in car.__init__()) : new cars must be created on a road !')
         
         self.generate_path()        
-        self.set_car_properties(new_type)
+        self.set_default_properties(new_type)
 
-    def set_car_properties(self, new_type):
+    def set_default_properties(self, new_type):
         """
         Sets the car's properties, given its type
         """
@@ -61,7 +60,7 @@ class Car:
             self.color  =  __constants__.LIGHT_BLUE   # And they're blue !
         
         else:
-            raise Exception('ERROR (in car.set_car_properties()): unknown type of vehicle')
+            raise Exception('ERROR (in car.set_default_properties()) : unknown type of vehicle !')
             
     def generate_path(self, minimum = 8, maximum = 11):
         """
@@ -76,14 +75,14 @@ class Car:
             new_position    (list)          :   position in the road or in the roundabout (note that the meaning of the position depends on the kind of location)
         """
         #   Leave the current location
-        if self.location and self in self.location.cars:
+        if self.location is not None and self in self.location.cars:
             self.location.cars.remove(self)
         else:
             raise Exception("WARNING (in car.join()) : a car had no location !")
 
         #   Roundabout -> road
         if isinstance(self.location, __roundabout__.Roundabout) and isinstance(new_location, __road__.Road):
-            car_slot = init.find_key(self.location.slots_cars, self)
+            car_slot = find_key(self.location.slots_cars, self)
             
             #   Remove car from its slot
             if car_slot is None:
@@ -105,7 +104,7 @@ class Car:
         self.position = new_position
         self.location = new_location
         self.speed = 0
-        self.location.cars.insert(0, self) #CONVENTiON SENSITIVE
+        self.location.cars.insert(0, self) #CONVENTION SENSITIVE
     
     def catch_slot(self, roundabout):
         """
@@ -142,7 +141,7 @@ class Car:
         """
         Expresses the cars' wishes :P
         """
-        #   End of the path
+        #   End of path
         if len(self.path) == 0:
             return None
         else:
@@ -160,7 +159,7 @@ class Car:
             obstacle_is_light = True
 
             #   Green light
-            if self.location.gates[__constants__.LEAVING_GATE]:
+            if self.location.gates[__constants__.EXIT_GATE]:
                 obstacle = self.location.length + self.headway
             #   Red light
             else:
@@ -178,8 +177,8 @@ class Car:
         """
         Moves the car, THEN manages its speed, acceleration.
         """
+        #   We only manage cars on roads, we don't care about roundabouts
         if not isinstance(self.location, __road__.Road):
-            # We only manage cars on roads, we don't care about rndabts
             return None
 
         (obstacle, obstacle_is_light) = self._next_obstacle()
@@ -225,7 +224,7 @@ class Car:
         #   Arrival at a roundabout
         if self.position >= self.location.length - self.length/2 - self.headway:
             #   Green light
-            if self.location.gates[__constants__.LEAVING_GATE] :
+            if self.location.gates[__constants__.EXIT_GATE] :
                 id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
                 
                 #   The slot doesn't exist : creation of the slot
@@ -235,30 +234,30 @@ class Car:
                 #   The slot is free
                 if self.location.end.slots_cars[id_slot] is None:
                     self.location.end.slots_cars[id_slot]   = self
-                    self.waiting                            = False
+                    self.is_waiting                         = False
                     self.join(self.location.end)
                     
                 #   The slot isn't free
                 else:
-                    self.waiting = True
+                    self.is_waiting = True
                     
             #   Red light
             else:
-                self.waiting = True
+                self.is_waiting = True
 
         #   Waiting
         if self.position + self.length/2 + self.sight_distance > obstacle: 
             if not obstacle_is_light:
-                self.waiting = self.location.cars[self.rank + 1].waiting    # CONVENTION SENSITIVE
-            elif self.location.gates[__constants__.LEAVING_GATE]:
-                self.waiting = False
+                self.is_waiting = self.location.cars[self.rank + 1].is_waiting    # CONVENTION SENSITIVE
+            elif self.location.gates[__constants__.EXIT_GATE]:
+                self.is_waiting = False
             else:
-                self.waiting = True
+                self.is_waiting = True
         
         #   experimental - stress
-        if self.waiting : 
-            self.stress += 1
-            self.consecutif_waiting +=1
+        if self.is_waiting: 
+            self.stress             += 1
+            self.consecutif_waiting += 1
         else:
             self.consecutif_waiting = 0
 

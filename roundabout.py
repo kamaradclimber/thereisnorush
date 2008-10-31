@@ -4,13 +4,13 @@ File        :   roundabout.py
 Description :   defines the class "Roundabout"
 """
 
-import           init
-import           time
+from lib            import *
+import time
 
-from vector      import Vector
+from vector         import Vector
 
-import car       as __car__
-import constants as __constants__
+import car          as __car__
+import constants    as __constants__
 
 class Roundabout:
     """
@@ -83,11 +83,11 @@ class Roundabout:
                         self.set_gate(other_road, False)
         
         #   Too long waiting time : open the gate and close others
-        if road in self.incoming_roads and road.last_gate_update(__constants__.LEAVING_GATE) > __constants__.WAITING_TIME_LIMIT and road.total_waiting_cars:
+        if road in self.incoming_roads and road.last_gate_update(__constants__.EXIT_GATE) > __constants__.WAITING_TIME_LIMIT and road.total_waiting_cars:
             self.set_gate(road, True)
 
             for other_road in self.incoming_roads:
-                if (other_road.last_gate_update(__constants__.LEAVING_GATE) <= __constants__.WAITING_TIME_LIMIT or not other_road.total_waiting_cars) and id(other_road) != id(road):
+                if (other_road.last_gate_update(__constants__.EXIT_GATE) <= __constants__.WAITING_TIME_LIMIT or not other_road.total_waiting_cars) and id(other_road) != id(road):
                      self.set_gate(other_road, False)
 
         #   Full roundabout : close all incoming roads, open all leaving roads
@@ -104,7 +104,7 @@ class Roundabout:
         
         if not(car.next_way(True) is None) and self.leaving_roads:
             next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
-            car_slot = init.find_key(self.slots_cars, car)
+            car_slot = find_key(self.slots_cars, car)
 
             #   The car has lost its slot   
             if car_slot is None:
@@ -127,7 +127,7 @@ class Roundabout:
         #   Make the cars rotate
         if time.clock() - self.last_shift > __constants__.ROUNDABOUT_ROTATION_RATE:
             self.last_shift = time.clock()
-            self.slots_roads = init.shift_list(self.slots_roads)
+            self.slots_roads = shift_list(self.slots_roads)
 
         #   Spawning mode
         if self.spawning and len(self.leaving_roads) and (time.clock() - self.spawn_timer > __constants__.SPAWN_TIME):
@@ -136,12 +136,12 @@ class Roundabout:
             # Possible ways out. NB : the "1000/ " thing ensures *integer* probabilities.
             possible_roads_events = [(self.leaving_roads[i], 1000/num_possible_roads) for i in range(num_possible_roads)]
         
-            chosen_road = init.proba_poll(possible_roads_events)
+            chosen_road = proba_poll(possible_roads_events)
             if chosen_road.is_free:
                 car_type_events = [(__constants__.STANDARD_CAR, 80), 
                                    (__constants__.TRUCK       , 20)]
                                    
-                new_car = __car__.Car(chosen_road, init.proba_poll(car_type_events))
+                new_car = __car__.Car(chosen_road, proba_poll(car_type_events))
 
         #   Update gates
         for road in self.incoming_roads:
@@ -155,7 +155,7 @@ class Roundabout:
         
         #   Kill cars that have reached their destination
         for car in self.to_kill:
-            car_slot = init.find_key(self.slots_cars, car)
+            car_slot = find_key(self.slots_cars, car)
             self.slots_cars[car_slot] = None
             car.die()
 
@@ -169,9 +169,9 @@ class Roundabout:
         """
         #   Set which gate is to be updated
         if id(road.begin) == id(self):
-            current_gate = __constants__.INCOMING_GATE
+            current_gate = __constants__.ENTRANCE_GATE
         else:
-            current_gate = __constants__.LEAVING_GATE
+            current_gate = __constants__.EXIT_GATE
         
         #   Update if necessary
         if road.gates[current_gate] != state:

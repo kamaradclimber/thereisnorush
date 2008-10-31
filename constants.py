@@ -4,12 +4,12 @@ File        :   constants.py
 Description :   defines the constants
 """
 
-# Revision information
+#   Revision information
 
-REVISION_NUMBER = 116
+REVISION_NUMBER = 117
 REVISION_NAME   = 'Thereisnorush (testing)'
 
-# Colors (R, G, B, [Alpha])
+#   Colors (R, G, B, [Alpha])
 BLACK       =   0,   0,   0
 RED         = 255,   0,   0
 GREEN       =   0, 255,   0
@@ -24,7 +24,7 @@ LIGHT_BLUE  =  64,  64, 255
 
 TRANSPARENT = 0, 0, 0, 0
 
-# Car
+#   Car
 CAR_DEFAULT_LENGTH  = 5
 CAR_DEFAULT_WIDTH   = 4
 CAR_DEFAULT_HEADWAY = CAR_DEFAULT_LENGTH    # marge de sécurité
@@ -35,12 +35,12 @@ CAR_DEFAULT_COLOR   = 255, 255, 255
 STANDARD_CAR        = 0
 TRUCK               = 1
 
-# Track
+#   Track
 TRACK_OFFSET_X = 32
 TRACK_OFFSET_Y = 32
 TRACK_SCALE    = 3.5
 
-# Roundabout
+#   Roundabout
 ROUNDABOUT_WIDTH                  = 3
 ROUNDABOUT_HEIGHT                 = 3
 ROUNDABOUT_COLOR                  = RED
@@ -60,12 +60,12 @@ WAITING_CARS_LIMIT = 8
 WAITING_TIME_LIMIT = 10.000
 
 #   Other
-RESOLUTION          = (WINDOW_WIDTH, WINDOW_HEIGHT) = (1000, 750)
+SCENE_RESOLUTION    = (SCENE_WIDTH, SCENE_HEIGHT)   = (1000, 750)
 PANEL_RESOLUTION    = (PANEL_WIDTH, PANEL_HEIGHT)   = (200, 500)
 delta_t             = 0.1
 
 DISPLAY_DENSITY     = False # You may de-activate per-density coloring (+ fps)
 
-LEAVING_GATE        = 1
-INCOMING_GATE       = 0
-SPAWN_TIME          = 1.700
+EXIT_GATE       = 1
+ENTRANCE_GATE   = 0
+SPAWN_TIME      = 1.700
