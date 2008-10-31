@@ -4,7 +4,7 @@ File        :   track.py
 Description :   defines the class "Track"
 """
 
-from lib            import *
+import lib
 import roundabout   as __roundabout__
 import road         as __road__
 import constants    as __constants__
@@ -67,12 +67,12 @@ class Track_Parser:
         except IOError:
             raise Exception("%s cannot be loaded (current directory is : %s)" % (file_name, getcwd())) 
             
-        if len(file_picture) > 0:
-            from pygame import image 
-            try:
-                self.track.picture = image.load(file_picture)
-            except IOError:
-                raise Exception("%s cannot be loaded (current directory is : %s)" % (file_picture, getcwd()))                 
+#        if len(file_picture) > 0:
+#            from pygame import image 
+#            try:
+#                self.track.picture = image.load(file_picture)
+#            except IOError:
+#                raise Exception("%s cannot be loaded (current directory is : %s)" % (file_picture, getcwd()))                 
         
         for line in file_data:
             line = line.strip()

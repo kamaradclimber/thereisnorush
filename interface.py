@@ -4,38 +4,40 @@ File        :   interface.py
 Description :   Manages the displays and main loop.
 """
 
-import constants    as __constants__
-from lib            import *
-import track        as __track__
-from vector         import Vector
-
+import lib
 import sys
+
+import constants    as __constants__
+import track        as __track__
+
+from vector         import Vector
 from PyQt4          import QtCore, QtGui, Qt
 
-class Scene(QtGui.QWidget):
+class Scene(QtGui.QTabWidget):
     """
     Area where the scene will be drawn.
     """
 
-    def __init__(self, new_window, parent = None):
+    def __init__(self, parent, new_window):
         QtGui.QWidget.__init__(self, parent)
 
         self.painter    = None
         self.window     = new_window
         
-        size_policy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
-        self.setSizePolicy(size_policy)
         self.resize(__constants__.SCENE_WIDTH, __constants__.SCENE_HEIGHT)
-        self.setUpdatesEnabled(True)
+#        size_policy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+#        self.setSizePolicy(size_policy)
+        
 
     def paintEvent(self, event):
         """
         Specifies how the control should draw itself.
         """
+        
         self.painter = QtGui.QPainter(self)
 
         self.painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
-        self.painter.fillRect(QRectF(QPointF(0, 0), QPointF(self.width(), self.height())), QColor(0, 0, 0))
+#        self.painter.fillRect(QtCore.QRectF(QtCore.QPointF(0, 0), QtCore.QPointF(self.width(), self.height())), QtGui.QColor(0, 0, 0))
         self.draw()
         
         self.painter.end()
@@ -64,10 +66,10 @@ class Scene(QtGui.QWidget):
         (start_position, end_position) = (road.begin.position.ceil(), road.end.position.ceil())
         
         #   Draw traffic lights (or not)
-        if window.exit_lights.isChecked():
-            self.draw_traffic_light(end_position, road, __constants__.EXIT_GATE)
-        if window.entrance_lights.isChecked():
-            self.draw_traffic_light(start_position, road, __constants__.ENTRANCE_GATE)
+        if self.window.exit_lights.isChecked():
+            self.draw_traffic_light(end_position, road, __constants__.LEAVING_GATE)
+        if self.window.entrance_lights.isChecked():
+            self.draw_traffic_light(start_position, road, __constants__.INCOMING_GATE)
 
         color = __constants__.GREEN
         key = 0
@@ -140,7 +142,7 @@ class Scene(QtGui.QWidget):
             pass
         
         #   Selected roudabout
-        if window.selected_roundabout == roundabout:
+        if self.window.selected_roundabout == roundabout:
             self.painter.setPen(QtGui.QColor(*__constants__.ROUNDABOUT_COLOR))
             self.painter.setBrush(QtGui.QColor(*__constants__.TRANSPARENT))
             self.painter.drawEllipse(roundabout.position.x - roundabout.radius, roundabout.position.y - roundabout.radius, 2 * roundabout.radius, 2 * roundabout.radius)
@@ -181,6 +183,14 @@ class Scene(QtGui.QWidget):
 
             position = start_position + d_position * i
             self.painter.drawEllipse(position.x - TF_RADIUS, position.y - TF_RADIUS, 2 * TF_RADIUS, 2*TF_RADIUS)
+            
+    def mousePressEvent(self, event):
+        """
+        Manages what happens when a mouse button is pressed
+        """
+        # Experimental : select a roundabout
+        self.window.select_roundabout(event.x(), event.y())
+
 
 class MainWindow(QtGui.QMainWindow):
     """
@@ -205,26 +215,22 @@ class MainWindow(QtGui.QMainWindow):
     
         """
         #   Window settings
-        self.setObjectName('Main window')
+        self.setObjectName('MainWindow')
         self.setWindowTitle(__constants__.REVISION_NAME + ' - r' + str(__constants__.REVISION_NUMBER))
         self.setWindowIcon(QtGui.QIcon('icons/tinr_logo.png'))
 
         self.setCentralWidget(QtGui.QWidget())
         
         #   Scene
-        self.scene = Scene(self)
-        
-        #size_policy.setHorizontalStretch(0)
-        #size_policy.setVerticalStretch(0)
-        #size_policy.setHeightForWidth(self.control_panel.sizePolicy().hasHeightForWidth())
+        self.scene = Scene(None, self)
         
         #   Commands tab
         self.entrance_lights = QtGui.QCheckBox('Display entrance traffic lights')
-        self.entrance_lights.setObjectName('Entrance lights')   #   Is it really useful to give objects names ? -- Ch@hine
+        self.entrance_lights.setObjectName('entrance_lights')
         self.entrance_lights.setChecked(False)
         
         self.exit_lights = QtGui.QCheckBox('Display exit traffic lights')
-        self.exit_lights.setObjectName('Exit lights')
+        self.exit_lights.setObjectName('exit_lights')
         self.exit_lights.setChecked(True)
 
         lay_commands = QtGui.QVBoxLayout()
@@ -257,8 +263,10 @@ class MainWindow(QtGui.QMainWindow):
         self.control_panel.addTab(self.tab_commands, 'Commands')
         self.control_panel.setCurrentIndex(0)
         
-        
         QtCore.QMetaObject.connectSlotsByName(self)
+
+        size_policy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.control_panel.setSizePolicy(size_policy)
         
         #   Display
         lay_window = QtGui.QGridLayout()
@@ -269,7 +277,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         """
-        Specifies what has to be done when exiting the application ; this function is automatically called by Qt as soon as the user clicks on the close button (at the top right of the window), that's why you mustn't change its name !
+        Specifies what has to be done when exiting the application.
+        This function is automatically called by Qt when the user clicks on the close button : don't change its name !
         """
         event.accept()
         exit()
@@ -280,13 +289,6 @@ class MainWindow(QtGui.QMainWindow):
         """
         if event.key() == QtCore.Qt.Key_Escape:
             exit()
-
-    def mousePressEvent(self, event):
-        """
-        Manages what happens when a mouse button is pressed
-        """
-        # Experimental : select a roundabout
-        self.select_roundabout(event.x(), event.y())
             
     def select_roundabout(self, x, y):
         """
@@ -310,6 +312,7 @@ class MainWindow(QtGui.QMainWindow):
             self.update_simulation()
             self.update_information()
             self.scene.update()
+            self.update()
         else:
             QtGui.QFrame.timerEvent(self, event)
 
@@ -320,8 +323,9 @@ class MainWindow(QtGui.QMainWindow):
         #   Run the simulation for delta_t
         for road in __track__.track.roads:
             road.update()
-        for roundabout in __track__.track.roundabouts: #oui deux boucles séparées sinon linfo est pas en temps réél (enfin ca serait pas un drame non plus vu l'échelle de delta_t ! )
-            roundabout.selfish_load()
+#        for roundabout in __track__.track.roundabouts:
+            #oui deux boucles séparées sinon linfo est pas en temps réél (enfin ca serait pas un drame non plus vu l'échelle de delta_t ! )
+#            roundabout.selfish_load()
         for roundabout in __track__.track.roundabouts:
             roundabout.update()
         

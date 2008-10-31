@@ -66,6 +66,6 @@ delta_t             = 0.1
 
 DISPLAY_DENSITY     = False # You may de-activate per-density coloring (+ fps)
 
-EXIT_GATE       = 1
-ENTRANCE_GATE   = 0
+LEAVING_GATE       = 1
+INCOMING_GATE   = 0
 SPAWN_TIME      = 1.700

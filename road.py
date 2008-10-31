@@ -4,8 +4,10 @@ File        :   road.py
 Description :   defines the class "Road"
 """
 
+import lib
+import time
+
 import constants    as __constants__
-import              time
 from math           import sqrt
 
 class Road:

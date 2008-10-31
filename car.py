@@ -4,7 +4,7 @@ File        :   car.py
 Description :   defines the class "Car"
 """
 
-from lib            import *
+import lib
 from random         import randint
 import constants    as __constants__
 import road         as __road__
@@ -82,7 +82,7 @@ class Car:
 
         #   Roundabout -> road
         if isinstance(self.location, __roundabout__.Roundabout) and isinstance(new_location, __road__.Road):
-            car_slot = find_key(self.location.slots_cars, self)
+            car_slot = lib.find_key(self.location.slots_cars, self)
             
             #   Remove car from its slot
             if car_slot is None:
@@ -159,7 +159,7 @@ class Car:
             obstacle_is_light = True
 
             #   Green light
-            if self.location.gates[__constants__.EXIT_GATE]:
+            if self.location.gates[__constants__.LEAVING_GATE]:
                 obstacle = self.location.length + self.headway
             #   Red light
             else:
@@ -224,7 +224,7 @@ class Car:
         #   Arrival at a roundabout
         if self.position >= self.location.length - self.length/2 - self.headway:
             #   Green light
-            if self.location.gates[__constants__.EXIT_GATE] :
+            if self.location.gates[__constants__.LEAVING_GATE] :
                 id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
                 
                 #   The slot doesn't exist : creation of the slot
@@ -249,7 +249,7 @@ class Car:
         if self.position + self.length/2 + self.sight_distance > obstacle: 
             if not obstacle_is_light:
                 self.is_waiting = self.location.cars[self.rank + 1].is_waiting    # CONVENTION SENSITIVE
-            elif self.location.gates[__constants__.EXIT_GATE]:
+            elif self.location.gates[__constants__.LEAVING_GATE]:
                 self.is_waiting = False
             else:
                 self.is_waiting = True

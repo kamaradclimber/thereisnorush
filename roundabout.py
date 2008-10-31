@@ -4,7 +4,7 @@ File        :   roundabout.py
 Description :   defines the class "Roundabout"
 """
 
-from lib            import *
+import lib
 import time
 
 from vector         import Vector
@@ -42,7 +42,6 @@ class Roundabout:
         self.spawning       = new_spawning
         self.spawn_timer    = time.clock()
         self.last_shift     = time.clock()
-        self.selfish_load   = 0
         
         self.slots_roads    = [None for i in range(self.max_cars)]
 
@@ -74,14 +73,14 @@ class Roundabout:
         around_incoming_loads, around_leaving_loads = [], []
         for road in self.incoming_roads:
             around_incoming_loads.append(road.begin.load)
-            if road.begin.load > self.load and road.gates[__constants__.ENTRANCE_GATE]: #rond point chargé et qui laisse ses voitures se deverser vers moi
+            if road.begin.load > self.load and road.gates[__constants__.INCOMING_GATE]: #rond point chargé et qui laisse ses voitures se deverser vers moi
                 self.set_gate(road, True)
             elif road.begin.load < self.load and abs((road.begin.load - self.load)/(self.load+0.001)) > 0.10 : #rondpoint vraiment pas chargé , je coupe
                 self.set_gate(road, False)
                 
         for road in self.leaving_roads:
             around_leaving_loads.append(road.end.load)
-            if road.end.load < self.load and road.gates[__constants__.EXIT_GATE]: #rond point pas trop chargé et qui laisse passer mes voitures: j'ouvre
+            if road.end.load < self.load and road.gates[__constants__.LEAVING_GATE]: #rond point pas trop chargé et qui laisse passer mes voitures: j'ouvre
                 self.set_gate(road, True)
             elif road.end.load > self.load and abs((road.begin.load - self.load)/(self.load+0.001)) > 0.10: #rondpoint bien chargé, je le laisse respirer
                 self.set_gate(road, False)
@@ -110,7 +109,7 @@ class Roundabout:
         
         if not(car.next_way(True) is None) and self.leaving_roads:
             next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
-            car_slot = find_key(self.slots_cars, car)
+            car_slot = lib.find_key(self.slots_cars, car)
 
             #   The car has lost its slot   
             if car_slot is None:
@@ -133,7 +132,7 @@ class Roundabout:
         #   Make the cars rotate
         if time.clock() - self.last_shift > __constants__.ROUNDABOUT_ROTATION_RATE:
             self.last_shift = time.clock()
-            self.slots_roads = shift_list(self.slots_roads)
+            self.slots_roads = lib.shift_list(self.slots_roads)
 
         #   Spawning mode
         if self.spawning and len(self.leaving_roads) and (time.clock() - self.spawn_timer > __constants__.SPAWN_TIME):
@@ -142,12 +141,12 @@ class Roundabout:
             # Possible ways out. NB : the "1000/ " thing ensures *integer* probabilities.
             possible_roads_events = [(self.leaving_roads[i], 1000/num_possible_roads) for i in range(num_possible_roads)]
         
-            chosen_road = proba_poll(possible_roads_events)
+            chosen_road = lib.proba_poll(possible_roads_events)
             if chosen_road.is_free:
                 car_type_events = [(__constants__.STANDARD_CAR, 80), 
                                    (__constants__.TRUCK       , 20)]
                                    
-                new_car = __car__.Car(chosen_road, proba_poll(car_type_events))
+                new_car = __car__.Car(chosen_road, lib.proba_poll(car_type_events))
 
         #   Update gates
         self._update_gates()
@@ -158,7 +157,7 @@ class Roundabout:
         
         #   Kill cars that have reached their destination
         for car in self.to_kill:
-            car_slot = find_key(self.slots_cars, car)
+            car_slot = lib.find_key(self.slots_cars, car)
             self.slots_cars[car_slot] = None
             car.die()
 
@@ -172,9 +171,9 @@ class Roundabout:
         """
         #   Set which gate is to be updated
         if id(road.begin) == id(self):
-            current_gate = __constants__.ENTRANCE_GATE
+            current_gate = __constants__.INCOMING_GATE
         else:
-            current_gate = __constants__.EXIT_GATE
+            current_gate = __constants__.LEAVING_GATE
         
         #   Update if necessary
         if road.gates[current_gate] != state:
@@ -199,17 +198,20 @@ class Roundabout:
 
         return total
 
+    @property
     def selfish_load(self):
         """
         Returns in per cent a number called load (inspired by the load of a Linux station)
         """
         length_sum = sum([road.length for road in self.incoming_roads])
-        self.selfish_load = self.total_waiting_cars*50/(length_sum+1) +  len(self.cars)*50 / self.max_cars
+        return self.total_waiting_cars*50/(length_sum+1) +  len(self.cars)*50 / self.max_cars
 
     @property
     def load(self):
-        load = self.load
+        #load = self.load
+        load = 0
         for road in self.incoming_roads:
             load += road.begin.selfish_load / road.length
         for road in self.leaving_roads:
             load += road.end.selfish_load / road.length
+        return load
