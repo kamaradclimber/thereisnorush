@@ -64,39 +64,44 @@ class Roundabout:
         else:
             raise Exception("ERROR (in Roundabout.host_road()) : there is no slot to host any further roads !")
             
-    def _update_gate(self, road):
+    def _update_gates(self):
         """
-        Road-specific gate handling
-            road (Road) : the road whose traffic ligths are to be handled
+        Gate handling
         """
-        #   Too many waiting cars
-        if road.total_waiting_cars > __constants__.WAITING_CARS_LIMIT:
-            #   Leaving road : do not allow any further car on this road
-            if road in self.leaving_roads:
-                self.set_gate(road, False)
 
-            #   Incoming road : give higher priority to this road
-            else:
+        #First, let's have a global view of situation 
+        around_incoming_loads, around_leaving_loads = [], []
+        for road in self.incoming_roads:
+            around_incoming_loads.append(road.begin.load)
+            if road.begin.load > self.load and road.gates[__constants__.ENTRANCE_GATE]: #rond point chargé et qui laisse ses voitures se deverser vers moi
                 self.set_gate(road, True)
-                for other_road in self.incoming_roads:
-                    if other_road.total_waiting_cars <= __constants__.WAITING_CARS_LIMIT:
-                        self.set_gate(other_road, False)
+            elif road.begin.load < self.load and abs((road.begin.load - self.load)/(self.load+0.001)) > 0.10 : #rondpoint vraiment pas chargé , je coupe
+                self.set_gate(road, False)
+                
+        for road in self.leaving_roads:
+            around_leaving_loads.append(road.end.load)
+            if road.end.load < self.load and road.gates[__constants__.EXIT_GATE]: #rond point pas trop chargé et qui laisse passer mes voitures: j'ouvre
+                self.set_gate(road, True)
+            elif road.end.load > self.load and abs((road.begin.load - self.load)/(self.load+0.001)) > 0.10: #rondpoint bien chargé, je le laisse respirer
+                self.set_gate(road, False)
         
-        #   Too long waiting time : open the gate and close others
-        if road in self.incoming_roads and road.last_gate_update(__constants__.EXIT_GATE) > __constants__.WAITING_TIME_LIMIT and road.total_waiting_cars:
-            self.set_gate(road, True)
-
-            for other_road in self.incoming_roads:
-                if (other_road.last_gate_update(__constants__.EXIT_GATE) <= __constants__.WAITING_TIME_LIMIT or not other_road.total_waiting_cars) and id(other_road) != id(road):
-                     self.set_gate(other_road, False)
+        #Then, let's update each road, few rules because the general view overrules the local one.
+        
+        for road in self.incoming_roads:
+            #   Too long waiting time : open the gate and not close others
+            if road in self.incoming_roads and road.last_gate_update(__constants__.LEAVING_GATE) > __constants__.WAITING_TIME_LIMIT and road.total_waiting_cars:
+                self.set_gate(road, True)
 
         #   Full roundabout : close all incoming roads, open all leaving roads
-        if self.is_full:
-            for road in self.incoming_roads:
-                self.set_gate(road, False)
-            for road in self.leaving_roads:
-                self.set_gate(road, True)
-    
+        #ceci est inutile depuis que les voitures ne s'insère plus dans les slots pleins (sinon l'application de ce procédé ruine un peu le systeme de load)
+        #if self.is_full:
+        #    for road in self.incoming_roads:
+        #        self.set_gate(road, False)
+        #    for road in self.leaving_roads:
+        #        self.set_gate(road, True)
+        
+ 
+
     def update_car(self, car):
         """
         Updates a given car on the roundabout 
@@ -144,10 +149,7 @@ class Roundabout:
                 new_car = __car__.Car(chosen_road, proba_poll(car_type_events))
 
         #   Update gates
-        for road in self.incoming_roads:
-            self._update_gate(road)
-        for road in self.leaving_roads:
-            self._update_gate(road)
+        self._update_gates()
                 
         #   Update cars
         for car in self.cars:
@@ -195,3 +197,11 @@ class Roundabout:
             total += road.total_waiting_cars
 
         return total
+    @property
+    def load(self):
+        """
+        Returns in per cent a number called load (inspired by the load of a Linux station)
+        """
+        length_sum = sum([road.length for road in self.incoming_roads])
+        return self.total_waiting_cars*50/(length_sum+1) +  len(self.cars)*50 / self.max_cars
+        #dans un futur proche, ceci sera remplacé par un calcul plus complexe qui calculera la charge en fonction des voisins et des voisins des voisins (calculs des arbres malades pour ceux qui connaissent, je men chargerai)
