@@ -24,25 +24,23 @@ class Scene(QtGui.QTabWidget):
         self.painter    = None
         self.window     = new_window
         
-        self.resize(__constants__.SCENE_WIDTH, __constants__.SCENE_HEIGHT)
-#        size_policy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
-#        self.setSizePolicy(size_policy)
-        
+        self.resize(__constants__.SCENE_WIDTH, __constants__.SCENE_HEIGHT)        
 
     def paintEvent(self, event):
         """
+        /!\ Qt specific (please don't rename)
         Specifies how the control should draw itself.
         """
         
         self.painter = QtGui.QPainter(self)
 
-        self.painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
+        self.painter.setRenderHint(QtGui.QPainter.Antialiasing, self.window.use_antialiasing.isChecked())
 #        self.painter.fillRect(QtCore.QRectF(QtCore.QPointF(0, 0), QtCore.QPointF(self.width(), self.height())), QtGui.QColor(0, 0, 0))
-        self.draw()
+        self.draw_scene()
         
         self.painter.end()
 
-    def draw(self):
+    def draw_scene(self):
         """
         Draws the complete scene on the screen.
         Dessine la scène entière à l'écran.
@@ -70,25 +68,27 @@ class Scene(QtGui.QTabWidget):
             self.draw_traffic_light(end_position, road, __constants__.LEAVING_GATE)
         if self.window.entrance_lights.isChecked():
             self.draw_traffic_light(start_position, road, __constants__.INCOMING_GATE)
-
-        color = __constants__.GREEN
-        key = 0
-        if road.cars and __constants__.DISPLAY_DENSITY:
-            occupation = 0
-            for car in road.cars:
-                occupation += car.length
-
-            key = 2 * (float(occupation)/float(road.length)) * 255
-            if key > 255: key = 255
-            color = [key, 255 - key, 0]
-
-#        if not __track__.track.picture:
+            
         self.painter.drawLine(start_position.x, start_position.y, end_position.x, end_position.y)
-
+        for car in road.cars:
+            self.draw_car(car)
+        
+        # DEPRECATED
+        #color = __constants__.GREEN
+        #key = 0
+        #if road.cars and __constants__.DISPLAY_DENSITY:
+        #    occupation = 0
+        #    for car in road.cars:
+        #        occupation += car.length
+        #    key = 2 * (float(occupation)/float(road.length)) * 255
+        #    if key > 255: key = 255
+        #    color = [key, 255 - key, 0]
+        #if not __track__.track.picture:
+        #
         #   Do not draw cars when density exceeds ~80%
-        if road.cars and key < 200:
-            for car in road.cars:
-                self.draw_car(car)
+        #if road.cars and key < 200:
+        #   for car in road.cars:
+        #       self.draw_car(car)
 
     def draw_car(self, car):
         """
@@ -186,6 +186,7 @@ class Scene(QtGui.QTabWidget):
             
     def mousePressEvent(self, event):
         """
+        /!\ Qt specific (please don't rename)
         Manages what happens when a mouse button is pressed
         """
         # Experimental : select a roundabout
@@ -199,7 +200,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, parent = None):
         """
-
+        Creates the main window
         """
         QtGui.QMainWindow.__init__(self, parent)
 
@@ -212,7 +213,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def setup_interface(self):
         """
-    
+        Sets up the Qt interface, layout, slots & properties
         """
         #   Window settings
         self.setObjectName('MainWindow')
@@ -223,6 +224,7 @@ class MainWindow(QtGui.QMainWindow):
         
         #   Scene
         self.scene = Scene(None, self)
+        self.scene.setObjectName('scene')
         
         #   Commands tab
         self.entrance_lights = QtGui.QCheckBox('Display entrance traffic lights')
@@ -232,34 +234,39 @@ class MainWindow(QtGui.QMainWindow):
         self.exit_lights = QtGui.QCheckBox('Display exit traffic lights')
         self.exit_lights.setObjectName('exit_lights')
         self.exit_lights.setChecked(True)
+        
+        self.use_antialiasing = QtGui.QCheckBox('Use antialiasing')
+        self.use_antialiasing.setObjectName('use_antialiasing')
+        self.use_antialiasing.setChecked(True)
 
         lay_commands = QtGui.QVBoxLayout()
         lay_commands.addWidget(self.entrance_lights)
         lay_commands.addWidget(self.exit_lights)
+        lay_commands.addWidget(self.use_antialiasing)
         
         self.tab_commands = QtGui.QWidget()
-        self.tab_commands.setObjectName('Commands tab')
+        self.tab_commands.setObjectName('tab_commands')
         self.tab_commands.setLayout(lay_commands)
 
         #   Information tab
         self.lbl_info = QtGui.QLabel('<i>Information</i>')
         self.lbl_info.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.lbl_info.setWordWrap(True)
-        self.lbl_info.setObjectName('Information text')
+        self.lbl_info.setObjectName('lbl_info')
         
         lay_info = QtGui.QVBoxLayout()
         lay_info.addWidget(self.lbl_info)
 
         self.tab_info = QtGui.QWidget()
-        self.tab_info.setObjectName('Information tab')
+        self.tab_info.setObjectName('tab_info')
         self.tab_info.setLayout(lay_info)        
         
         #   Control panel
         self.control_panel = QtGui.QTabWidget()
-        self.control_panel.setObjectName('Control panel')
+        self.control_panel.setObjectName('control_panel')
         self.control_panel.resize(__constants__.PANEL_WIDTH, __constants__.PANEL_HEIGHT)
         self.control_panel.setTabPosition(QtGui.QTabWidget.East)
-        self.control_panel.addTab(self.tab_info, 'Information')
+        self.control_panel.addTab(self.tab_info, 'Informations')
         self.control_panel.addTab(self.tab_commands, 'Commands')
         self.control_panel.setCurrentIndex(0)
         
@@ -277,15 +284,16 @@ class MainWindow(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         """
+        /!\ Qt specific (please don't rename)
         Specifies what has to be done when exiting the application.
-        This function is automatically called by Qt when the user clicks on the close button : don't change its name !
         """
         event.accept()
         exit()
     
     def keyPressEvent(self, event):
         """
-        Manages the keyboard events ; the name of the function is set by Qt, so don't change it.
+        /!\ Qt specific (please don't rename)
+        Manages keyboard events
         """
         if event.key() == QtCore.Qt.Key_Escape:
             exit()
@@ -306,6 +314,7 @@ class MainWindow(QtGui.QMainWindow):
         
     def timerEvent(self, event):
         """
+        /!\ Qt specific (please don't rename)
         Passes or uses timer events to update the simulation
         """
         if event.timerId() == self.timer.timerId():
@@ -331,6 +340,7 @@ class MainWindow(QtGui.QMainWindow):
         
     def update_information(self):
         """
+        Displays informations on the simulation and selected objects
         """
         information = ''
         
@@ -360,7 +370,14 @@ class MainWindow(QtGui.QMainWindow):
             information += 'radius : ' + str(self.selected_roundabout.radius) + '<br/>'
             information += 'cars : ' + str(len(self.selected_roundabout.cars)) + '<br/>'
             if self.selected_roundabout.spawning:
-                information += '<b>Spawning node<b>'
+                information += '<b>Spawning mode<b><br/>'
+            if len(self.selected_roundabout.leaving_roads) == 0:
+                information += '<b>Destroying mode<b><br/>'
+            if self.selected_roundabout.cars:
+                avg_waiting_time = 0
+                for car in self.selected_roundabout.cars:
+                    avg_waiting_time += car.total_waiting_time / float(len(self.selected_roundabout.cars))
+                information += '<br/><b>Average waiting time</b> (s) : ' + str(avg_waiting_time) + '<br/>'
         
         self.lbl_info.setText(information)
 
@@ -368,7 +385,7 @@ def main(args):
     app = QtGui.QApplication(args)
     
     main_window = MainWindow()
-    main_window.show()
+    main_window.showMaximized()
 
     sys.exit(app.exec_())
         

@@ -27,7 +27,8 @@ class Roundabout:
             new_coordinates (list) : the coordinates [x, y] for the roundabout
         """
         
-        self.position       = Vector(__constants__.TRACK_SCALE * new_x + __constants__.TRACK_OFFSET_X, __constants__.TRACK_SCALE * new_y + __constants__.TRACK_OFFSET_Y)
+        self.position       = Vector(__constants__.TRACK_SCALE * new_x + __constants__.TRACK_OFFSET_X, 
+                                     __constants__.TRACK_SCALE * new_y + __constants__.TRACK_OFFSET_Y)
         self.radius         = radius
         
         self.incoming_roads = []
@@ -143,8 +144,9 @@ class Roundabout:
         
             chosen_road = lib.proba_poll(possible_roads_events)
             if chosen_road.is_free:
-                car_type_events = [(__constants__.STANDARD_CAR, 80), 
-                                   (__constants__.TRUCK       , 20)]
+                car_type_events = [(__constants__.CARTYPE_STANDARD_CAR, 80), 
+                                   (__constants__.CARTYPE_TRUCK       , 15), 
+                                   (__constants__.CARTYPE_SPEEDCAR    ,  5)]
                                    
                 new_car = __car__.Car(chosen_road, lib.proba_poll(car_type_events))
 

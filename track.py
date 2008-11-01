@@ -8,6 +8,7 @@ import lib
 import roundabout   as __roundabout__
 import road         as __road__
 import constants    as __constants__
+from os             import getcwd
 
 #   Bootstrap
 if (__name__ == '__main__'):
@@ -25,16 +26,8 @@ class Track:
             new_roads   (list)  :   a list of the roads
         """
         
-        if not isinstance(new_roundabouts, list):
-            self.roundabouts = []
-        else:
-            self.roundabouts = new_roundabouts
-        
-        if not isinstance(new_roads, list):
-            self.roads = []
-        else:
-            self.roads = new_roads
-    
+        self.roundabouts = new_roundabouts
+        self.roads = new_roads
         self.picture = None
     
     def add_car(self, road_number, position):
@@ -58,9 +51,6 @@ class Track_Parser:
         and loads it in the simulation.
             file_name    (string)    :   the name of the file to load.
         """
-        
-        # TODO :
-        #       · (T.LFF1) try to figure out a way to force the current directory to be the correct one (especially on Windows), since it raises an error when cwd isn't init.py's directory.
         
         try:
             file_data   = file(file_name)
@@ -104,5 +94,3 @@ def load_demo_track():
 
 track = Track()
 load_demo_track()
-
-

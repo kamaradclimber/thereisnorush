@@ -5,6 +5,8 @@ Description :   defines the class "Car"
 """
 
 import lib
+import time
+
 from random         import randint
 import constants    as __constants__
 import road         as __road__
@@ -15,7 +17,7 @@ class Car:
     Those which will crowd our city >_< .
     """
 
-    def __init__(self, new_location, new_type = __constants__.STANDARD_CAR, new_position = 0):
+    def __init__(self, new_location, new_type = __constants__.CARTYPE_STANDARD_CAR, new_position = 0):
         """
         Constructor method : a car is provided a (for now unmutable) sequence of directions.
             new_path (list)  :   a list of waypoints
@@ -29,9 +31,11 @@ class Car:
         self.location           = new_location
         self.position           = new_position
         self.acceleration       = 0
-        self.stress             = 0
+
         self.sight_distance     = 5 * __constants__.CAR_DEFAULT_LENGTH
-        self.consecutif_waiting = 0        
+        
+        self.total_waiting_time = 0
+        self.last_waiting_time  = 0        
 
         if isinstance(new_location, __road__.Road):
             self.location.cars.insert(0, self)
@@ -47,17 +51,31 @@ class Car:
         """
         
         # isn't there a better solution (I miss switch…)
-        if new_type == __constants__.STANDARD_CAR:
+        if new_type == __constants__.CARTYPE_STANDARD_CAR:
             self.length = __constants__.CAR_DEFAULT_LENGTH    
             self.force  = __constants__.CAR_DEFAULT_FORCE    
             self.mass   = __constants__.CAR_DEFAULT_MASS    
             self.color  = __constants__.CAR_DEFAULT_COLOR
         
-        elif new_type == __constants__.TRUCK:
-            self.length =  __constants__.CAR_DEFAULT_LENGTH * 3
+        elif new_type == __constants__.CARTYPE_TRUCK:
+        
+            # Several sub-categories : pickup, truck, long truck, bus
+            possible_sizes = [(2, 20), 
+                              (3, 60), 
+                              (4, 15),
+                              (5, 5)]
+        
+            self.length =  __constants__.CAR_DEFAULT_LENGTH * lib.proba_poll(possible_sizes)
             self.force  =  __constants__.CAR_DEFAULT_FORCE  * 5
-            self.mass   =  __constants__.CAR_DEFAULT_MASS   * 30            # They're ~30 tons heavy =]
+            self.mass   =  __constants__.CAR_DEFAULT_MASS   * 5 * self.length
             self.color  =  __constants__.LIGHT_BLUE   # And they're blue !
+
+        elif new_type == __constants__.CARTYPE_SPEEDCAR:
+        
+            self.length =  __constants__.CAR_DEFAULT_LENGTH
+            self.force  =  __constants__.CAR_DEFAULT_FORCE  * 5
+            self.mass   =  __constants__.CAR_DEFAULT_MASS   / 1.5
+            self.color  =  __constants__.LIGHT_RED   # Red !
         
         else:
             raise Exception('ERROR (in car.set_default_properties()) : unknown type of vehicle !')
@@ -234,33 +252,48 @@ class Car:
                 #   The slot is free
                 if self.location.end.slots_cars[id_slot] is None:
                     self.location.end.slots_cars[id_slot]   = self
-                    self.is_waiting                         = False
+                    self.change_waiting_attitude(False)
                     self.join(self.location.end)
                     
                 #   The slot isn't free
                 else:
-                    self.is_waiting = True
+                    self.change_waiting_attitude(True)
                     
             #   Red light
             else:
-                self.is_waiting = True
+                self.change_waiting_attitude(True)
 
         #   Waiting
         if self.position + self.length/2 + self.sight_distance > obstacle: 
             if not obstacle_is_light:
-                self.is_waiting = self.location.cars[self.rank + 1].is_waiting    # CONVENTION SENSITIVE
+                self.change_waiting_attitude(self.location.cars[self.rank + 1].is_waiting)    # CONVENTION SENSITIVE
             elif self.location.gates[__constants__.LEAVING_GATE]:
-                self.is_waiting = False
+                self.change_waiting_attitude(False)
             else:
-                self.is_waiting = True
+                self.change_waiting_attitude(True)
         
-        #   experimental - stress
-        if self.is_waiting: 
-            self.stress             += 1
-            self.consecutif_waiting += 1
-        else:
-            self.consecutif_waiting = 0
 
+    def change_waiting_attitude(self, new_attitude):
+        """
+        Changes, if needed, the waiting attitude of a car
+        """
+        if new_attitude == self.is_waiting:
+            # There is no change: do nothing
+            return None
+            
+        if new_attitude:
+            # We begin a "waiting" phase : reset the counter
+            
+            self.is_waiting = True
+            self.start_waiting_time = time.clock()
+            self.last_waiting_time  = 0
+        else:
+            # We end a "waiting" phase : look at the clock
+            
+            self.is_waiting = False
+            self.last_waiting_time = time.clock() - self.start_waiting_time
+            self.total_waiting_time += self.last_waiting_time
+            
     @property
     def rank(self):
         if self in self.location.cars:

@@ -6,7 +6,6 @@ Description :   defines the functions needed for the simulation
 
 import constants    as __constants__
 from random         import randint
-from os             import getcwd
 
 #   Bootstrap
 if (__name__ == '__main__'):
@@ -32,7 +31,7 @@ def shift_list(list):
 def proba_poll(events):
     """
     Returns an event with a given probability
-        events = [value1, proba1, value2, proba2…]
+        events = [value1, proba1, value2, proba2...]
         probas should be integer values
     """
     list_polls  = []

@@ -32,8 +32,10 @@ CAR_DEFAULT_SPEED   = 0
 CAR_DEFAULT_FORCE   = 10.0
 CAR_DEFAULT_MASS    = 1.0
 CAR_DEFAULT_COLOR   = 255, 255, 255
-STANDARD_CAR        = 0
-TRUCK               = 1
+
+CARTYPE_STANDARD_CAR = 0 # Standard cars
+CARTYPE_TRUCK        = 1 # Trucks, pickups, buses...
+CARTYPE_SPEEDCAR     = 2 # Speedcars, roadsters...
 
 #   Track
 TRACK_OFFSET_X = 32
