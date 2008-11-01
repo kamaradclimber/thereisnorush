@@ -10,7 +10,7 @@ import time
 from vector         import Vector
 
 import car          as __car__
-import constants    as __constants__
+import constants
 
 class Roundabout:
     """
@@ -21,14 +21,14 @@ class Roundabout:
                  new_x, 
                  new_y, 
                  new_spawning = False, 
-                 radius       =__constants__.ROUNDABOUT_RADIUS_DEFAULT):
+                 radius       =constants.ROUNDABOUT_RADIUS_DEFAULT):
         """
         Constructor method : creates a new roundabout.
             new_coordinates (list) : the coordinates [x, y] for the roundabout
         """
         
-        self.position       = Vector(__constants__.TRACK_SCALE * new_x + __constants__.TRACK_OFFSET_X, 
-                                     __constants__.TRACK_SCALE * new_y + __constants__.TRACK_OFFSET_Y)
+        self.position       = Vector(constants.TRACK_SCALE * new_x + constants.TRACK_OFFSET_X, 
+                                     constants.TRACK_SCALE * new_y + constants.TRACK_OFFSET_Y)
         self.radius         = radius
         
         self.incoming_roads = []
@@ -37,8 +37,8 @@ class Roundabout:
         self.to_kill        = [] 
         self.slots_cars     = {}
         
-        self.max_cars       = __constants__.ROUNDABOUT_DEFAULT_MAX_CARS
-        self.rotation_speed = __constants__.ROUNDABOUT_DEFAULT_ROTATION_SPEED
+        self.max_cars       = constants.ROUNDABOUT_DEFAULT_MAX_CARS
+        self.rotation_speed = constants.ROUNDABOUT_DEFAULT_ROTATION_SPEED
         
         self.spawning       = new_spawning
         self.spawn_timer    = time.clock()
@@ -65,7 +65,7 @@ class Roundabout:
         else:
             raise Exception("ERROR (in Roundabout.host_road()) : there is no slot to host any further roads !")
             
-    def _update_gates(self):
+    def _update_traffic_lights(self):
         """
         Gate handling
         """
@@ -74,14 +74,14 @@ class Roundabout:
         around_incoming_loads, around_leaving_loads = [], []
         for road in self.incoming_roads:
             around_incoming_loads.append(road.begin.load)
-            if road.begin.load > self.load and road.gates[__constants__.INCOMING_GATE]: #rond point chargé et qui laisse ses voitures se deverser vers moi
+            if road.begin.load > self.load and road.traffic_lights[constants.ENTRANCE]: #rond point chargé et qui laisse ses voitures se deverser vers moi
                 self.set_gate(road, True)
             elif road.begin.load < self.load and abs((road.begin.load - self.load)/(self.load+0.001)) > 0.10 : #rondpoint vraiment pas chargé , je coupe
                 self.set_gate(road, False)
                 
         for road in self.leaving_roads:
             around_leaving_loads.append(road.end.load)
-            if road.end.load < self.load and road.gates[__constants__.LEAVING_GATE]: #rond point pas trop chargé et qui laisse passer mes voitures: j'ouvre
+            if road.end.load < self.load and road.traffic_lights[constants.EXIT]: #rond point pas trop chargé et qui laisse passer mes voitures: j'ouvre
                 self.set_gate(road, True)
             elif road.end.load > self.load and abs((road.begin.load - self.load)/(self.load+0.001)) > 0.10: #rondpoint bien chargé, je le laisse respirer
                 self.set_gate(road, False)
@@ -90,7 +90,7 @@ class Roundabout:
         
         for road in self.incoming_roads:
             #   Too long waiting time : open the gate and not close others
-            if road in self.incoming_roads and road.last_gate_update(__constants__.LEAVING_GATE) > __constants__.WAITING_TIME_LIMIT and road.total_waiting_cars:
+            if road in self.incoming_roads and road.last_gate_update(constants.EXIT) > constants.WAITING_TIME_LIMIT and road.total_waiting_cars:
                 self.set_gate(road, True)
 
         #   Full roundabout : close all incoming roads, open all leaving roads
@@ -131,27 +131,27 @@ class Roundabout:
         Updates the roundabout : rotate the cars, dispatch them...
         """
         #   Make the cars rotate
-        if time.clock() - self.last_shift > __constants__.ROUNDABOUT_ROTATION_RATE:
+        if time.clock() - self.last_shift > constants.ROUNDABOUT_ROTATION_RATE:
             self.last_shift = time.clock()
             self.slots_roads = lib.shift_list(self.slots_roads)
 
         #   Spawning mode
-        if self.spawning and len(self.leaving_roads) and (time.clock() - self.spawn_timer > __constants__.SPAWN_TIME):
-        
+        if self.spawning and len(self.leaving_roads) and (time.clock() - self.spawn_timer > constants.SPAWN_TIME):
+            self.spawn_timer = time.clock() 
             num_possible_roads    = len(self.leaving_roads)
             # Possible ways out. NB : the "1000/ " thing ensures *integer* probabilities.
             possible_roads_events = [(self.leaving_roads[i], 1000/num_possible_roads) for i in range(num_possible_roads)]
         
             chosen_road = lib.proba_poll(possible_roads_events)
             if chosen_road.is_free:
-                car_type_events = [(__constants__.CARTYPE_STANDARD_CAR, 80), 
-                                   (__constants__.CARTYPE_TRUCK       , 15), 
-                                   (__constants__.CARTYPE_SPEEDCAR    ,  5)]
+                car_type_events = [(constants.STANDARD_CAR, 80), 
+                                   (constants.TRUCK       , 15), 
+                                   (constants.SPEED_CAR   ,  5)]
                                    
                 new_car = __car__.Car(chosen_road, lib.proba_poll(car_type_events))
 
-        #   Update gates
-        self._update_gates()
+        #   Update traffic lights
+        self._update_traffic_lights()
                 
         #   Update cars
         for car in self.cars:
@@ -167,20 +167,20 @@ class Roundabout:
     
     def set_gate(self, road, state):
         """
-        Sets the state of the gates on the road.
-            road    (Road)  :   the road whose gates are affected
+        Sets the state of the traffic lights on the road.
+            road    (Road)  :   the road whose traffic lights are affected
             state   (bool)   :   the state (False = red, True = green) of the gate
         """
         #   Set which gate is to be updated
         if id(road.begin) == id(self):
-            current_gate = __constants__.INCOMING_GATE
+            current_gate = constants.ENTRANCE
         else:
-            current_gate = __constants__.LEAVING_GATE
+            current_gate = constants.EXIT
         
         #   Update if necessary
-        if road.gates[current_gate] != state:
-            road.gates_update[current_gate] = time.clock()
-            road.gates[current_gate]        = state
+        if road.traffic_lights[current_gate] != state:
+            road.traffic_lights_update[current_gate] = time.clock()
+            road.traffic_lights[current_gate]        = state
 
     @property
     def is_full(self):

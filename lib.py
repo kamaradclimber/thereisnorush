@@ -4,7 +4,7 @@ File        :   lib.py
 Description :   defines the functions needed for the simulation
 """
 
-import constants    as __constants__
+import constants
 from random         import randint
 
 #   Bootstrap

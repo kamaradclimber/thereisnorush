@@ -8,7 +8,7 @@ import lib
 import time
 
 from random         import randint
-import constants    as __constants__
+import constants
 import road         as __road__
 import roundabout   as __roundabout__
 
@@ -17,23 +17,23 @@ class Car:
     Those which will crowd our city >_< .
     """
 
-    def __init__(self, new_location, new_type = __constants__.CARTYPE_STANDARD_CAR, new_position = 0):
+    def __init__(self, new_location, new_type = constants.STANDARD_CAR, new_position = 0):
         """
         Constructor method : a car is provided a (for now unmutable) sequence of directions.
-            new_path (list)  :   a list of waypoints
-            new_road (Road) :   the road where the car originates (for now, let's forbid the original location to be a roundabout)
         """
         self.path               = []
         self.is_waiting         = False
-        self.width              = __constants__.CAR_DEFAULT_WIDTH
-        self.speed              = __constants__.CAR_DEFAULT_SPEED 
-        self.headway            = __constants__.CAR_DEFAULT_HEADWAY
+        self.width              = constants.VEHICLE[new_type][constants.DEFAULT_WIDTH]
+        self.speed              = constants.VEHICLE[new_type][constants.DEFAULT_SPEED]
+        self.headway            = constants.VEHICLE[new_type][constants.DEFAULT_HEADWAY]
+        self.length             = constants.VEHICLE[new_type][constants.DEFAULT_LENGTH]
+        self.force              = constants.VEHICLE[new_type][constants.DEFAULT_FORCE]
+        self.mass               = constants.VEHICLE[new_type][constants.DEFAULT_MASS]
+        self.color              = constants.VEHICLE[new_type][constants.DEFAULT_COLOR]
         self.location           = new_location
         self.position           = new_position
         self.acceleration       = 0
-
-        self.sight_distance     = 5 * __constants__.CAR_DEFAULT_LENGTH
-        
+        self.sight_distance     = 5 * constants.VEHICLE[constants.STANDARD_CAR][constants.DEFAULT_LENGTH]
         self.total_waiting_time = 0
         self.last_waiting_time  = 0        
 
@@ -44,40 +44,23 @@ class Car:
         
         self.generate_path()        
         self.set_default_properties(new_type)
-
+    
+    #   This functions may be soon deprecated
     def set_default_properties(self, new_type):
         """
-        Sets the car's properties, given its type
+        Sets the car's properties, given its type.
         """
-        
-        # isn't there a better solution (I miss switch…)
-        if new_type == __constants__.CARTYPE_STANDARD_CAR:
-            self.length = __constants__.CAR_DEFAULT_LENGTH    
-            self.force  = __constants__.CAR_DEFAULT_FORCE    
-            self.mass   = __constants__.CAR_DEFAULT_MASS    
-            self.color  = __constants__.CAR_DEFAULT_COLOR
-        
-        elif new_type == __constants__.CARTYPE_TRUCK:
-        
+        if new_type == constants.TRUCK:
             # Several sub-categories : pickup, truck, long truck, bus
             possible_sizes = [(2, 20), 
                               (3, 60), 
                               (4, 15),
                               (5, 5)]
         
-            self.length =  __constants__.CAR_DEFAULT_LENGTH * lib.proba_poll(possible_sizes)
-            self.force  =  __constants__.CAR_DEFAULT_FORCE  * 5
-            self.mass   =  __constants__.CAR_DEFAULT_MASS   * 5 * self.length
-            self.color  =  __constants__.LIGHT_BLUE   # And they're blue !
-
-        elif new_type == __constants__.CARTYPE_SPEEDCAR:
+            self.length *= lib.proba_poll(possible_sizes)
+            self.mass   *= self.length
         
-            self.length =  __constants__.CAR_DEFAULT_LENGTH
-            self.force  =  __constants__.CAR_DEFAULT_FORCE  * 5
-            self.mass   =  __constants__.CAR_DEFAULT_MASS   / 1.5
-            self.color  =  __constants__.LIGHT_RED   # Red !
-        
-        else:
+        if new_type not in constants.VEHICLE_TYPES:
             raise Exception('ERROR (in car.set_default_properties()) : unknown type of vehicle !')
             
     def generate_path(self, minimum = 8, maximum = 11):
@@ -177,7 +160,7 @@ class Car:
             obstacle_is_light = True
 
             #   Green light
-            if self.location.gates[__constants__.LEAVING_GATE]:
+            if self.location.traffic_lights[constants.EXIT]:
                 obstacle = self.location.length + self.headway
             #   Red light
             else:
@@ -224,8 +207,8 @@ class Car:
             delta_position  = obstacle - self.position - self.length/2 - self.headway
             
             self.acceleration   =   0
-            #self.acceleration   +=  __constants__.ALPHA * delta_speed
-            #self.acceleration   +=  __constants__.BETA  * delta_position
+            #self.acceleration   +=  constants.ALPHA * delta_speed
+            #self.acceleration   +=  constants.BETA  * delta_position
             #self.acceleration   =   min(self.acceleration, 10)      #   Prevent acceleration from outranging 10
             #self.acceleration   =   max(self.acceleration, -10)     #   Prevent acceleration from outranging -10
             
@@ -234,15 +217,15 @@ class Car:
                 self.acceleration = self.force/self.mass * delta_speed/abs(delta_speed)
                 
         #   Update the position given the speed
-        self.position = min(self.position + self.speed * __constants__.delta_t, obstacle - self.length/2 - self.headway)
+        self.position = min(self.position + self.speed * constants.delta_t, obstacle - self.length/2 - self.headway)
         
         #   Update the speed given the acceleration
-        self.speed = max(min(self.speed + self.acceleration * __constants__.delta_t, self.location.max_speed), 5)
+        self.speed = max(min(self.speed + self.acceleration * constants.delta_t, self.location.max_speed), 5)
 
         #   Arrival at a roundabout
         if self.position >= self.location.length - self.length/2 - self.headway:
             #   Green light
-            if self.location.gates[__constants__.LEAVING_GATE] :
+            if self.location.traffic_lights[constants.EXIT] :
                 id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
                 
                 #   The slot doesn't exist : creation of the slot
@@ -251,7 +234,7 @@ class Car:
                     
                 #   The slot is free
                 if self.location.end.slots_cars[id_slot] is None:
-                    self.location.end.slots_cars[id_slot]   = self
+                    self.location.end.slots_cars[id_slot] = self
                     self.change_waiting_attitude(False)
                     self.join(self.location.end)
                     
@@ -267,31 +250,29 @@ class Car:
         if self.position + self.length/2 + self.sight_distance > obstacle: 
             if not obstacle_is_light:
                 self.change_waiting_attitude(self.location.cars[self.rank + 1].is_waiting)    # CONVENTION SENSITIVE
-            elif self.location.gates[__constants__.LEAVING_GATE]:
+            elif self.location.traffic_lights[constants.EXIT]:
                 self.change_waiting_attitude(False)
             else:
                 self.change_waiting_attitude(True)
         
-
     def change_waiting_attitude(self, new_attitude):
         """
         Changes, if needed, the waiting attitude of a car
         """
+        #   There is no change : do nothing
         if new_attitude == self.is_waiting:
-            # There is no change: do nothing
             return None
-            
+        
+        #   Start a "waiting" phase : reset the counter
         if new_attitude:
-            # We begin a "waiting" phase : reset the counter
-            
-            self.is_waiting = True
+            self.is_waiting         = True
             self.start_waiting_time = time.clock()
             self.last_waiting_time  = 0
+        
+        #   Stop a "waiting" phase : look at the clock
         else:
-            # We end a "waiting" phase : look at the clock
-            
-            self.is_waiting = False
-            self.last_waiting_time = time.clock() - self.start_waiting_time
+            self.is_waiting         = False
+            self.last_waiting_time  = time.clock() - self.start_waiting_time
             self.total_waiting_time += self.last_waiting_time
             
     @property

@@ -7,7 +7,7 @@ Description :   defines the class "Road"
 import lib
 import time
 
-import constants    as __constants__
+import constants
 from math           import sqrt
 
 class Road:
@@ -17,7 +17,7 @@ class Road:
     def __init__(   self,
                     new_begin       = None,
                     new_end         = None,
-                    new_max_speed   = __constants__.ROAD_DEFAULT_MAX_SPEED):
+                    new_max_speed   = constants.ROAD_DEFAULT_MAX_SPEED):
         """
         Constructor method : creates a new road.
             new_begin  (Node)    : starting point for the road
@@ -28,11 +28,11 @@ class Road:
         self.end            = new_end
         self.cars           = []
         self.max_speed      = new_max_speed
-        self.gates_update   = [time.clock(), time.clock()]
-        self.gates          = [True, False]    # [gate at the beginning, gate at the end]
+        self.traffic_lights_update   = [time.clock(), time.clock()]
+        self.traffic_lights          = [True, False]    # [gate at the beginning, gate at the end]
         self.parallel       = None
         self.orthogonal     = None
-        self.width          = __constants__.ROAD_DEFAULT_WIDTH
+        self.width          = constants.ROAD_DEFAULT_WIDTH
         
         self.end.incoming_roads.append(self)
         self.begin.leaving_roads.append(self)
@@ -56,7 +56,7 @@ class Road:
         Return the time (in milliseconds) since the last update of a gate (0 or 1).
         """
         current_time = time.clock()
-        return (current_time - self.gates_update[gate])
+        return (current_time - self.traffic_lights_update[gate])
     
     @property
     def is_free(self):

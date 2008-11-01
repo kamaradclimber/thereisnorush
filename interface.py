@@ -7,24 +7,25 @@ Description :   Manages the displays and main loop.
 import lib
 import sys
 
-import constants    as __constants__
+import constants
 import track        as __track__
 
 from vector         import Vector
 from PyQt4          import QtCore, QtGui, Qt
 
-class Scene(QtGui.QTabWidget):
+class Scene(QtGui.QWidget):
     """
     Area where the scene will be drawn.
     """
 
-    def __init__(self, parent, new_window):
+    def __init__(self, new_window, parent = None):
         QtGui.QWidget.__init__(self, parent)
 
         self.painter    = None
         self.window     = new_window
         
-        self.resize(__constants__.SCENE_WIDTH, __constants__.SCENE_HEIGHT)        
+        self.setSizePolicy(QtGui.QSizePolicy())
+        self.setMinimumSize(constants.SCENE_WIDTH, constants.SCENE_HEIGHT)
 
     def paintEvent(self, event):
         """
@@ -35,12 +36,12 @@ class Scene(QtGui.QTabWidget):
         self.painter = QtGui.QPainter(self)
 
         self.painter.setRenderHint(QtGui.QPainter.Antialiasing, self.window.use_antialiasing.isChecked())
-#        self.painter.fillRect(QtCore.QRectF(QtCore.QPointF(0, 0), QtCore.QPointF(self.width(), self.height())), QtGui.QColor(0, 0, 0))
-        self.draw_scene()
+        self.painter.fillRect(QtCore.QRectF(QtCore.QPointF(0, 0), QtCore.QPointF(self.width(), self.height())), QtGui.QColor(0, 0, 0))
+        self.draw()
         
         self.painter.end()
 
-    def draw_scene(self):
+    def draw(self):
         """
         Draws the complete scene on the screen.
         Dessine la scène entière à l'écran.
@@ -65,18 +66,19 @@ class Scene(QtGui.QTabWidget):
         
         #   Draw traffic lights (or not)
         if self.window.exit_lights.isChecked():
-            self.draw_traffic_light(end_position, road, __constants__.LEAVING_GATE)
+            self.draw_traffic_light(end_position, road, constants.EXIT)
         if self.window.entrance_lights.isChecked():
-            self.draw_traffic_light(start_position, road, __constants__.INCOMING_GATE)
-            
+            self.draw_traffic_light(start_position, road, constants.ENTRANCE)
+        
+        self.painter.setPen(QtGui.QColor(128, 255, 0))
         self.painter.drawLine(start_position.x, start_position.y, end_position.x, end_position.y)
         for car in road.cars:
             self.draw_car(car)
         
         # DEPRECATED
-        #color = __constants__.GREEN
+        #color = constants.GREEN
         #key = 0
-        #if road.cars and __constants__.DISPLAY_DENSITY:
+        #if road.cars and constants.DISPLAY_DENSITY:
         #    occupation = 0
         #    for car in road.cars:
         #        occupation += car.length
@@ -138,13 +140,15 @@ class Scene(QtGui.QTabWidget):
         #       · (DN1) draw the cars on the roundabout
 
         if not __track__.track.picture:
-            #pygame.draw.circle(self.screen, __constants__.ROUNDABOUT_COLOR, roundabout.position.ceil().get_tuple(), __constants__.ROUNDABOUT_WIDTH)
+            self.painter.setBrush(QtGui.QColor(255, 0, 0))
+            self.painter.setPen(QtGui.QColor(*constants.TRANSPARENT))
+            self.painter.drawEllipse(roundabout.position.x - roundabout.radius/4, roundabout.position.y - roundabout.radius/4, roundabout.radius/2, roundabout.radius/2)
             pass
         
         #   Selected roudabout
         if self.window.selected_roundabout == roundabout:
-            self.painter.setPen(QtGui.QColor(*__constants__.ROUNDABOUT_COLOR))
-            self.painter.setBrush(QtGui.QColor(*__constants__.TRANSPARENT))
+            self.painter.setPen(QtGui.QColor(*constants.ROUNDABOUT_COLOR))
+            self.painter.setBrush(QtGui.QColor(*constants.TRANSPARENT))
             self.painter.drawEllipse(roundabout.position.x - roundabout.radius, roundabout.position.y - roundabout.radius, 2 * roundabout.radius, 2 * roundabout.radius)
 
         if roundabout.cars:
@@ -167,7 +171,7 @@ class Scene(QtGui.QTabWidget):
 
         TF_RADIUS = 3
         width     = 0
-        state     = road.gates[gate]
+        state     = road.traffic_lights[gate]
 
         (parallel, orthogonal)  = road.unit_vectors
         start_position          = position + orthogonal * 6 - parallel * 12
@@ -182,6 +186,7 @@ class Scene(QtGui.QTabWidget):
                 self.painter.setBrush(QtGui.QColor('black'))
 
             position = start_position + d_position * i
+            self.painter.setPen(QtGui.QColor(0, 0, 255))
             self.painter.drawEllipse(position.x - TF_RADIUS, position.y - TF_RADIUS, 2 * TF_RADIUS, 2*TF_RADIUS)
             
     def mousePressEvent(self, event):
@@ -191,7 +196,6 @@ class Scene(QtGui.QTabWidget):
         """
         # Experimental : select a roundabout
         self.window.select_roundabout(event.x(), event.y())
-
 
 class MainWindow(QtGui.QMainWindow):
     """
@@ -217,13 +221,13 @@ class MainWindow(QtGui.QMainWindow):
         """
         #   Window settings
         self.setObjectName('MainWindow')
-        self.setWindowTitle(__constants__.REVISION_NAME + ' - r' + str(__constants__.REVISION_NUMBER))
+        self.setWindowTitle(constants.REVISION_NAME + ' - r' + str(constants.REVISION_NUMBER))
         self.setWindowIcon(QtGui.QIcon('icons/tinr_logo.png'))
 
         self.setCentralWidget(QtGui.QWidget())
         
         #   Scene
-        self.scene = Scene(None, self)
+        self.scene = Scene(self)
         self.scene.setObjectName('scene')
         
         #   Commands tab
@@ -264,7 +268,7 @@ class MainWindow(QtGui.QMainWindow):
         #   Control panel
         self.control_panel = QtGui.QTabWidget()
         self.control_panel.setObjectName('control_panel')
-        self.control_panel.resize(__constants__.PANEL_WIDTH, __constants__.PANEL_HEIGHT)
+        self.control_panel.resize(constants.PANEL_WIDTH, constants.PANEL_HEIGHT)
         self.control_panel.setTabPosition(QtGui.QTabWidget.East)
         self.control_panel.addTab(self.tab_info, 'Informations')
         self.control_panel.addTab(self.tab_commands, 'Commands')
@@ -321,7 +325,6 @@ class MainWindow(QtGui.QMainWindow):
             self.update_simulation()
             self.update_information()
             self.scene.update()
-            self.update()
         else:
             QtGui.QFrame.timerEvent(self, event)
 
