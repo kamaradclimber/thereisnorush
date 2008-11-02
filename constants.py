@@ -15,7 +15,7 @@ RED         = 255,   0,   0
 GREEN       =   0, 255,   0
 BLUE        =   0,   0, 255
 WHITE       = 255, 255, 255
-GRAY        = 190, 190, 190
+GREY        = 190, 190, 190
 ORANGE      = 255, 128,   0
 
 LIGHT_RED   = 255,  64,  64
@@ -90,16 +90,17 @@ ROUNDABOUT_DEFAULT_MAX_CARS       = 5
 ROAD_COLOR             = WHITE
 ROAD_DEFAULT_MAX_SPEED = 50
 ROAD_DEFAULT_LENGTH    = 100
-ROAD_DEFAULT_WIDTH     = 5
+ROAD_DEFAULT_LANES     = 1
+
+LANE_DEFAULT_WIDTH     = 5
 
 #   Rules
 WAITING_CARS_LIMIT = 8
 WAITING_TIME_LIMIT = 10.000
 
 #   Other
-SCENE_RESOLUTION    = (SCENE_WIDTH, SCENE_HEIGHT)   = (1000, 750)
+SCENE_RESOLUTION    = (SCENE_WIDTH, SCENE_HEIGHT)   = (800, 700)
 PANEL_RESOLUTION    = (PANEL_WIDTH, PANEL_HEIGHT)   = (200, 500)
-delta_t             = 0.1
 
 DISPLAY_DENSITY     = False # You may de-activate per-density coloring (+ fps)
 

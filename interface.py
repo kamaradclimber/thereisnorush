@@ -6,6 +6,7 @@ Description :   Manages the displays and main loop.
 
 import lib
 import sys
+import time
 
 import constants
 import track        as __track__
@@ -26,6 +27,9 @@ class Scene(QtGui.QWidget):
         
         self.setSizePolicy(QtGui.QSizePolicy())
         self.setMinimumSize(constants.SCENE_WIDTH, constants.SCENE_HEIGHT)
+        
+        lib.Delta_t = 0
+        self.last_update = time.clock()
 
     def paintEvent(self, event):
         """
@@ -70,28 +74,18 @@ class Scene(QtGui.QWidget):
         if self.window.entrance_lights.isChecked():
             self.draw_traffic_light(start_position, road, constants.ENTRANCE)
         
-        self.painter.setPen(QtGui.QColor(128, 255, 0))
+        self.painter.setPen(QtGui.QColor(*constants.ROAD_COLOR))
         self.painter.drawLine(start_position.x, start_position.y, end_position.x, end_position.y)
-        for car in road.cars:
-            self.draw_car(car)
         
-        # DEPRECATED
-        #color = constants.GREEN
-        #key = 0
-        #if road.cars and constants.DISPLAY_DENSITY:
-        #    occupation = 0
-        #    for car in road.cars:
-        #        occupation += car.length
-        #    key = 2 * (float(occupation)/float(road.length)) * 255
-        #    if key > 255: key = 255
-        #    color = [key, 255 - key, 0]
-        #if not __track__.track.picture:
-        #
-        #   Do not draw cars when density exceeds ~80%
-        #if road.cars and key < 200:
-        #   for car in road.cars:
-        #       self.draw_car(car)
+        for lane in road.lanes:
+            self.draw_lane(lane)
 
+    def draw_lane(self, lane):
+        """
+        """
+        for car in lane.cars:
+            self.draw_car(car)
+            
     def draw_car(self, car):
         """
         Draws a given car on the screen.
@@ -104,11 +98,11 @@ class Scene(QtGui.QWidget):
         a_position = car.location.end.position
         direction  = (a_position - d_position)
 
-        length_covered = float(int(car.position)) / float(int(car.location.length))
+        length_covered = float(int(car.position)) / float(int(car.location.parent.length))
 
         #   Get them once
         (r_width, r_length)    = (car.width, car.length)
-        (parallel, orthogonal) = car.location.unit_vectors
+        (parallel, orthogonal) = car.location.parent.unit_vectors
 
         #   Coordinates for the center
         center_position = d_position + direction * length_covered + orthogonal * car.location.width/2
@@ -157,7 +151,7 @@ class Scene(QtGui.QWidget):
 
             #TEMPORARY : the number of cars on the roundabout is written
             position = Vector(roundabout.position.x + 10, roundabout.position.y + 10)
-            self.painter.setPen(QtGui.QColor('black'))
+            self.painter.setPen(QtGui.QColor(*constants.WHITE))
             self.painter.drawText(position.x, position.y, str(len(roundabout.cars)))
             pass        
         
@@ -186,7 +180,7 @@ class Scene(QtGui.QWidget):
                 self.painter.setBrush(QtGui.QColor('black'))
 
             position = start_position + d_position * i
-            self.painter.setPen(QtGui.QColor(0, 0, 255))
+            self.painter.setPen(QtGui.QColor(*constants.GREY))
             self.painter.drawEllipse(position.x - TF_RADIUS, position.y - TF_RADIUS, 2 * TF_RADIUS, 2*TF_RADIUS)
             
     def mousePressEvent(self, event):
@@ -325,6 +319,9 @@ class MainWindow(QtGui.QMainWindow):
             self.update_simulation()
             self.update_information()
             self.scene.update()
+            
+            lib.Delta_t = time.clock() - self.scene.last_update
+            self.scene.last_update = time.clock()
         else:
             QtGui.QFrame.timerEvent(self, event)
 
@@ -337,7 +334,8 @@ class MainWindow(QtGui.QMainWindow):
             road.update()
         for roundabout in __track__.track.roundabouts:
             #oui deux boucles séparées sinon linfo est pas en temps réél (enfin ca serait pas un drame non plus vu l'échelle de delta_t ! )
-            roundabout.selfish_load()
+            # Weird : selfish_load is a property, hence it is not callable !
+            dummy = roundabout.selfish_load
         for roundabout in __track__.track.roundabouts:
             roundabout.update()
         
@@ -355,7 +353,7 @@ class MainWindow(QtGui.QMainWindow):
         cars_on_roundabouts = 0
         
         for road in __track__.track.roads:
-            cars_on_roads += len(road.cars)
+            cars_on_roads += road.total_cars
             cars_waiting  += road.total_waiting_cars
         for roundabout in __track__.track.roundabouts:
             cars_on_roundabouts += len(roundabout.cars)
@@ -381,7 +379,12 @@ class MainWindow(QtGui.QMainWindow):
                 avg_waiting_time = 0
                 for car in self.selected_roundabout.cars:
                     avg_waiting_time += car.total_waiting_time / float(len(self.selected_roundabout.cars))
-                information += '<br/><b>Average waiting time</b> (s) : ' + str(avg_waiting_time) + '<br/>'
+                information += '<br/><b>Average waiting time</b> (s) : ' + str(lib.round(avg_waiting_time,2)) + '<br/>'
+        
+        if lib.Delta_t != 0:
+            information += '<br/><b>Simulation</b><br/>'
+            information += 'FPS : ' + str(lib.round(1/lib.Delta_t, 2)) + '<br/>'
+            information += '&Delta;t (s): ' + str(lib.round(lib.Delta_t, 2)) + '<br/>'
         
         self.lbl_info.setText(information)
 

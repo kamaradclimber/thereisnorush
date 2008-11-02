@@ -37,10 +37,10 @@ class Car:
         self.total_waiting_time = 0
         self.last_waiting_time  = 0        
 
-        if isinstance(new_location, __road__.Road):
+        if isinstance(new_location, __road__.Lane):
             self.location.cars.insert(0, self)
         else:
-            raise ValueError('ERROR (in car.__init__()) : new cars must be created on a road !')
+            raise ValueError('ERROR (in car.__init__()) : new cars must be created on a lane !')
         
         self.generate_path()        
         self.set_default_properties(new_type)
@@ -71,9 +71,9 @@ class Car:
     
     def join(self, new_location, new_position = 0):
         """
-        Allocate the car to the given location. The concept of location makes it possible to use this code for either a road or a roundabout.
-            new_location    (Road or Roundabout)  :   road or roundabout that will host, if possible, the car
-            new_position    (list)          :   position in the road or in the roundabout (note that the meaning of the position depends on the kind of location)
+        Allocate the car to the given location. The concept of location makes it possible to use this code for either a lane or a roundabout.
+            new_location    (road or lane or Roundabout)  :   lane or roundabout that will host, if possible, the car
+            new_position    (list)          :   position in the lane or in the roundabout (note that the meaning of the position depends on the kind of location)
         """
         #   Leave the current location
         if self.location is not None and self in self.location.cars:
@@ -81,8 +81,8 @@ class Car:
         else:
             raise Exception("WARNING (in car.join()) : a car had no location !")
 
-        #   Roundabout -> road
-        if isinstance(self.location, __roundabout__.Roundabout) and isinstance(new_location, __road__.Road):
+        #   Roundabout -> Lane
+        if isinstance(self.location, __roundabout__.Roundabout) and isinstance(new_location, __road__.Lane):
             car_slot = lib.find_key(self.location.slots_cars, self)
             
             #   Remove car from its slot
@@ -93,11 +93,11 @@ class Car:
 
             self.acceleration = self.force/self.mass
 
-        #   Road -> roundabout
-        elif isinstance(new_location, __roundabout__.Roundabout) and isinstance(self.location, __road__.Road):
+        #   Lane -> roundabout
+        elif isinstance(new_location, __roundabout__.Roundabout) and isinstance(self.location, __road__.Lane):
             self.catch_slot(new_location)
 
-        #   Road -> road OR roundabout -> roundabout : ERROR
+        #   Lane -> lane OR roundabout -> roundabout : ERROR
         else:
             raise Exception('ERROR (in car.join()) : road to road OR roundabout to roundabout junction is forbidden !')
         
@@ -111,8 +111,8 @@ class Car:
         """
         Ajoute la voiture sur le carrefour en l'ajoutant sur le slot (supposé vide) en face de la route d'où elle vient
         """
-        if self.location in roundabout.slots_roads:
-            id_slot = roundabout.slots_roads.index(self.location)
+        if self.location.parent in roundabout.slots_roads:
+            id_slot = roundabout.slots_roads.index(self.location.parent)
             
             if roundabout.slots_cars.has_key(id_slot):
                 if roundabout.slots_cars[id_slot] is None:
@@ -160,11 +160,11 @@ class Car:
             obstacle_is_light = True
 
             #   Green light
-            if self.location.traffic_lights[constants.EXIT]:
-                obstacle = self.location.length + self.headway
+            if self.location.parent.traffic_lights[constants.EXIT]:
+                obstacle = self.location.parent.length + self.headway
             #   Red light
             else:
-                obstacle = self.location.length
+                obstacle = self.location.parent.length
 
             return (obstacle, obstacle_is_light)
 
@@ -179,7 +179,7 @@ class Car:
         Moves the car, THEN manages its speed, acceleration.
         """
         #   We only manage cars on roads, we don't care about roundabouts
-        if not isinstance(self.location, __road__.Road):
+        if not isinstance(self.location, __road__.Lane):
             return None
 
         (obstacle, obstacle_is_light) = self._next_obstacle()
@@ -217,26 +217,26 @@ class Car:
                 self.acceleration = self.force/self.mass * delta_speed/abs(delta_speed)
                 
         #   Update the position given the speed
-        self.position = min(self.position + self.speed * constants.delta_t, obstacle - self.length/2 - self.headway)
+        self.position = min(self.position + self.speed * lib.Delta_t, obstacle - self.length/2 - self.headway)
         
         #   Update the speed given the acceleration
-        self.speed = max(min(self.speed + self.acceleration * constants.delta_t, self.location.max_speed), 5)
+        self.speed = max(min(self.speed + self.acceleration * lib.Delta_t, self.location.parent.max_speed), 5)
 
         #   Arrival at a roundabout
-        if self.position >= self.location.length - self.length/2 - self.headway:
+        if self.position >= self.location.parent.length - self.length/2 - self.headway:
             #   Green light
-            if self.location.traffic_lights[constants.EXIT] :
-                id_slot = self.location.end.slots_roads.index(self.location)    #slot in front of the car location
+            if self.location.parent.traffic_lights[constants.EXIT] :
+                id_slot = self.location.parent.end.slots_roads.index(self.location.parent)    #slot in front of the car location
                 
                 #   The slot doesn't exist : creation of the slot
-                if not self.location.end.slots_cars.has_key(id_slot):
-                    self.location.end.slots_cars[id_slot] = None
+                if not self.location.parent.end.slots_cars.has_key(id_slot):
+                    self.location.parent.end.slots_cars[id_slot] = None
                     
                 #   The slot is free
-                if self.location.end.slots_cars[id_slot] is None:
-                    self.location.end.slots_cars[id_slot] = self
+                if self.location.parent.end.slots_cars[id_slot] is None:
+                    self.location.parent.end.slots_cars[id_slot] = self
                     self.change_waiting_attitude(False)
-                    self.join(self.location.end)
+                    self.join(self.location.parent.end)
                     
                 #   The slot isn't free
                 else:
@@ -250,7 +250,7 @@ class Car:
         if self.position + self.length/2 + self.sight_distance > obstacle: 
             if not obstacle_is_light:
                 self.change_waiting_attitude(self.location.cars[self.rank + 1].is_waiting)    # CONVENTION SENSITIVE
-            elif self.location.traffic_lights[constants.EXIT]:
+            elif self.location.parent.traffic_lights[constants.EXIT]:
                 self.change_waiting_attitude(False)
             else:
                 self.change_waiting_attitude(True)

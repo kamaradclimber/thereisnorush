@@ -11,6 +11,13 @@ from random         import randint
 if (__name__ == '__main__'):
     raise Exception("You should run interface.py instead of this file !")
 
+Delta_t = 0
+
+def round(number, decimals = 0):
+    """
+    """
+    return int(number * (10**decimals))/float(10**decimals)
+    
 def find_key(dictionnary, value):
     """
     Finds the key associated to a value in a dictionnary.

@@ -34,7 +34,7 @@ class Track:
         """
         Adds a car on the track
         """
-        new_car = __car__.Car(self.roads[road_number], position)
+        new_car = __car__.Car(self.roads[road_number].get_free_lane(), position)
 
 class Track_Parser:
     ROUNDABOUT  = "Roundabout"

@@ -122,7 +122,7 @@ class Roundabout:
             if self.slots_roads[car_slot] in self.leaving_roads:            
                 if (self.leaving_roads[next_way].is_free) and self.slots_roads[car_slot] == self.leaving_roads[next_way]:
                 #la route sur laquelle on veut aller est vidée et surtout _en face_  du slot de la voiture
-                    car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)]) # cette fois on fait une lecture destructive
+                    car.join(self.leaving_roads[car.next_way(False) % len(self.leaving_roads)].get_free_lane()) # cette fois on fait une lecture destructive
 
         #la voiture n'a pas d'endroit où aller : on la met dans le couloir de la mort
         else:
@@ -150,7 +150,7 @@ class Roundabout:
                                    (constants.TRUCK       , 15), 
                                    (constants.SPEED_CAR   ,  5)]
                                    
-                new_car = __car__.Car(chosen_road, lib.proba_poll(car_type_events))
+                new_car = __car__.Car(chosen_road.get_free_lane(), lib.proba_poll(car_type_events))
 
         #   Update traffic lights
         self._update_traffic_lights()

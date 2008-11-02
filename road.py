@@ -12,7 +12,7 @@ from math           import sqrt
 
 class Road:
     """
-    Connection between 2 nodes ; one-way only.
+    A road acts as a container for several lanes and connects two roundabouts
     """
     def __init__(   self,
                     new_begin       = None,
@@ -24,32 +24,36 @@ class Road:
             new_end    (Node)    : ending point for the road
             new_length (int)     : road length
         """
+
         self.begin          = new_begin
         self.end            = new_end
-        self.cars           = []
         self.max_speed      = new_max_speed
+        
+        self.lanes          = [Lane(self, i) for i in range(constants.ROAD_DEFAULT_LANES)]
+        
         self.traffic_lights_update   = [time.clock(), time.clock()]
         self.traffic_lights          = [True, False]    # [gate at the beginning, gate at the end]
+        
         self.parallel       = None
         self.orthogonal     = None
-        self.width          = constants.ROAD_DEFAULT_WIDTH
         
         self.end.incoming_roads.append(self)
         self.begin.leaving_roads.append(self)
         
         self.end.host_road(self)
         self.begin.host_road(self)
+        
+        width = 0
+        for lane in self.lanes:
+            width += lane.width
+        self.width = width
 
     def update(self):
         """
-        Updates the road (will update the cars on the road).
+        Updates the road (will update the lanes on the road).
         """
-        # CONVENTION SENSITIVE
-        if self.cars:
-            queue_length = len(self.cars)
-            
-            for i in range(queue_length):
-                self.cars[queue_length - 1 - i].act()
+        for lane in self.lanes:
+            lane.update()
         
     def last_gate_update(self, gate):
         """
@@ -57,19 +61,33 @@ class Road:
         """
         current_time = time.clock()
         return (current_time - self.traffic_lights_update[gate])
+
+    def get_free_lane(self):
+        """
+        Returns a free lane on the road
+        """
+        free_lanes = [lane for lane in self.lanes if lane.is_free]
+        
+        if len(free_lanes) == 0:
+            # There is no free lane
+            return None
+            
+        return free_lanes[0]
+        
     
     @property
     def is_free(self):
         """
         Returns whether there is still room on the road.
         """
-        # I guess there is still room as long as the last car engaged on the road if far enough from the start of the road
-        if not self.cars:
-            return True
-        else:
-            # CONVENTION SENSITIVE
-            return(self.cars[0].position > self.cars[0].length + self.cars[0].headway)
+        
+        # The road is free, unless all the lanes are full
+        
+        for lane in self.lanes:
+            if lane.is_free:
+                return True
     
+        return False
     @property
     def length(self):
         """
@@ -104,8 +122,72 @@ class Road:
     @property
     def total_waiting_cars(self):
         """
-        Returns the number of waiting cars on the road.
+        Returns the total number of waiting cars on the road.
+        """
+        result = 0
+        
+        for lane in self.lanes:
+            result += lane.total_waiting_cars
+        
+        return result
+    
+    @property
+    def total_cars(self):
+        """
+        Returns the total number of cars on the road
+        """
+        result = 0
+        for lane in self.lanes:
+            result += len(lane.cars)
+            
+        return result
+        
+class Lane():
+    """
+    A lane is a one-way piece of road
+    """
+    
+    def __init__(self, parent, index):
+        """
+        Creates a Lane on the parent Road.
+        The higher the index, the farther the lane.
+        """
+        self.cars  = []
+        self.begin = parent.begin
+        self.end   = parent.end
+        self.width = constants.LANE_DEFAULT_WIDTH
+        self.index = index
+        self.parent = parent
+        
+    def update(self):
+        """
+        Updates the lane, and all the cars on it
+        """
+        if not self.cars:
+            return None
+            
+        queue_length = len(self.cars)
+        
+        for i in range(queue_length):
+            self.cars[queue_length - 1 - i].act()
+    
+    @property
+    def total_waiting_cars(self):
+        """
+        Returns the number of waiting cars on the lane.
         """
         if not self.cars:
             return 0
-        return len([0 for car in self.cars if car.is_waiting])    
+        return len([0 for car in self.cars if car.is_waiting])
+    
+    @property
+    def is_free(self):
+        """
+        Returns whether there is still room on the road.
+        """
+        # I guess there is still room as long as the last car engaged on the road if far enough from the start of the road
+        if not self.cars:
+            return True
+        else:
+            # CONVENTION SENSITIVE
+            return(self.cars[0].position > self.cars[0].length + self.cars[0].headway)
