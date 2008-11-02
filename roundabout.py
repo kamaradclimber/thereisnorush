@@ -45,7 +45,9 @@ class Roundabout:
         self.last_shift     = time.clock()
         
         self.slots_roads    = [None for i in range(self.max_cars)]
+        self.selfish_load   = 0
 
+        
     def host_road(self, road):
         """
         Connects a road to a slot, must be called during initialization.
@@ -206,12 +208,11 @@ class Roundabout:
         Returns in per cent a number called load (inspired by the load of a Linux station)
         """
         length_sum = sum([road.length for road in self.incoming_roads])
-        return self.total_waiting_cars*50/(length_sum+1) +  len(self.cars)*50 / self.max_cars
+        self.selfish_load = self.total_waiting_cars*50/(length_sum+1) +  len(self.cars)*50 / self.max_cars
 
     @property
     def load(self):
-        #load = self.load
-        load = 0
+        load = self.selfish_load
         for road in self.incoming_roads:
             load += road.begin.selfish_load / road.length
         for road in self.leaving_roads:
