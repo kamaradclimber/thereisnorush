@@ -6,7 +6,7 @@ Description :   defines the constants
 
 #   Revision information
 
-REVISION_NUMBER = 122
+REVISION_NUMBER = 125
 REVISION_NAME   = 'Thereisnorush (testing)'
 
 #   Colors (R, G, B, [Alpha])
@@ -88,11 +88,15 @@ ROUNDABOUT_DEFAULT_MAX_CARS       = 5
 
 #   Road
 ROAD_COLOR             = WHITE
-ROAD_DEFAULT_MAX_SPEED = 50
+ROAD_DEFAULT_MAX_SPEED = 50.0
 ROAD_DEFAULT_LENGTH    = 100
 ROAD_DEFAULT_LANES     = 1
 
 LANE_DEFAULT_WIDTH     = 5
+
+# Pathfinding
+PATH_INEXISTENT = 1
+PATH_FOUND      = 2
 
 #   Rules
 WAITING_CARS_LIMIT = 8

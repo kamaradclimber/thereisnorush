@@ -389,6 +389,7 @@ class MainWindow(QtGui.QMainWindow):
         self.lbl_info.setText(information)
 
 def main(args):
+
     app = QtGui.QApplication(args)
     
     main_window = MainWindow()
