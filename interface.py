@@ -269,36 +269,13 @@ class MainWindow(QtGui.QMainWindow):
 
         #   Toolbar
         main_toolbar = self.addToolBar('Main toolbar')
-        main_toolbar.addAction(act_exit)
         main_toolbar.addAction(act_play)
         main_toolbar.addAction(act_pause)
         main_toolbar.addAction(act_reset)
 
         #   Scene
         self.scene = Scene(self)
-        self.scene.setObjectName('scene')
-        
-        #   Commands box
-        self.entrance_lights = QtGui.QCheckBox('Display entrance traffic lights')
-        self.entrance_lights.setObjectName('entrance_lights')
-        self.entrance_lights.setChecked(False)
-        
-        self.exit_lights = QtGui.QCheckBox('Display exit traffic lights')
-        self.exit_lights.setObjectName('exit_lights')
-        self.exit_lights.setChecked(True)
-        
-        self.use_antialiasing = QtGui.QCheckBox('Use antialiasing')
-        self.use_antialiasing.setObjectName('use_antialiasing')
-        self.use_antialiasing.setChecked(True)
-
-        lay_commands = QtGui.QVBoxLayout()
-        lay_commands.addWidget(self.entrance_lights)
-        lay_commands.addWidget(self.exit_lights)
-        lay_commands.addWidget(self.use_antialiasing)
-        
-        self.box_commands = QtGui.QGroupBox('Commands')
-        self.box_commands.setObjectName('box_commands')
-        self.box_commands.setLayout(lay_commands)
+        self.scene.setObjectName('scene')     
 
         #   Information box
         self.lbl_info = QtGui.QLabel('<i>Information</i>')
@@ -313,11 +290,47 @@ class MainWindow(QtGui.QMainWindow):
         self.box_info.setObjectName('box_info')
         self.box_info.setLayout(lay_info)        
     
+        #   Commands box
+        self.entrance_lights = QtGui.QCheckBox('Display entrance traffic lights')
+        self.entrance_lights.setObjectName('entrance_lights')
+        self.entrance_lights.setChecked(False)
+        
+        self.exit_lights = QtGui.QCheckBox('Display exit traffic lights')
+        self.exit_lights.setObjectName('exit_lights')
+        self.exit_lights.setChecked(True)
+        
+        self.use_antialiasing = QtGui.QCheckBox('Use antialiasing')
+        self.use_antialiasing.setObjectName('use_antialiasing')
+        self.use_antialiasing.setChecked(False)
+
+        self.display_density = QtGui.QCheckBox('Display density')
+        self.display_density.setObjectName('display_density')
+        self.display_density.setChecked(False)
+
+        lbl_spawn_delay = QtGui.QLabel('Spawn delay')
+        self.spawn_delay = QtGui.QSpinBox()
+        self.spawn_delay.setSingleStep(100)
+        self.spawn_delay.setRange(1000, 30000)
+        self.spawn_delay.setSuffix('ms')
+        self.spawn_delay.setValue(SPAWN_TIME * 1000.0)
+
+        lay_commands = QtGui.QGridLayout()
+        lay_commands.addWidget(self.entrance_lights, 0, 0, 1, 2)
+        lay_commands.addWidget(self.exit_lights, 1, 0, 1, 2)
+        lay_commands.addWidget(self.use_antialiasing, 2, 0, 1, 2)
+        lay_commands.addWidget(self.display_density, 3, 0, 1, 2)
+        lay_commands.addWidget(lbl_spawn_delay, 4, 0)
+        lay_commands.addWidget(self.spawn_delay, 4, 1)
+        
+        self.box_commands = QtGui.QGroupBox('Commands')
+        self.box_commands.setObjectName('box_commands')
+        self.box_commands.setLayout(lay_commands)
+        
         #   Control panel
         lay_panel = QtGui.QVBoxLayout()
         lay_panel.addWidget(self.box_info)
-        lay_panel.addWidget(self.box_commands)
         lay_panel.addStretch(1)
+        lay_panel.addWidget(self.box_commands)
         
         self.panel = QtGui.QFrame()
         self.panel.setObjectName('panel')
