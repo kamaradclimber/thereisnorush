@@ -19,7 +19,7 @@ class Car:
 
     def __init__(self, new_location, new_type = STANDARD_CAR, new_position = 0):
         """
-        Constructor method : a car is provided a (for now unmutable) sequence of directions.
+        Constructor method.
         """
         #   Check the vehicle type
         if new_type not in VEHICLE_TYPES:
@@ -42,12 +42,11 @@ class Car:
         self.total_waiting_time = 0
         self.last_waiting_time  = 0
         
-        #   Several sub-categories : pickup, truck, long truck, bus
+        #   Several sub-categories : truck, long truck, bus
         if new_type == TRUCK:
-            possible_sizes = [(2, 20), 
+            possible_sizes = [(2, 25), 
                               (3, 60), 
-                              (4, 15),
-                              (5, 5)]
+                              (4, 15)]
         
             self.length *= lib.proba_poll(possible_sizes)
             self.mass   *= self.length

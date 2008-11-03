@@ -187,7 +187,8 @@ class Scene(QtGui.QWidget):
         /!\ Qt specific (please don't rename)
         Manages what happens when a mouse button is pressed
         """
-        # Experimental : select a roundabout
+        # Experimental : select a roundabout or a car
+        self.window.select_car(event.x(), event.y())
         self.window.select_roundabout(event.x(), event.y())
 
 class MainWindow(QtGui.QMainWindow):
@@ -204,6 +205,7 @@ class MainWindow(QtGui.QMainWindow):
         #   Set parameters
         self.elapsed_time           = 0
         self.last_update            = time.clock()
+        self.selected_car           = None
         self.selected_roundabout    = None
         self.is_playing             = True
         
@@ -400,7 +402,24 @@ class MainWindow(QtGui.QMainWindow):
             if abs(roundabout.position - click_position) < roundabout.radius:
                 self.selected_roundabout = roundabout
                 break
-        
+    
+    def select_car(self, x, y):
+        """
+        Selects the car placed on x, y.
+        Deselects if there is none.
+        """
+        click_position = Vector(x, y)
+
+        self.selected_car = None
+
+        for road in __track__.track.roads:
+            for lane in road.lanes:
+                for car in lane.cars:
+                    car_position = road.begin.position + (road.end.position - road.begin.position).normalize() * car.position
+                    if abs(car_position - click_position) < 20:
+                        self.selected_car = car
+                        break
+
     def timerEvent(self, event):
         """
         /!\ Qt specific (please don't rename)
