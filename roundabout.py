@@ -125,7 +125,7 @@ class Roundabout:
         else:
             self.to_kill.append(car)
 
-    def update(self):
+    def update(self, delay):
         """
         Updates the roundabout : rotate the cars, dispatch them...
         """

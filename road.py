@@ -48,12 +48,12 @@ class Road:
             width += lane.width
         self.width = width
 
-    def update(self):
+    def update(self, delay):
         """
         Updates the road (will update the lanes on the road).
         """
         for lane in self.lanes:
-            lane.update()
+            lane.update(delay)
         
     def last_gate_update(self, gate):
         """
@@ -167,7 +167,7 @@ class Lane():
         self.index = index
         self.parent = parent
         
-    def update(self):
+    def update(self, delay):
         """
         Updates the lane, and all the cars on it
         """
@@ -177,7 +177,7 @@ class Lane():
         queue_length = len(self.cars)
         
         for i in range(queue_length):
-            self.cars[queue_length - 1 - i].act()
+            self.cars[queue_length - 1 - i].act(delay)
     
     @property
     def total_waiting_cars(self):

@@ -20,20 +20,20 @@ class Scene(QtGui.QWidget):
     """
 
     def __init__(self, new_window, parent = None):
+        """
+        Builds the scene.
+        """
         QtGui.QWidget.__init__(self, parent)
 
         self.painter    = None
         self.window     = new_window
         
-        self.setSizePolicy(QtGui.QSizePolicy())
+        self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
         self.setMinimumSize(SCENE_WIDTH, SCENE_HEIGHT)
-        
-        lib.Delta_t = 0
-        self.last_update = time.clock()
 
     def paintEvent(self, event):
         """
-        /!\ Qt specific (please don't rename)
+        /!\ Qt specific (please don't rename) : is triggered each time the update() method is called.
         Specifies how the control should draw itself.
         """
         self.painter = QtGui.QPainter(self)
@@ -197,16 +197,22 @@ class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, parent = None):
         """
-        Creates the main window
+        Builds the main window.
         """
         QtGui.QMainWindow.__init__(self, parent)
 
+        #   Set parameters
+        self.elapsed_time           = 0
+        self.last_update            = time.clock()
+        self.selected_roundabout    = None
+        self.is_playing             = True
+        
+        #   Set the interface
         self.setup_interface()
         
+        #   Start the timer
         self.timer = QtCore.QBasicTimer()
         self.timer.start(10, self)
-        
-        self.selected_roundabout = None
 
     def setup_interface(self):
         """
@@ -214,16 +220,65 @@ class MainWindow(QtGui.QMainWindow):
         """
         #   Window settings
         self.setObjectName('MainWindow')
+
+        screen = QtGui.QDesktopWidget().screenGeometry()
+        self.resize(screen.width(), screen.height())
+
         self.setWindowTitle(REVISION_NAME + ' - r' + str(REVISION_NUMBER))
         self.setWindowIcon(QtGui.QIcon('icons/tinr_logo.png'))
+        self.statusBar().showMessage('Ready')
 
         self.setCentralWidget(QtGui.QWidget())
         
+        #   Exit action
+        act_exit = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
+        act_exit.setShortcut('Ctrl+Q')
+        act_exit.setStatusTip('Exit application')
+        self.connect(act_exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
+        
+        #   Play action
+        act_play = QtGui.QAction(QtGui.QIcon('icons/play.png'), 'Play', self)
+        #act_play.setShortcut('Ctrl+P')
+        act_play.setStatusTip('Play simulation')
+        self.connect(act_play, QtCore.SIGNAL('triggered()'), self.play_simulation)
+
+        #   Pause action
+        act_pause = QtGui.QAction(QtGui.QIcon('icons/pause.png'), 'Pause', self)
+        #act_pause.setShortcut('Ctrl+P')
+        act_pause.setStatusTip('Pause simulation')
+        self.connect(act_pause, QtCore.SIGNAL('triggered()'), self.pause_simulation)
+
+        #   Reset action
+        act_reset = QtGui.QAction(QtGui.QIcon('icons/reset.png'), 'Reset', self)
+        #act_reset.setShortcut('Ctrl+R')
+        act_reset.setStatusTip('Reset simulation')
+        self.connect(act_reset, QtCore.SIGNAL('triggered()'), self.reset_simulation)
+
+        #   Menu
+        menu_bar = self.menuBar()
+        
+        #   File menu
+        file = menu_bar.addMenu('&File')
+        file.addAction(act_exit)
+
+        #   Simulation menu
+        simulation = menu_bar.addMenu('&Simulation')
+        simulation.addAction(act_play)
+        simulation.addAction(act_pause)
+        simulation.addAction(act_reset)
+
+        #   Toolbar
+        main_toolbar = self.addToolBar('Main toolbar')
+        main_toolbar.addAction(act_exit)
+        main_toolbar.addAction(act_play)
+        main_toolbar.addAction(act_pause)
+        main_toolbar.addAction(act_reset)
+
         #   Scene
         self.scene = Scene(self)
         self.scene.setObjectName('scene')
         
-        #   Commands tab
+        #   Commands box
         self.entrance_lights = QtGui.QCheckBox('Display entrance traffic lights')
         self.entrance_lights.setObjectName('entrance_lights')
         self.entrance_lights.setChecked(False)
@@ -241,11 +296,11 @@ class MainWindow(QtGui.QMainWindow):
         lay_commands.addWidget(self.exit_lights)
         lay_commands.addWidget(self.use_antialiasing)
         
-        self.tab_commands = QtGui.QWidget()
-        self.tab_commands.setObjectName('tab_commands')
-        self.tab_commands.setLayout(lay_commands)
+        self.box_commands = QtGui.QGroupBox('Commands')
+        self.box_commands.setObjectName('box_commands')
+        self.box_commands.setLayout(lay_commands)
 
-        #   Information tab
+        #   Information box
         self.lbl_info = QtGui.QLabel('<i>Information</i>')
         self.lbl_info.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.lbl_info.setWordWrap(True)
@@ -254,30 +309,54 @@ class MainWindow(QtGui.QMainWindow):
         lay_info = QtGui.QVBoxLayout()
         lay_info.addWidget(self.lbl_info)
 
-        self.tab_info = QtGui.QWidget()
-        self.tab_info.setObjectName('tab_info')
-        self.tab_info.setLayout(lay_info)        
-        
+        self.box_info = QtGui.QGroupBox('Information')
+        self.box_info.setObjectName('box_info')
+        self.box_info.setLayout(lay_info)        
+    
         #   Control panel
-        self.control_panel = QtGui.QTabWidget()
-        self.control_panel.setObjectName('control_panel')
-        self.control_panel.resize(PANEL_WIDTH, PANEL_HEIGHT)
-        self.control_panel.setTabPosition(QtGui.QTabWidget.East)
-        self.control_panel.addTab(self.tab_info, 'Informations')
-        self.control_panel.addTab(self.tab_commands, 'Commands')
-        self.control_panel.setCurrentIndex(0)
+        lay_panel = QtGui.QVBoxLayout()
+        lay_panel.addWidget(self.box_info)
+        lay_panel.addWidget(self.box_commands)
+        lay_panel.addStretch(1)
+        
+        self.panel = QtGui.QFrame()
+        self.panel.setObjectName('panel')
+        self.panel.setLayout(lay_panel)
+
+        #self.control_panel.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Expanding))
+        #self.control_panel.setMinimumSize(PANEL_WIDTH, PANEL_HEIGHT)
+        #self.control_panel.setTabPosition(QtGui.QTabWidget.East)
+        #self.control_panel.addTab(self.tab_info, 'Informations')
+        #self.control_panel.addTab(self.tab_commands, 'Commands')
+        #self.control_panel.setCurrentIndex(0)
         
         QtCore.QMetaObject.connectSlotsByName(self)
 
-        size_policy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
-        self.control_panel.setSizePolicy(size_policy)
-        
         #   Display
         lay_window = QtGui.QGridLayout()
         lay_window.addWidget(self.scene, 0, 0)
-        lay_window.addWidget(self.control_panel, 0, 1)
+        lay_window.addWidget(self.panel, 0, 1)
 
         self.centralWidget().setLayout(lay_window)
+    
+    #   If you find another way to implement the equivalent of the following 2 slots, please just change it ! -- Ch@hine
+    def play_simulation(self):
+        """
+
+        """
+        self.is_playing = True
+
+    def pause_simulation(self):
+        """
+
+        """
+        self.is_playing = False
+
+    def reset_simulation(self):
+        """
+
+        """
+        pass
 
     def closeEvent(self, event):
         """
@@ -315,12 +394,14 @@ class MainWindow(QtGui.QMainWindow):
         Passes or uses timer events to update the simulation
         """
         if event.timerId() == self.timer.timerId():
-            self.update_simulation()
-            self.update_information()
-            self.scene.update()
+            self.elapsed_time = time.clock() - self.last_update
+            self.last_update = time.clock()
             
-            lib.Delta_t = time.clock() - self.scene.last_update
-            self.scene.last_update = time.clock()
+            if self.is_playing:
+                self.update_simulation()
+                self.update_information()
+                self.scene.update()
+            
         else:
             QtGui.QFrame.timerEvent(self, event)
 
@@ -330,12 +411,12 @@ class MainWindow(QtGui.QMainWindow):
         """
         #   Run the simulation for delta_t
         for road in __track__.track.roads:
-            road.update()
+            road.update(self.elapsed_time)
         for roundabout in __track__.track.roundabouts:
             #oui deux boucles séparées sinon linfo est pas en temps réél (enfin ca serait pas un drame non plus vu l'échelle de delta_t ! )
             roundabout.get_local_load()
         for roundabout in __track__.track.roundabouts:
-            roundabout.update()
+            roundabout.update(self.elapsed_time)
         
     def update_information(self):
         """
