@@ -334,8 +334,7 @@ class MainWindow(QtGui.QMainWindow):
             road.update()
         for roundabout in __track__.track.roundabouts:
             #oui deux boucles séparées sinon linfo est pas en temps réél (enfin ca serait pas un drame non plus vu l'échelle de delta_t ! )
-            # Weird : selfish_load is a property, hence it is not callable !
-            dummy = roundabout.selfish_load
+            roundabout.get_local_load()
         for roundabout in __track__.track.roundabouts:
             roundabout.update()
         
@@ -370,7 +369,7 @@ class MainWindow(QtGui.QMainWindow):
             information += 'position : (' + str(self.selected_roundabout.position.x) + ',' + str(self.selected_roundabout.position.y) + ') <br/>'
             information += 'radius : ' + str(self.selected_roundabout.radius) + '<br/>'
             information += 'cars : ' + str(len(self.selected_roundabout.cars)) + '<br/>'
-            information += 'load : ' + str(self.selected_roundabout.load) + '<br/>'
+            information += 'load : ' + str(lib.round(self.selected_roundabout.global_load, 2)) + '<br/>'
             if self.selected_roundabout.spawning:
                 information += '<b>Spawning mode<b><br/>'
             if len(self.selected_roundabout.leaving_roads) == 0:

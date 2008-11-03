@@ -185,10 +185,6 @@ class Car:
         (obstacle, obstacle_is_light) = self._next_obstacle()
 
         #   Update the acceleration given the context
-        
-        # TEMPORARY : simple version that works, ask Sharayanan for explanations
-        # This guarantees that the car will stop at the right location, although this is not 
-        # very realistic, but let's focus on physics first -- Sharayanan
         self.sight_distance = (self.speed**2)/(2*self.force/self.mass)
         
         #   No obstacle at sight
