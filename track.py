@@ -7,7 +7,7 @@ Description :   defines the class "Track"
 import lib
 import roundabout   as __roundabout__
 import road         as __road__
-import constants
+from constants      import *
 from os             import getcwd
 
 #   Bootstrap

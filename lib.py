@@ -4,8 +4,7 @@ File        :   lib.py
 Description :   defines the functions needed for the simulation
 """
 
-import constants
-from random         import randint
+from random import randint, choice
 
 #   Bootstrap
 if (__name__ == '__main__'):
@@ -49,5 +48,4 @@ def proba_poll(events):
     if len(list_polls) == 0:
         raise Exception('ERROR (in init.proba_poll()): incorrect data format.')
     else:
-        return list_polls[randint(0, len(list_polls) - 1)
-]
+        return choice(list_polls)

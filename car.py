@@ -8,7 +8,7 @@ import lib
 import time
 
 from random         import randint
-import constants
+from constants      import *
 import road         as __road__
 import roundabout   as __roundabout__
 
@@ -17,41 +17,33 @@ class Car:
     Those which will crowd our city >_< .
     """
 
-    def __init__(self, new_location, new_type = constants.STANDARD_CAR, new_position = 0):
+    def __init__(self, new_location, new_type = STANDARD_CAR, new_position = 0):
         """
         Constructor method : a car is provided a (for now unmutable) sequence of directions.
         """
+        #   Check the vehicle type
+        if new_type not in VEHICLE_TYPES:
+            raise Exception('ERROR (in car.__init__()) : unknown type of vehicle !')
+        
+        #   Initialization of the parameters
         self.path               = []
         self.is_waiting         = False
-        self.width              = constants.VEHICLE[new_type][constants.DEFAULT_WIDTH]
-        self.speed              = constants.VEHICLE[new_type][constants.DEFAULT_SPEED]
-        self.headway            = constants.VEHICLE[new_type][constants.DEFAULT_HEADWAY]
-        self.length             = constants.VEHICLE[new_type][constants.DEFAULT_LENGTH]
-        self.force              = constants.VEHICLE[new_type][constants.DEFAULT_FORCE]
-        self.mass               = constants.VEHICLE[new_type][constants.DEFAULT_MASS]
-        self.color              = constants.VEHICLE[new_type][constants.DEFAULT_COLOR]
+        self.width              = VEHICLE[new_type][DEFAULT_WIDTH]
+        self.speed              = VEHICLE[new_type][DEFAULT_SPEED]
+        self.headway            = VEHICLE[new_type][DEFAULT_HEADWAY]
+        self.length             = VEHICLE[new_type][DEFAULT_LENGTH]
+        self.force              = VEHICLE[new_type][DEFAULT_FORCE]
+        self.mass               = VEHICLE[new_type][DEFAULT_MASS]
+        self.color              = VEHICLE[new_type][DEFAULT_COLOR]
         self.location           = new_location
         self.position           = new_position
         self.acceleration       = 0
-        self.sight_distance     = 5 * constants.VEHICLE[constants.STANDARD_CAR][constants.DEFAULT_LENGTH]
+        self.sight_distance     = 5 * VEHICLE[STANDARD_CAR][DEFAULT_LENGTH]
         self.total_waiting_time = 0
-        self.last_waiting_time  = 0        
-
-        if isinstance(new_location, __road__.Lane):
-            self.location.cars.insert(0, self)
-        else:
-            raise ValueError('ERROR (in car.__init__()) : new cars must be created on a lane !')
+        self.last_waiting_time  = 0
         
-        self.generate_path()        
-        self.set_default_properties(new_type)
-    
-    #   This functions may be soon deprecated
-    def set_default_properties(self, new_type):
-        """
-        Sets the car's properties, given its type.
-        """
-        if new_type == constants.TRUCK:
-            # Several sub-categories : pickup, truck, long truck, bus
+        #   Several sub-categories : pickup, truck, long truck, bus
+        if new_type == TRUCK:
             possible_sizes = [(2, 20), 
                               (3, 60), 
                               (4, 15),
@@ -60,9 +52,14 @@ class Car:
             self.length *= lib.proba_poll(possible_sizes)
             self.mass   *= self.length
         
-        if new_type not in constants.VEHICLE_TYPES:
-            raise Exception('ERROR (in car.set_default_properties()) : unknown type of vehicle !')
-            
+        #   Cars must be created on a lane
+        if isinstance(new_location, __road__.Lane):
+            self.location.cars.insert(0, self)
+        else:
+            raise ValueError('ERROR (in car.__init__()) : new cars must be created on a lane !')
+        
+        self.generate_path()        
+    
     def generate_path(self, minimum = 8, maximum = 11):
         """
         Assembles random waypoints into a "path" list.
@@ -160,7 +157,7 @@ class Car:
             obstacle_is_light = True
 
             #   Green light
-            if self.location.parent.traffic_lights[constants.EXIT]:
+            if self.location.parent.traffic_lights[EXIT]:
                 obstacle = self.location.parent.length + self.headway
             #   Red light
             else:
@@ -187,14 +184,21 @@ class Car:
         #   Update the acceleration given the context
         self.sight_distance = (self.speed**2)/(2*self.force/self.mass)
         
-        #   No obstacle at sight
+        #   No obstacle at sight : « 1 trait danger, 2 traits sécurité : je fonce ! »
         if self.position + self.length/2 + self.sight_distance < obstacle:
-            # « 1 trait danger, 2 traits sécurité : je fonce ! »
             self.acceleration = self.force/self.mass
 
         #   Visible obstacle
         else:
-            #   Set the parameters given the kind of obstacle
+            #   Set waiting attitude
+            if not obstacle_is_light:
+                self.change_waiting_attitude(self.location.cars[self.rank + 1].is_waiting)    # CONVENTION SENSITIVE
+            elif self.location.parent.traffic_lights[EXIT]:
+                self.change_waiting_attitude(False)
+            else:
+                self.change_waiting_attitude(True)
+            
+            #   Start deceleration
             if obstacle_is_light:
                 delta_speed = - self.speed
             else:
@@ -202,26 +206,19 @@ class Car:
             
             delta_position  = obstacle - self.position - self.length/2 - self.headway
             
-            self.acceleration   =   0
-            #self.acceleration   +=  constants.ALPHA * delta_speed
-            #self.acceleration   +=  constants.BETA  * delta_position
-            #self.acceleration   =   min(self.acceleration, 10)      #   Prevent acceleration from outranging 10
-            #self.acceleration   =   max(self.acceleration, -10)     #   Prevent acceleration from outranging -10
+            self.acceleration = 0
             
-            # TEMPORARY : Simple version that *works*, ask Sharayanan for explanations
             if delta_speed:
                 self.acceleration = self.force/self.mass * delta_speed/abs(delta_speed)
                 
-        #   Update the position given the speed
-        self.position = min(self.position + self.speed * lib.Delta_t, obstacle - self.length/2 - self.headway)
-        
-        #   Update the speed given the acceleration
-        self.speed = max(min(self.speed + self.acceleration * lib.Delta_t, self.location.parent.max_speed), 5)
+        #   Update the position and speed given the speed and acceleration
+        self.position   = min(self.position + self.speed * lib.Delta_t, obstacle - self.length/2 - self.headway)
+        self.speed      = max(min(self.speed + self.acceleration * lib.Delta_t, self.location.parent.max_speed), 5)
 
         #   Arrival at a roundabout
         if self.position >= self.location.parent.length - self.length/2 - self.headway:
             #   Green light
-            if self.location.parent.traffic_lights[constants.EXIT] :
+            if self.location.parent.traffic_lights[EXIT] :
                 id_slot = self.location.parent.end.slots_roads.index(self.location.parent)    #slot in front of the car location
                 
                 #   The slot doesn't exist : creation of the slot
@@ -242,15 +239,6 @@ class Car:
             else:
                 self.change_waiting_attitude(True)
 
-        #   Waiting
-        if self.position + self.length/2 + self.sight_distance > obstacle: 
-            if not obstacle_is_light:
-                self.change_waiting_attitude(self.location.cars[self.rank + 1].is_waiting)    # CONVENTION SENSITIVE
-            elif self.location.parent.traffic_lights[constants.EXIT]:
-                self.change_waiting_attitude(False)
-            else:
-                self.change_waiting_attitude(True)
-        
     def change_waiting_attitude(self, new_attitude):
         """
         Changes, if needed, the waiting attitude of a car

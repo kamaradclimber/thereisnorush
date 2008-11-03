@@ -5,8 +5,7 @@ Description :   defines the constants
 """
 
 #   Revision information
-
-REVISION_NUMBER = 125
+REVISION_NUMBER = 127
 REVISION_NAME   = 'Thereisnorush (testing)'
 
 #   Colors (R, G, B, [Alpha])
@@ -94,7 +93,7 @@ ROAD_DEFAULT_LANES     = 1
 
 LANE_DEFAULT_WIDTH     = 5
 
-# Pathfinding
+#   Pathfinding
 PATH_INEXISTENT = 1
 PATH_FOUND      = 2
 
@@ -102,12 +101,14 @@ PATH_FOUND      = 2
 WAITING_CARS_LIMIT = 8
 WAITING_TIME_LIMIT = 10.000
 
-#   Other
+#   Traffic lights
+EXIT     = 1
+ENTRANCE = 0
+
+#   Resolution
 SCENE_RESOLUTION    = (SCENE_WIDTH, SCENE_HEIGHT)   = (800, 700)
 PANEL_RESOLUTION    = (PANEL_WIDTH, PANEL_HEIGHT)   = (200, 500)
 
-DISPLAY_DENSITY     = False # You may de-activate per-density coloring (+ fps)
-
-EXIT     = 1
-ENTRANCE = 0
+#   Others
+DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
 SPAWN_TIME      = 2.0

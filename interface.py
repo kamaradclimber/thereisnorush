@@ -8,7 +8,7 @@ import lib
 import sys
 import time
 
-import constants
+from constants      import *
 import track        as __track__
 
 from vector         import Vector
@@ -26,7 +26,7 @@ class Scene(QtGui.QWidget):
         self.window     = new_window
         
         self.setSizePolicy(QtGui.QSizePolicy())
-        self.setMinimumSize(constants.SCENE_WIDTH, constants.SCENE_HEIGHT)
+        self.setMinimumSize(SCENE_WIDTH, SCENE_HEIGHT)
         
         lib.Delta_t = 0
         self.last_update = time.clock()
@@ -36,7 +36,6 @@ class Scene(QtGui.QWidget):
         /!\ Qt specific (please don't rename)
         Specifies how the control should draw itself.
         """
-        
         self.painter = QtGui.QPainter(self)
 
         self.painter.setRenderHint(QtGui.QPainter.Antialiasing, self.window.use_antialiasing.isChecked())
@@ -70,11 +69,11 @@ class Scene(QtGui.QWidget):
         
         #   Draw traffic lights (or not)
         if self.window.exit_lights.isChecked():
-            self.draw_traffic_light(end_position, road, constants.EXIT)
+            self.draw_traffic_light(end_position, road, EXIT)
         if self.window.entrance_lights.isChecked():
-            self.draw_traffic_light(start_position, road, constants.ENTRANCE)
+            self.draw_traffic_light(start_position, road, ENTRANCE)
         
-        self.painter.setPen(QtGui.QColor(*constants.ROAD_COLOR))
+        self.painter.setPen(QtGui.QColor(*ROAD_COLOR))
         self.painter.drawLine(start_position.x, start_position.y, end_position.x, end_position.y)
         
         for lane in road.lanes:
@@ -135,14 +134,14 @@ class Scene(QtGui.QWidget):
 
         if not __track__.track.picture:
             self.painter.setBrush(QtGui.QColor(255, 0, 0))
-            self.painter.setPen(QtGui.QColor(*constants.TRANSPARENT))
+            self.painter.setPen(QtGui.QColor(*TRANSPARENT))
             self.painter.drawEllipse(roundabout.position.x - roundabout.radius/4, roundabout.position.y - roundabout.radius/4, roundabout.radius/2, roundabout.radius/2)
             pass
         
         #   Selected roudabout
         if self.window.selected_roundabout == roundabout:
-            self.painter.setPen(QtGui.QColor(*constants.ROUNDABOUT_COLOR))
-            self.painter.setBrush(QtGui.QColor(*constants.TRANSPARENT))
+            self.painter.setPen(QtGui.QColor(*ROUNDABOUT_COLOR))
+            self.painter.setBrush(QtGui.QColor(*TRANSPARENT))
             self.painter.drawEllipse(roundabout.position.x - roundabout.radius, roundabout.position.y - roundabout.radius, 2 * roundabout.radius, 2 * roundabout.radius)
 
         if roundabout.cars:
@@ -151,7 +150,7 @@ class Scene(QtGui.QWidget):
 
             #TEMPORARY : the number of cars on the roundabout is written
             position = Vector(roundabout.position.x + 10, roundabout.position.y + 10)
-            self.painter.setPen(QtGui.QColor(*constants.WHITE))
+            self.painter.setPen(QtGui.QColor(*WHITE))
             self.painter.drawText(position.x, position.y, str(len(roundabout.cars)))
             pass        
         
@@ -180,7 +179,7 @@ class Scene(QtGui.QWidget):
                 self.painter.setBrush(QtGui.QColor('black'))
 
             position = start_position + d_position * i
-            self.painter.setPen(QtGui.QColor(*constants.GREY))
+            self.painter.setPen(QtGui.QColor(*GREY))
             self.painter.drawEllipse(position.x - TF_RADIUS, position.y - TF_RADIUS, 2 * TF_RADIUS, 2*TF_RADIUS)
             
     def mousePressEvent(self, event):
@@ -215,7 +214,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         #   Window settings
         self.setObjectName('MainWindow')
-        self.setWindowTitle(constants.REVISION_NAME + ' - r' + str(constants.REVISION_NUMBER))
+        self.setWindowTitle(REVISION_NAME + ' - r' + str(REVISION_NUMBER))
         self.setWindowIcon(QtGui.QIcon('icons/tinr_logo.png'))
 
         self.setCentralWidget(QtGui.QWidget())
@@ -262,7 +261,7 @@ class MainWindow(QtGui.QMainWindow):
         #   Control panel
         self.control_panel = QtGui.QTabWidget()
         self.control_panel.setObjectName('control_panel')
-        self.control_panel.resize(constants.PANEL_WIDTH, constants.PANEL_HEIGHT)
+        self.control_panel.resize(PANEL_WIDTH, PANEL_HEIGHT)
         self.control_panel.setTabPosition(QtGui.QTabWidget.East)
         self.control_panel.addTab(self.tab_info, 'Informations')
         self.control_panel.addTab(self.tab_commands, 'Commands')

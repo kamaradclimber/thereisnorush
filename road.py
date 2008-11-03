@@ -7,8 +7,8 @@ Description :   defines the class "Road"
 import lib
 import time
 
-import constants
-from math           import sqrt
+from constants  import *
+from math       import sqrt
 
 class Road:
     """
@@ -17,7 +17,7 @@ class Road:
     def __init__(   self,
                     new_begin       = None,
                     new_end         = None,
-                    new_max_speed   = constants.ROAD_DEFAULT_MAX_SPEED):
+                    new_max_speed   = ROAD_DEFAULT_MAX_SPEED):
         """
         Constructor method : creates a new road.
             new_begin  (Node)    : starting point for the road
@@ -29,7 +29,7 @@ class Road:
         self.end            = new_end
         self.max_speed      = new_max_speed
         
-        self.lanes          = [Lane(self, i) for i in range(constants.ROAD_DEFAULT_LANES)]
+        self.lanes          = [Lane(self, i) for i in range(ROAD_DEFAULT_LANES)]
         
         self.traffic_lights_update   = [time.clock(), time.clock()]
         self.traffic_lights          = [True, False]    # [gate at the beginning, gate at the end]
@@ -141,6 +141,14 @@ class Road:
             result += len(lane.cars)
             
         return result
+    
+    @property
+    def weight(self):
+        """
+        Returns the weight associated to the road, for pathfinding computations.
+        """
+        # Here, the weight is the time needed to walk the road
+        return self.length/self.max_speed
         
 class Lane():
     """
@@ -155,7 +163,7 @@ class Lane():
         self.cars  = []
         self.begin = parent.begin
         self.end   = parent.end
-        self.width = constants.LANE_DEFAULT_WIDTH
+        self.width = LANE_DEFAULT_WIDTH
         self.index = index
         self.parent = parent
         
