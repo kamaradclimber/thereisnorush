@@ -6,7 +6,6 @@ Description :   defines the class "Car"
 
 import lib
 
-
 from random         import randint
 from constants      import *
 import road         as __road__

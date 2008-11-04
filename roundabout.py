@@ -10,7 +10,7 @@ import lib
 from vector         import Vector
 
 import car          as __car__
-from constants import *
+from constants      import *
 
 class Roundabout:
     """
@@ -20,16 +20,15 @@ class Roundabout:
     def __init__(self, 
                  new_x, 
                  new_y, 
-                 new_spawning = False, 
-                 radius       = ROUNDABOUT_RADIUS_DEFAULT):
+                 new_spawning   = False, 
+                 new_radius     = ROUNDABOUT_RADIUS_DEFAULT):
         """
         Constructor method : creates a new roundabout.
-            new_coordinates (list) : the coordinates [x, y] for the roundabout
         """
         
         self.position       = Vector(TRACK_SCALE * new_x + TRACK_OFFSET_X, 
                                      TRACK_SCALE * new_y + TRACK_OFFSET_Y)
-        self.radius         = radius
+        self.radius         = new_radius
         
         self.incoming_roads = []
         self.leaving_roads  = []
@@ -49,22 +48,20 @@ class Roundabout:
         
         self.car_spiraling_time = {}
 
-        
-    def host_road(self, road):
+    def host_road(self, new_road):
         """
         Connects a road to a slot, must be called during initialization.
-        Connecte, lors d'une initialisation, une route à un slot sur le carrefour.
         """
         
-        if road in self.slots_roads:
+        #   Error handling
+        if new_road in self.slots_roads:
             return None
         
-        # List of free slots  How many free slots there are
-        free_slots = [i for (i, slot) in enumerate(self.slots_roads) if slot is None]
+        #   Choose a random free slot, if any, to allocate for the road
+        free_slots = [i for (i, road) in enumerate(self.slots_roads) if road is None]
 
-        if len(free_slots) > 0:
-            #   Choose a random free slot to allocate for the road
-            self.slots_roads[free_slots[0]] = road
+        if len(free_slots):
+            self.slots_roads[free_slots[0]] = new_road
             self.slots_cars[free_slots[0]]  = None
         else:
             raise Exception("ERROR (in Roundabout.host_road()) : there is no slot to host any further roads !")
@@ -74,14 +71,13 @@ class Roundabout:
         Gate handling
         """
 
-        #First, let's have a global view of situation 
+        #   First, let's have a global view of situation 
         around_incoming_loads = []
         around_leaving_loads  = []
         
         relative_tolerance = 0.05
                 
         for road in self.leaving_roads:
-             
             around_leaving_loads.append(road.end.global_load)
             delta_load = self.global_load - road.begin.global_load
             
@@ -90,7 +86,7 @@ class Roundabout:
             elif abs(delta_load/self.global_load) > relative_tolerance:
                 self.set_gate(road, False)
         
-        #Then, let's update each road, few rules because the general view overrules the local one.
+        #   Then, let's update each road, few rules because the general view overrules the local one.
        
         for road in self.incoming_roads:
             #   Too long waiting time : open the gate and not close others
@@ -197,6 +193,7 @@ class Roundabout:
         """
         Returns whether there is no place left on the roundabout.
         """
+
         return (len(self.cars) >= self.max_cars)
 
     @property
@@ -204,6 +201,7 @@ class Roundabout:
         """
         Returns the number of cars waiting on all the incoming roads connected to this roudabout.
         """
+
         total = 0
         for road in self.incoming_roads:
             total += road.total_waiting_cars
@@ -213,10 +211,12 @@ class Roundabout:
     @property
     def global_load(self):
         """
+        
         """
-        the_load = self.local_load * 10
+        result = self.local_load * 10
         for road in self.incoming_roads:
-            the_load += road.begin.local_load
+            result += road.begin.local_load
         for road in self.leaving_roads:
-            the_load += road.end.local_load
-        return the_load
+            result += road.end.local_load
+
+        return result

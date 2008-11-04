@@ -9,6 +9,7 @@ import sys
 
 
 from constants      import *
+import road         as __road__
 import track        as __track__
 
 from vector         import Vector
@@ -75,6 +76,25 @@ class Scene(QtGui.QWidget):
         
         self.painter.setPen(QtGui.QColor(*ROAD_COLOR))
         self.painter.drawLine(start_position.x, start_position.y, end_position.x, end_position.y)
+        
+        selected_car = self.window.selected_car
+        if selected_car is not None:
+            if isinstance(selected_car.location, __road__.Lane):
+                current_road        = selected_car.location.parent
+                car_position        = current_road.begin.position + (current_road.end.position - current_road.begin.position).normalize() * selected_car.position
+                
+                self.painter.setPen(QtGui.QColor(*BLUE))
+                self.painter.drawLine(  car_position.x,                 car_position.y,
+                                        current_road.end.position.x,    current_road.end.position.y)
+            else:
+                current_road = selected_car.location.incoming_roads[0]
+
+            for i in selected_car.path:
+                next_way        = i % len(current_road.end.leaving_roads)
+                current_road    = current_road.end.leaving_roads[next_way]
+
+                self.painter.drawLine(  current_road.begin.position.x,  current_road.begin.position.y,
+                                        current_road.end.position.x,    current_road.end.position.y)
         
         for lane in road.lanes:
             self.draw_lane(lane)
