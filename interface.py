@@ -6,7 +6,7 @@ Description :   Manages the displays and main loop.
 
 import lib
 import sys
-import time
+
 
 from constants      import *
 import track        as __track__
@@ -204,10 +204,10 @@ class MainWindow(QtGui.QMainWindow):
 
         #   Set parameters
         self.elapsed_time           = 0
-        self.last_update            = time.clock()
+        self.last_update            = lib.clock()
         self.selected_car           = None
         self.selected_roundabout    = None
-        self.is_playing             = True
+#        self.is_playing             = True
         
         #   Set the interface
         self.setup_interface()
@@ -288,7 +288,7 @@ class MainWindow(QtGui.QMainWindow):
         lay_info = QtGui.QVBoxLayout()
         lay_info.addWidget(self.lbl_info)
 
-        self.box_info = QtGui.QGroupBox('Information')
+        self.box_info = QtGui.QGroupBox('Informations')
         self.box_info.setObjectName('box_info')
         self.box_info.setLayout(lay_info)        
     
@@ -337,13 +337,6 @@ class MainWindow(QtGui.QMainWindow):
         self.panel = QtGui.QFrame()
         self.panel.setObjectName('panel')
         self.panel.setLayout(lay_panel)
-
-        #self.control_panel.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Expanding))
-        #self.control_panel.setMinimumSize(PANEL_WIDTH, PANEL_HEIGHT)
-        #self.control_panel.setTabPosition(QtGui.QTabWidget.East)
-        #self.control_panel.addTab(self.tab_info, 'Informations')
-        #self.control_panel.addTab(self.tab_commands, 'Commands')
-        #self.control_panel.setCurrentIndex(0)
         
         QtCore.QMetaObject.connectSlotsByName(self)
 
@@ -359,13 +352,18 @@ class MainWindow(QtGui.QMainWindow):
         """
 
         """
-        self.is_playing = True
+#        self.is_playing = True
+        lib.set_speed (0)
 
     def pause_simulation(self):
         """
 
         """
-        self.is_playing = False
+#        self.is_playing = False
+        if simulation_speed == 1:
+            lib.set_speed(2.0)
+        else:
+            lib.set_speed(1.0)
 
     def reset_simulation(self):
         """
@@ -426,13 +424,13 @@ class MainWindow(QtGui.QMainWindow):
         Passes or uses timer events to update the simulation
         """
         if event.timerId() == self.timer.timerId():
-            self.elapsed_time = time.clock() - self.last_update
-            self.last_update = time.clock()
+            self.elapsed_time = lib.clock() - self.last_update
+            self.last_update = lib.clock()
             
-            if self.is_playing:
-                self.update_simulation()
-                self.update_information()
-                self.scene.update()
+#            if self.is_playing:
+            self.update_simulation()
+            self.update_information()
+            self.scene.update()
             
         else:
             QtGui.QFrame.timerEvent(self, event)
@@ -500,6 +498,8 @@ class MainWindow(QtGui.QMainWindow):
         self.lbl_info.setText(information)
 
 def main(args):
+
+    lib.time_last_counter = 0.0
 
     app = QtGui.QApplication(args)
     

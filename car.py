@@ -5,7 +5,7 @@ Description :   defines the class "Car"
 """
 
 import lib
-import time
+
 
 from random         import randint
 from constants      import *
@@ -249,13 +249,13 @@ class Car:
         #   Start a "waiting" phase : reset the counter
         if new_attitude:
             self.is_waiting         = True
-            self.start_waiting_time = time.clock()
+            self.start_waiting_time = lib.clock()
             self.last_waiting_time  = 0
         
         #   Stop a "waiting" phase : look at the clock
         else:
             self.is_waiting         = False
-            self.last_waiting_time  = time.clock() - self.start_waiting_time
+            self.last_waiting_time  = lib.clock() - self.start_waiting_time
             self.total_waiting_time += self.last_waiting_time
             
     @property

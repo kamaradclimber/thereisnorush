@@ -112,3 +112,8 @@ PANEL_RESOLUTION    = (PANEL_WIDTH, PANEL_HEIGHT)   = (200, 500)
 #   Others
 DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
 SPAWN_TIME      = 2.0
+
+# Not really constants... but cannot be placed in lib.py
+simulation_speed = 1.0
+time_static_counter = 0.0
+time_last_counter = 0.0

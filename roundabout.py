@@ -5,7 +5,7 @@ Description :   defines the class "Roundabout"
 """
 
 import lib
-import time
+
 
 from vector         import Vector
 
@@ -41,8 +41,8 @@ class Roundabout:
         self.rotation_speed = ROUNDABOUT_DEFAULT_ROTATION_SPEED
         
         self.spawning       = new_spawning
-        self.spawn_timer    = time.clock()
-        self.last_shift     = time.clock()
+        self.spawn_timer    = lib.clock()
+        self.last_shift     = lib.clock()
         
         self.slots_roads    = [None for i in range(self.max_cars)]
         self.local_load   = 0
@@ -103,9 +103,9 @@ class Roundabout:
         """
 
         if not (car in self.car_spiraling_time):
-            self.car_spiraling_time[car] = [car.total_waiting_time, time.clock()]
+            self.car_spiraling_time[car] = [car.total_waiting_time, lib.clock()]
             
-        car.total_waiting_time = self.car_spiraling_time[car][0] + time.clock() - self.car_spiraling_time[car][1]
+        car.total_waiting_time = self.car_spiraling_time[car][0] + lib.clock() - self.car_spiraling_time[car][1]
         
         if not(car.next_way(True) is None) and self.leaving_roads:
             next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
@@ -130,13 +130,13 @@ class Roundabout:
         Updates the roundabout : rotate the cars, dispatch them...
         """
         #   Make the cars rotate
-        if time.clock() - self.last_shift > ROUNDABOUT_ROTATION_RATE:
-            self.last_shift = time.clock()
+        if lib.clock() - self.last_shift > ROUNDABOUT_ROTATION_RATE:
+            self.last_shift = lib.clock()
             self.slots_roads = lib.shift_list(self.slots_roads)
 
         #   Spawning mode
-        if self.spawning and len(self.leaving_roads) and (time.clock() - self.spawn_timer > SPAWN_TIME):
-            self.spawn_timer = time.clock() 
+        if self.spawning and len(self.leaving_roads) and (lib.clock() - self.spawn_timer > SPAWN_TIME):
+            self.spawn_timer = lib.clock() 
             num_possible_roads    = len(self.leaving_roads)
             # Possible ways out. NB : the "1000/ " thing ensures *integer* probabilities.
             possible_roads_events = [(self.leaving_roads[i], 1000/num_possible_roads) for i in range(num_possible_roads)]
@@ -178,7 +178,7 @@ class Roundabout:
         
         #   Update if necessary
         if road.traffic_lights[current_gate] != state:
-            road.traffic_lights_update[current_gate] = time.clock()
+            road.traffic_lights_update[current_gate] = lib.clock()
             road.traffic_lights[current_gate]        = state
 
     def get_local_load(self):

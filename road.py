@@ -5,7 +5,7 @@ Description :   defines the class "Road"
 """
 
 import lib
-import time
+
 
 from constants  import *
 from math       import sqrt
@@ -31,7 +31,7 @@ class Road:
         
         self.lanes          = [Lane(self, i) for i in range(ROAD_DEFAULT_LANES)]
         
-        self.traffic_lights_update   = [time.clock(), time.clock()]
+        self.traffic_lights_update   = [lib.clock(), lib.clock()]
         self.traffic_lights          = [True, False]    # [gate at the beginning, gate at the end]
         
         self.parallel       = None
@@ -59,7 +59,7 @@ class Road:
         """
         Return the time (in milliseconds) since the last update of a gate (0 or 1).
         """
-        current_time = time.clock()
+        current_time = lib.clock()
         return (current_time - self.traffic_lights_update[gate])
 
     def get_free_lane(self):

@@ -5,12 +5,14 @@ Description :   defines the functions needed for the simulation
 """
 
 from random import randint, choice
+import constants
+import time
 
 #   Bootstrap
 if (__name__ == '__main__'):
     raise Exception("You should run interface.py instead of this file !")
 
-Delta_t = 0
+Delta_t          = 0.0
 
 def round(number, decimals = 0):
     """
@@ -49,3 +51,20 @@ def proba_poll(events):
         raise Exception('ERROR (in init.proba_poll()): incorrect data format.')
     else:
         return choice(list_polls)
+
+def clock():
+    """
+    Returns the time multiplied by the simulation speed
+    """
+    if constants.time_last_counter == 0:
+        constants.time_last_counter = time.clock()
+
+    time_interval = time.clock() - constants.time_last_counter
+    constants.time_static_counter += time_interval * constants.simulation_speed
+            
+    constants.time_last_counter = time.clock()
+    
+    return constants.time_static_counter
+    
+def set_speed(new_speed):
+    constants.simulation_speed = new_speed

@@ -5,7 +5,7 @@ Description :   provides pathfinding information
 """
 
 from constants  import *
-import time
+import lib
 
 class Gps():
     """
@@ -70,10 +70,10 @@ class Gps():
         self.open_list.append(start_node)
         self.g_cost[start_node] = 0
         
-        self.start_time = time.clock()
+        self.start_time = lib.clock()
         parent          = {}
         
-        while (time.clock() - self.start_time) < max_time:
+        while (lib.clock() - self.start_time) < max_time:
             if len(self.open_list):
                 #   The "parent" node, around which we look, is always the first node of the "open" list
                 #   This node is transferred to the "closed" list
