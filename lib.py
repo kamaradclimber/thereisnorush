@@ -67,4 +67,15 @@ def clock():
     return constants.time_static_counter
     
 def set_speed(new_speed):
+    """
+    Sets the simulation speed
+    Please use this instead of directly addressing constants.simulation_speed
+    """
     constants.simulation_speed = new_speed
+    
+def get_speed():
+    """
+    Returns the simulation speed
+    Please use this instead of directly addressing constants.simulation_speed
+    """
+    return constants.simulation_speed

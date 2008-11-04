@@ -89,12 +89,15 @@ class Scene(QtGui.QWidget):
             else:
                 current_road = selected_car.location.incoming_roads[0]
 
-            for i in selected_car.path:
-                next_way        = i % len(current_road.end.leaving_roads)
-                current_road    = current_road.end.leaving_roads[next_way]
-
-                self.painter.drawLine(  current_road.begin.position.x,  current_road.begin.position.y,
-                                        current_road.end.position.x,    current_road.end.position.y)
+            for next_way in selected_car.path:
+#                next_way        = i % len(current_road.end.leaving_roads)
+                try:
+                    current_road    = current_road.end.leaving_roads[next_way]
+                    
+                    self.painter.drawLine(  current_road.begin.position.x,  current_road.begin.position.y,
+                                            current_road.end.position.x,    current_road.end.position.y)
+                except:
+                    raise Exception("ERROR (in interface.draw_car()) : a car wants to go in a road that doesn't exist, check pathfinding.")
         
         for lane in road.lanes:
             self.draw_lane(lane)
@@ -223,7 +226,7 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self, parent)
 
         #   Set parameters
-        self.elapsed_time           = 0
+        lib.Delta_t           = 0
         self.last_update            = lib.clock()
         self.selected_car           = None
         self.selected_roundabout    = None
@@ -269,6 +272,11 @@ class MainWindow(QtGui.QMainWindow):
         #act_pause.setShortcut('Ctrl+P')
         act_pause.setStatusTip('Pause simulation')
         self.connect(act_pause, QtCore.SIGNAL('triggered()'), self.pause_simulation)
+        
+        #   Fast forward action
+        act_fastforward = QtGui.QAction(QtGui.QIcon('icons/play.png'), 'Fast forward', self)
+        act_fastforward.setStatusTip('Fast forward simulation (×2 ⋅ ×4 ⋅ ×8)')
+        self.connect(act_fastforward, QtCore.SIGNAL('triggered()'), self.fastforward_simulation)
 
         #   Reset action
         act_reset = QtGui.QAction(QtGui.QIcon('icons/reset.png'), 'Reset', self)
@@ -287,13 +295,17 @@ class MainWindow(QtGui.QMainWindow):
         simulation = menu_bar.addMenu('&Simulation')
         simulation.addAction(act_play)
         simulation.addAction(act_pause)
+        simulation.addAction(act_fastforward)
         simulation.addAction(act_reset)
 
         #   Toolbar
         main_toolbar = self.addToolBar('Main toolbar')
         main_toolbar.addAction(act_play)
         main_toolbar.addAction(act_pause)
+        main_toolbar.addAction(act_fastforward)
         main_toolbar.addAction(act_reset)
+        
+        
 
         #   Scene
         self.scene = Scene(self)
@@ -373,23 +385,36 @@ class MainWindow(QtGui.QMainWindow):
 
         """
 #        self.is_playing = True
-        lib.set_speed (0)
+        lib.set_speed (1.0)
 
     def pause_simulation(self):
         """
 
         """
 #        self.is_playing = False
-        if simulation_speed == 1:
-            lib.set_speed(2.0)
-        else:
-            lib.set_speed(1.0)
+        lib.set_speed(0.0)
 
     def reset_simulation(self):
         """
 
         """
         pass
+        
+    def fastforward_simulation(self):
+        """
+        Plays the simulation at 2, 4 or 8×
+        """
+        
+        sim_speed = lib.get_speed()
+        
+        if sim_speed == 2:
+            lib.set_speed(4)
+        elif sim_speed == 4:
+            lib.set_speed(8)
+        elif sim_speed == 8:
+            lib.set_speed(1)
+        else:
+            lib.set_speed(2)
 
     def closeEvent(self, event):
         """
@@ -444,10 +469,9 @@ class MainWindow(QtGui.QMainWindow):
         Passes or uses timer events to update the simulation
         """
         if event.timerId() == self.timer.timerId():
-            self.elapsed_time = lib.clock() - self.last_update
+            lib.Delta_t = lib.clock() - self.last_update
             self.last_update = lib.clock()
             
-#            if self.is_playing:
             self.update_simulation()
             self.update_information()
             self.scene.update()
@@ -461,12 +485,12 @@ class MainWindow(QtGui.QMainWindow):
         """
         #   Run the simulation for delta_t
         for road in __track__.track.roads:
-            road.update(self.elapsed_time)
+            road.update()
         for roundabout in __track__.track.roundabouts:
             #oui deux boucles séparées sinon linfo est pas en temps réél (enfin ca serait pas un drame non plus vu l'échelle de delta_t ! )
             roundabout.get_local_load()
         for roundabout in __track__.track.roundabouts:
-            roundabout.update(self.elapsed_time)
+            roundabout.update()
         
     def update_information(self):
         """
@@ -509,11 +533,14 @@ class MainWindow(QtGui.QMainWindow):
                 for car in self.selected_roundabout.cars:
                     avg_waiting_time += car.total_waiting_time / float(len(self.selected_roundabout.cars))
                 information += '<br/><b>Average waiting time</b> (s) : ' + str(lib.round(avg_waiting_time,2)) + '<br/>'
+
+        information += '<br/><b>Simulation</b><br/>'        
+        information += 'Speed : &times;' + str(lib.round(lib.get_speed(), 2))   + '<br/>'
         
         if lib.Delta_t != 0:
-            information += '<br/><b>Simulation</b><br/>'
-            information += 'FPS : ' + str(lib.round(1/lib.Delta_t, 2)) + '<br/>'
-            information += '&Delta;t (s): ' + str(lib.round(lib.Delta_t, 2)) + '<br/>'
+            information += 'FPS : ' + str(lib.round(lib.get_speed()/lib.Delta_t, 2)) + '<br/>'
+            information += '&Delta;t (s) : ' + str(lib.round(lib.Delta_t, 2)) + '<br/>'
+            
         
         self.lbl_info.setText(information)
 

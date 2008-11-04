@@ -169,7 +169,7 @@ class Car:
 
         return (obstacle, obstacle_is_light)
     
-    def act(self, delay):
+    def act(self):
         """
         Moves the car, THEN manages its speed, acceleration.
         """
@@ -210,8 +210,8 @@ class Car:
                 self.acceleration = self.force/self.mass * delta_speed/abs(delta_speed)
                 
         #   Update the position and speed given the speed and acceleration
-        self.position   = min(self.position + self.speed * delay, obstacle - self.length/2 - self.headway)
-        self.speed      = max(min(self.speed + self.acceleration * delay, self.location.parent.max_speed), 5)
+        self.position   = min(self.position + self.speed * lib.Delta_t, obstacle - self.length/2 - self.headway)
+        self.speed      = max(min(self.speed + self.acceleration * lib.Delta_t, self.location.parent.max_speed), 5)
 
         #   Arrival at a roundabout
         if self.position >= self.location.parent.length - self.length/2 - self.headway:
