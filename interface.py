@@ -119,12 +119,6 @@ class Scene(QtGui.QWidget):
         if car.road is None:
             return None
 
-        #d_position = car.road.start.position
-        #a_position = car.location.end.position
-        #direction  = (a_position - d_position)
-
-        #length_covered = float(int(car.position)) / float(int(car.location.parent.length))
-
         #   Get them once
         (r_width, r_length)    = (car.width, car.length)
         (parallel, orthogonal) = car.road.unit_vectors
@@ -277,7 +271,7 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(act_pause, QtCore.SIGNAL('triggered()'), self.pause_simulation)
         
         #   Fast forward action
-        act_fastforward = QtGui.QAction(QtGui.QIcon('icons/play.png'), 'Fast forward', self)
+        act_fastforward = QtGui.QAction(QtGui.QIcon('icons/forward.png'), 'Fast forward', self)
         act_fastforward.setStatusTip('Fast forward simulation (×2 ⋅ ×4 ⋅ ×8)')
         self.connect(act_fastforward, QtCore.SIGNAL('triggered()'), self.fastforward_simulation)
 

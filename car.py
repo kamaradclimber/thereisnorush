@@ -180,7 +180,7 @@ class Car:
     
             #   Otherwise : the next obstacle is the previous car
             obstacle_is_light = False
-            obstacle = self.lane.cars[self.rank + 1].position - self.lane.cars[self.rank + 1].length/2
+            obstacle = self.lane.cars[self.rank + 1].length_covered - self.lane.cars[self.rank + 1].length/2
     
             return (obstacle, obstacle_is_light)
         
