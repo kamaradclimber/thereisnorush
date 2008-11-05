@@ -17,7 +17,8 @@ class Roundabout:
     Crossroads of our city ; may host several roads.
     """
 
-    def __init__(self, 
+    def __init__(self,
+                 new_track,
                  new_x, 
                  new_y, 
                  new_spawning   = False, 
@@ -26,6 +27,7 @@ class Roundabout:
         Constructor method : creates a new roundabout.
         """
         
+        self.track          = new_track
         self.position       = Vector(TRACK_SCALE * new_x + TRACK_OFFSET_X, 
                                      TRACK_SCALE * new_y + TRACK_OFFSET_Y)
         self.radius         = new_radius
@@ -44,7 +46,7 @@ class Roundabout:
         self.last_shift     = lib.clock()
         
         self.slots_roads    = [None for i in range(self.max_cars)]
-        self.local_load   = 0
+        self.local_load     = 0
         
         self.car_spiraling_time = {}
 
@@ -52,10 +54,16 @@ class Roundabout:
         """
         Connects a road to a slot, must be called during initialization.
         """
-        
+
         #   Error handling
-        if new_road in self.slots_roads:
+        if new_road in self.slots_roads and (new_road in self.incoming_roads or new_road in self.leaving_roads):
             return None
+
+        #   Reference road
+        if id(new_road.start) == id(self):
+            self.leaving_roads.append(new_road)
+        else:
+            self.incoming_roads.append(new_road)
         
         #   Choose a random free slot, if any, to allocate for the road
         free_slots = [i for (i, road) in enumerate(self.slots_roads) if road is None]
@@ -68,7 +76,7 @@ class Roundabout:
             
     def _update_traffic_lights(self):
         """
-        Gate handling
+        Handles traffic lights.
         """
 
         #   First, let's have a global view of situation 
@@ -79,7 +87,7 @@ class Roundabout:
                 
         for road in self.leaving_roads:
             around_leaving_loads.append(road.end.global_load)
-            delta_load = self.global_load - road.begin.global_load
+            delta_load = self.global_load - road.start.global_load
             
             if delta_load >= 0 : 
                 self.set_gate(road, True)
@@ -167,7 +175,7 @@ class Roundabout:
             state   (bool)   :   the state (False = red, True = green) of the gate
         """
         #   Set which gate is to be updated
-        if id(road.begin) == id(self):
+        if id(road.start) == id(self):
             current_gate = ENTRANCE
         else:
             current_gate = EXIT
@@ -215,7 +223,7 @@ class Roundabout:
         """
         result = self.local_load * 10
         for road in self.incoming_roads:
-            result += road.begin.local_load
+            result += road.start.local_load
         for road in self.leaving_roads:
             result += road.end.local_load
 

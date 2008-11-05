@@ -7,7 +7,6 @@ Description :   Manages the displays and main loop.
 import lib
 import sys
 
-
 from constants      import *
 import road         as __road__
 import track        as __track__
@@ -66,7 +65,7 @@ class Scene(QtGui.QWidget):
         Dessine une route donnée à l'écran et toutes les voitures dessus.
             road (Road) : la route sus-citée.
         """
-        (start_position, end_position) = (road.begin.position.ceil(), road.end.position.ceil())
+        (start_position, end_position) = (road.start.position.ceil(), road.end.position.ceil())
         
         #   Draw traffic lights (or not)
         if self.window.exit_lights.isChecked():
@@ -81,7 +80,7 @@ class Scene(QtGui.QWidget):
         if selected_car is not None:
             if isinstance(selected_car.location, __road__.Lane):
                 current_road        = selected_car.location.parent
-                car_position        = current_road.begin.position + (current_road.end.position - current_road.begin.position).normalize() * selected_car.position
+                car_position        = current_road.start.position + (current_road.end.position - current_road.start.position).normalize() * selected_car.position
                 
                 self.painter.setPen(QtGui.QColor(*BLUE))
                 self.painter.drawLine(  car_position.x,                 car_position.y,
@@ -94,7 +93,7 @@ class Scene(QtGui.QWidget):
                 try:
                     current_road    = current_road.end.leaving_roads[next_way]
                     
-                    self.painter.drawLine(  current_road.begin.position.x,  current_road.begin.position.y,
+                    self.painter.drawLine(  current_road.start.position.x,  current_road.start.position.y,
                                             current_road.end.position.x,    current_road.end.position.y)
                 except:
                     raise Exception("ERROR (in interface.draw_car()) : a car wants to go in a road that doesn't exist, check pathfinding.")
@@ -116,18 +115,22 @@ class Scene(QtGui.QWidget):
         Dessine une voiture donnée à l'écran.
             car (Car) : la voiture sus-citée.
         """
-        d_position = car.location.begin.position
-        a_position = car.location.end.position
-        direction  = (a_position - d_position)
 
-        length_covered = float(int(car.position)) / float(int(car.location.parent.length))
+        if car.road is None:
+            return None
+
+        #d_position = car.road.start.position
+        #a_position = car.location.end.position
+        #direction  = (a_position - d_position)
+
+        #length_covered = float(int(car.position)) / float(int(car.location.parent.length))
 
         #   Get them once
         (r_width, r_length)    = (car.width, car.length)
-        (parallel, orthogonal) = car.location.parent.unit_vectors
+        (parallel, orthogonal) = car.road.unit_vectors
 
         #   Coordinates for the center
-        center_position = d_position + direction * length_covered + orthogonal * car.location.width/2
+        center_position = car.position
 
         points = []
         points.append(center_position - parallel * r_length/2 - orthogonal * r_width/2)
@@ -226,7 +229,7 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self, parent)
 
         #   Set parameters
-        lib.Delta_t           = 0
+        lib.delta_t                 = 0
         self.last_update            = lib.clock()
         self.selected_car           = None
         self.selected_roundabout    = None
@@ -458,7 +461,7 @@ class MainWindow(QtGui.QMainWindow):
         for road in __track__.track.roads:
             for lane in road.lanes:
                 for car in lane.cars:
-                    car_position = road.begin.position + (road.end.position - road.begin.position).normalize() * car.position
+                    car_position = road.start.position + (road.end.position - road.start.position).normalize() * car.position
                     if abs(car_position - click_position) < 20:
                         self.selected_car = car
                         break
@@ -469,7 +472,7 @@ class MainWindow(QtGui.QMainWindow):
         Passes or uses timer events to update the simulation
         """
         if event.timerId() == self.timer.timerId():
-            lib.Delta_t = lib.clock() - self.last_update
+            lib.delta_t = lib.clock() - self.last_update
             self.last_update = lib.clock()
             
             self.update_simulation()
@@ -537,9 +540,9 @@ class MainWindow(QtGui.QMainWindow):
         information += '<br/><b>Simulation</b><br/>'        
         information += 'Speed : &times;' + str(lib.round(lib.get_speed(), 2))   + '<br/>'
         
-        if lib.Delta_t != 0:
-            information += 'FPS : ' + str(lib.round(lib.get_speed()/lib.Delta_t, 2)) + '<br/>'
-            information += '&Delta;t (s) : ' + str(lib.round(lib.Delta_t, 2)) + '<br/>'
+        if lib.delta_t != 0:
+            information += 'FPS : ' + str(lib.round(lib.get_speed()/lib.delta_t, 2)) + '<br/>'
+            information += '&Delta;t (s) : ' + str(lib.round(lib.delta_t, 2)) + '<br/>'
             
         
         self.lbl_info.setText(information)

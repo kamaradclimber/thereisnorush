@@ -15,8 +15,8 @@ class Road:
     A road acts as a container for several lanes and connects two roundabouts
     """
     def __init__(   self,
-                    new_begin       = None,
-                    new_end         = None,
+                    new_start  = None,
+                    new_end    = None,
                     new_max_speed   = ROAD_DEFAULT_MAX_SPEED):
         """
         Constructor method : creates a new road.
@@ -25,23 +25,21 @@ class Road:
             new_length (int)     : road length
         """
 
-        self.begin          = new_begin
-        self.end            = new_end
+        self.start     = new_start
+        self.end       = new_end
         self.max_speed      = new_max_speed
         
         self.lanes          = [Lane(self, i) for i in range(ROAD_DEFAULT_LANES)]
         
         self.traffic_lights_update   = [lib.clock(), lib.clock()]
-        self.traffic_lights          = [True, False]    # [gate at the beginning, gate at the end]
-        
+        self.traffic_lights          = [True, False]    # [at the beginning, at the end]
+       
+        #   In order not to compute the unit vectors of the road several times, they are stored once they are computed
         self.parallel       = None
         self.orthogonal     = None
         
-        self.end.incoming_roads.append(self)
-        self.begin.leaving_roads.append(self)
-        
+        self.start.host_road(self)
         self.end.host_road(self)
-        self.begin.host_road(self)
         
         width = 0
         for lane in self.lanes:
@@ -74,7 +72,6 @@ class Road:
             
         return free_lanes[0]
         
-    
     @property
     def is_free(self):
         """
@@ -82,19 +79,19 @@ class Road:
         """
         
         # The road is free, unless all the lanes are full
-        
         for lane in self.lanes:
             if lane.is_free:
                 return True
     
         return False
+
     @property
     def length(self):
         """
         Returns the calculated length of the road.
         """
-        if (self.begin is not None) and (self.end is not None):
-            return abs(self.end.position - self.begin.position)
+        if (self.start is not None) and (self.end is not None):
+            return abs(self.end.position - self.start.position)
         
         return None
     
@@ -105,13 +102,12 @@ class Road:
         """
         
         # Avoid recomputing them each time
-        if self.parallel and self.orthogonal:
+        if (self.parallel is not None) and (self.orthogonal is not None):
             parallel = self.parallel
             orthogonal = self.orthogonal
         else:
             #   Normalized parallel and orthogonal vectors
-            parallel = self.end.position - self.begin.position
-            parallel.normalize()
+            parallel = (self.end.position - self.start.position).normalize()
             orthogonal = parallel.get_orthogonal()
             
             self.parallel = parallel
@@ -124,8 +120,8 @@ class Road:
         """
         Returns the total number of waiting cars on the road.
         """
+
         result = 0
-        
         for lane in self.lanes:
             result += lane.total_waiting_cars
         
@@ -136,6 +132,7 @@ class Road:
         """
         Returns the total number of cars on the road
         """
+
         result = 0
         for lane in self.lanes:
             result += len(lane.cars)
@@ -147,25 +144,32 @@ class Road:
         """
         Returns the weight associated to the road, for pathfinding computations.
         """
+
         # Here, the weight is the time needed to walk the road
         return self.length/self.max_speed
-        
+    
+    @property
+    def track(self):
+        """
+        Returns the track to which the road belongs.
+        """
+
+        return self.start.track
+
 class Lane():
     """
     A lane is a one-way piece of road
     """
     
-    def __init__(self, parent, index):
+    def __init__(self, new_road, index):
         """
         Creates a Lane on the parent Road.
         The higher the index, the farther the lane.
         """
-        self.cars  = []
-        self.begin = parent.begin
-        self.end   = parent.end
-        self.width = LANE_DEFAULT_WIDTH
-        self.index = index
-        self.parent = parent
+        self.cars   = []
+        self.width  = LANE_DEFAULT_WIDTH
+        self.index  = index
+        self.road   = new_road
         
     def update(self):
         """
@@ -199,3 +203,30 @@ class Lane():
         else:
             # CONVENTION SENSITIVE
             return(self.cars[0].position > self.cars[0].length + self.cars[0].headway)
+
+    @property
+    def start(self):
+        """
+        Returns the start node of the lane.
+        This property is provided for convenience.
+        """
+
+        return self.road.start
+
+    @property
+    def end(self):
+        """
+        Returns the end node of the lane.
+        This property is provided for convenience.
+        """
+
+        return self.road.end
+
+    @property
+    def track(self):
+        """
+        Returns the track to which the lane belongs.
+        This property is provided for convenience.
+        """
+
+        return self.road.track

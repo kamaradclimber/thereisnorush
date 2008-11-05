@@ -5,6 +5,7 @@ Description :   defines the class "Track"
 """
 
 import lib
+import gps          as __gps__
 import roundabout   as __roundabout__
 import road         as __road__
 from constants      import *
@@ -26,9 +27,10 @@ class Track:
             new_roads   (list)  :   a list of the roads
         """
         
-        self.roundabouts = new_roundabouts
-        self.roads = new_roads
-        self.picture = None
+        self.gps            = __gps__.Gps()
+        self.roundabouts    = new_roundabouts
+        self.roads          = new_roads
+        self.picture        = None
     
     def add_car(self, road_number, position):
         """
@@ -43,7 +45,7 @@ class Track_Parser:
     def __init__(self, track):
         """
         """
-        self.track = track
+        self.track  = track
     
     def load_from_file(self, file_name, file_picture = ''):
         """
@@ -79,7 +81,7 @@ class Track_Parser:
         elements = line.replace(',', ' ').split()
         if elements[0] == self.ROUNDABOUT:
             args = [int(item) for item in elements[1:]]
-            self.track.roundabouts.append(__roundabout__.Roundabout(*args))
+            self.track.roundabouts.append(__roundabout__.Roundabout(self.track, *args))
         elif elements[0] == self.ROAD:
             args = [int(item) for item in elements[1:]]
             new_road = __road__.Road(self.track.roundabouts[args[0]], self.track.roundabouts[args[1]])

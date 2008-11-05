@@ -12,7 +12,7 @@ import time
 if (__name__ == '__main__'):
     raise Exception("You should run interface.py instead of this file !")
 
-Delta_t          = 0.0
+delta_t = 0.0
 
 def round(number, decimals = 0):
     """
