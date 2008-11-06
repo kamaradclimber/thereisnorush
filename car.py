@@ -150,7 +150,7 @@ class Car:
         Expresses the cars' wishes :P
         """
         #   End of path
-        if len(self.path) == 0:
+        if self.path is None or len(self.path):
             return None
         else:
             next = self.path[0]

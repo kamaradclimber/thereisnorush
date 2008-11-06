@@ -94,6 +94,9 @@ ROAD_DEFAULT_LANES     = 1
 LANE_DEFAULT_WIDTH     = 5
 
 #   Pathfinding
+A_STAR      = 0
+DIJKSTRA    = 1
+
 PATH_INEXISTENT = 1
 PATH_FOUND      = 2
 
