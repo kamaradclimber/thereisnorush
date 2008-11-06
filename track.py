@@ -5,7 +5,6 @@ Description :   defines the class "Track"
 """
 
 import lib
-import gps          as __gps__
 import roundabout   as __roundabout__
 import road         as __road__
 from constants      import *
@@ -27,7 +26,6 @@ class Track:
             new_roads   (list)  :   a list of the roads
         """
         
-        self.gps            = __gps__.Gps()
         self.roundabouts    = new_roundabouts
         self.roads          = new_roads
         self.picture        = None

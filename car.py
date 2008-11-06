@@ -8,6 +8,7 @@ import lib
 
 from random         import randint, choice
 from constants      import *
+import gps          as __gps__
 import road         as __road__
 import roundabout   as __roundabout__
 
@@ -68,11 +69,14 @@ class Car:
         if isinstance(new_destination, __roundabout__.Roundabout) and new_destination in __track__.track.roundabouts:
             destination = new_destination
         else:
-            destination = choice(self.track.roundabouts)
+            # EXPERIMENTAL : leaving nodes only
+            destination = choice([roundabout for roundabout in self.track.roundabouts if len(roundabout.leaving_roads) == 0])
         
         #   Compute the path
-        #self.path = self.gps.find_path(self.road.start, destination)
-        self.path = [randint(0, 128) for i in range(randint(8, 11))]
+        
+        # Each car needs its own gps instance to avoid collisions and clean pathfinding
+        self.gps  = __gps__.Gps()
+        self.path = self.gps.find_path(self.road.start, destination)
     
     def join(self, new_location):
         """
@@ -150,12 +154,16 @@ class Car:
         Expresses the cars' wishes :P
         """
         #   End of path
-        if self.path is None or len(self.path):
+        
+        if self.path is None:
             return None
         else:
             next = self.path[0]
             if not read_only:
                 del self.path[0]
+            if len(self.path) == 0:
+                self.path = None 
+                
             return next
 
     def _next_obstacle(self):
@@ -344,12 +352,3 @@ class Car:
         """
 
         return self.location.track
-
-    @property
-    def gps(self):
-        """
-        Returns the GPS to use for pathfinding.
-        This function is provided for convenience.
-        """
-
-        return self.track.gps

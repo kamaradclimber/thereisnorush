@@ -111,8 +111,8 @@ class Roundabout:
             
         car.total_waiting_time = self.car_spiraling_time[car][0] + lib.clock() - self.car_spiraling_time[car][1]
         
-        if not(car.next_way(True) is None) and self.leaving_roads:
-            next_way = car.next_way(True) % len(self.leaving_roads) # Just read the next_way unless you really go there
+        if not(car.path is None) and self.leaving_roads:
+            next_way = car.next_way(True) # Just read the next_way unless you really go there
             car_slot = lib.find_key(self.slots_cars, car)
 
             #   The car has lost its slot   

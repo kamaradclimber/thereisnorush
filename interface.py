@@ -79,8 +79,8 @@ class Scene(QtGui.QWidget):
         selected_car = self.window.selected_car
         if selected_car is not None:
             if isinstance(selected_car.location, __road__.Lane):
-                current_road        = selected_car.location.parent
-                car_position        = current_road.start.position + (current_road.end.position - current_road.start.position).normalize() * selected_car.position
+                current_road        = selected_car.road
+                car_position        = current_road.start.position + current_road.parallel * selected_car.length_covered
                 
                 self.painter.setPen(QtGui.QColor(*BLUE))
                 self.painter.drawLine(  car_position.x,                 car_position.y,
@@ -88,16 +88,14 @@ class Scene(QtGui.QWidget):
             else:
                 current_road = selected_car.location.incoming_roads[0]
 
-            for next_way in selected_car.path:
-#                next_way        = i % len(current_road.end.leaving_roads)
-                try:
-                    current_road    = current_road.end.leaving_roads[next_way]
-                    
-                    self.painter.drawLine(  current_road.start.position.x,  current_road.start.position.y,
-                                            current_road.end.position.x,    current_road.end.position.y)
-                except:
-                    raise Exception("ERROR (in interface.draw_car()) : a car wants to go in a road that doesn't exist, check pathfinding.")
-        
+            if not (selected_car.path is None):
+                for next_way in selected_car.path:
+                    if not (next_way is None):
+                        current_road = current_road.end.leaving_roads[next_way]
+                            
+                        self.painter.drawLine(  current_road.start.position.x,  current_road.start.position.y,
+                                                    current_road.end.position.x,    current_road.end.position.y)
+            
         for lane in road.lanes:
             self.draw_lane(lane)
 
@@ -140,6 +138,13 @@ class Scene(QtGui.QWidget):
         self.painter.setBrush(QtGui.QColor(*car.color))
         self.painter.setPen(QtGui.QColor('black'))
         self.painter.drawPolygon(polygon[0], polygon[1], polygon[2], polygon[3])
+        
+        #   Selected car
+        if self.window.selected_car == car:
+            self.painter.setPen(QtGui.QColor(*ROUNDABOUT_COLOR))
+            self.painter.setBrush(QtGui.QColor(*TRANSPARENT))
+            self.painter.drawEllipse(car.position.x - car.length, car.position.y - car.length, 2*car.length, 2*car.length)
+
 
     def draw_roundabout(self, roundabout):
         """
@@ -272,7 +277,7 @@ class MainWindow(QtGui.QMainWindow):
         
         #   Fast forward action
         act_fastforward = QtGui.QAction(QtGui.QIcon('icons/forward.png'), 'Fast forward', self)
-        act_fastforward.setStatusTip('Fast forward simulation (×2 ⋅ ×4 ⋅ ×8)')
+        act_fastforward.setStatusTip('Fast forward simulation (x2 - x4 - x8)')
         self.connect(act_fastforward, QtCore.SIGNAL('triggered()'), self.fastforward_simulation)
 
         #   Reset action
@@ -302,8 +307,6 @@ class MainWindow(QtGui.QMainWindow):
         main_toolbar.addAction(act_fastforward)
         main_toolbar.addAction(act_reset)
         
-        
-
         #   Scene
         self.scene = Scene(self)
         self.scene.setObjectName('scene')     
@@ -455,7 +458,7 @@ class MainWindow(QtGui.QMainWindow):
         for road in __track__.track.roads:
             for lane in road.lanes:
                 for car in lane.cars:
-                    car_position = road.start.position + (road.end.position - road.start.position).normalize() * car.position
+                    car_position = road.start.position  + road.parallel * car.length_covered
                     if abs(car_position - click_position) < 20:
                         self.selected_car = car
                         break

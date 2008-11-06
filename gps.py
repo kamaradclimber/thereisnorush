@@ -41,8 +41,12 @@ class Gps():
             current_node    = self.path[i]
             next_node       = self.path[i + 1]
             
-            key = [i for i in range(len(current_node.leaving_roads)) if current_node.leaving_roads[i].end == next_node][0]
-            path.append(key)
+            key_list = [i for i in range(len(current_node.leaving_roads)) if current_node.leaving_roads[i].end == next_node]
+            
+            if len(key_list) == 0:
+                raise Exception('ERROR (in gps._build_path()) : there is no route.')
+                
+            path.append(key_list[0])
             
         return path
         
@@ -99,51 +103,56 @@ class Gps():
                     (self.open_list[i], self.open_list[0]) = (self.open_list[0], node)
             
             #   Check the adjacent nodes
-            for road in current_parent.leaving_roads:
+            children = [road.end for road in current_parent.leaving_roads]
+            
+            for child in children:
                 #   Not already in the closed list neither in the open list
-                if not (road.end in self.closed_list) and not (road.end in self.open_list):
+                if not (child in self.closed_list) and not (child in self.open_list):
                     #   Compute its G-cost, H-cost and F-cost
-                    self.g_cost[road.end] = self.g_cost[current_parent] + road.weight
-                    self.h_cost[road.end] = self._heuristic_weight(road.end, destination)
-                    self.f_cost[road.end] = self.g_cost[road.end] + self.h_cost[road.end]
+                    self.g_cost[child] = self.g_cost[current_parent] + road.weight
+                    self.h_cost[child] = self._heuristic_weight(child, destination)
+                    self.f_cost[child] = self.g_cost[child] + self.h_cost[child]
                     
-                    nearest_parent[road.end] = current_parent
+                    nearest_parent[child] = current_parent
                     
                     #   Add the node to the open list, keeping the order (the first node has the smallest F-cost)
-                    if len(self.open_list) and (self.f_cost[self.open_list[0]] > self.f_cost[road.end]):
-                        self.open_list.insert(0, road.end)
+                    if len(self.open_list) and (self.f_cost[self.open_list[0]] > self.f_cost[child]):
+                        self.open_list.insert(0, child)
                     else:
-                        self.open_list.append(road.end)
+                        self.open_list.append(child)
 
                 #   Already in the open list : check to see if this path is a better one than the currently known path
-                elif road.end in self.open_list:
+                elif child in self.open_list:
                     #   Compute the G-cost of this possible new path
                     current_g_cost = self.g_cost[current_parent] + road.weight
                         
                     #   This path is shorter (lower G-cost) : store this path as default to reach this node
-                    if current_g_cost < self.g_cost[road.end]:
+                    if current_g_cost < self.g_cost[child]:
                         #   Set this path as the shortest path to reach this node
-                        nearest_parent[road.end]    = current_parent
-                        self.g_cost[road.end]       = current_g_cost
-                        self.f_cost[road.end]       = self.g_cost[current_parent] + self.h_cost[road.end]   # Do not forget to update the F-cost !
+                        nearest_parent[child]    = current_parent
+                        self.g_cost[child]       = current_g_cost
+                        self.f_cost[child]       = self.g_cost[current_parent] + self.h_cost[child]   # Do not forget to update the F-cost !
                         
                         #   Check if the open list is still in the right order
-                        if self.f_cost[self.open_list[0]] > self.f_cost[road.end]:
-                            i = self.open_list.index(road.end)
+                        if self.f_cost[self.open_list[0]] > self.f_cost[child]:
+                            i = self.open_list.index(child)
                             (self.open_list[0], self.open_list[i]) = (self.open_list[i], self.open_list[0])
 
         #   Save the path if it exists.
         if self.path == PATH_FOUND:
+            
             current_node        = destination
             self.path           = []
-            self.path_length    = 0
-
+            self.path_length = 0
+            
             while current_node != origin:
                 self.path.insert(0, current_node)
-                current_node = nearest_parent[current_node]
+                if current_node in nearest_parent:
+                    current_node = nearest_parent[current_node]
+                else:
+                    raise Exception('ERROR (in gps.find_path()): ill-formed parent list, a node has no parent.')
+                    
                 self.path_length += 1
-            	
             return self._build_path()
 
         return None
-        
