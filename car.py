@@ -41,6 +41,8 @@ class Car:
         self.total_waiting_time = 0
         self.last_waiting_time  = 0
         
+        self.dead = False
+        
         #   Several sub-categories : truck, long truck, bus
         if new_type == TRUCK:
             possible_sizes = [(2, 25), 
@@ -77,6 +79,11 @@ class Car:
         # Each car needs its own gps instance to avoid collisions and clean pathfinding
         self.gps  = __gps__.Gps()
         self.path = self.gps.find_path(self.road.start, destination)
+        
+        self.destination = None 
+        if self.path:
+            if len(self.path) > 0:
+                self.destination = destination
     
     def join(self, new_location):
         """
@@ -145,6 +152,7 @@ class Car:
 
         if self.location.cars:
             if self in self.location.cars:
+                self.dead = True 
                 self.location.cars.remove(self)
             else:
                 raise Except("WARNING (in car.die()) : a car was not in its place !")
@@ -254,6 +262,7 @@ class Car:
                     self.road.end.slots_cars[id_slot] = self
                     self.change_waiting_attitude(False)
                     self.join(self.road.end)
+                    
                     
                 #   The slot isn't free
                 else:

@@ -48,6 +48,8 @@ class Roundabout:
         self.slots_roads    = [None for i in range(self.max_cars)]
         self.local_load     = 0
         
+        self.name = id(self)
+        
         self.car_spiraling_time = {}
 
     def host_road(self, new_road):
@@ -105,7 +107,7 @@ class Roundabout:
         """
         Updates a given car on the roundabout 
         """
-
+        
         if not (car in self.car_spiraling_time):
             self.car_spiraling_time[car] = [car.total_waiting_time, lib.clock()]
             

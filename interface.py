@@ -20,7 +20,7 @@ class Histogram(QtGui.QWidget):
     """
     
     def __init__(self, new_window, parent = None, 
-                 span = HISTOGRAM_SPAN, color = RED, 
+                 span = HISTOGRAM_SPAN, color = HISTOGRAM_COLOR, 
                  width = HISTOGRAM_WIDTH, height = HISTOGRAM_HEIGHT):
         """
         Initializes histogram representation
@@ -37,9 +37,15 @@ class Histogram(QtGui.QWidget):
         self.max  = 0.0
         self.min  = 0.0
         
-        self.color = color
+        # Colors
+        self.color        = color
+        self.border_color = GREY
+        self.back_color   = BLACK
         
-        self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
+        # Keep track of time
+        self.timer = 0
+        
+        self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed))
         self.setMinimumSize(width, height)
         
     def append(self, value):
@@ -49,20 +55,27 @@ class Histogram(QtGui.QWidget):
         # Shift data and replace the first element
         self.data = lib.shift_list(self.data)
         self.data[0] = value
+        self.timer += 1
         
         # Keep track of the extremes
         if value > self.max: self.max = value
         if value < self.min: self.min = value
 
-    def draw_bars(self):
+    def _draw_bars(self):
         """
         Draw the histobars
         """
         
-        # Height and width for a unit bar
-        bar_width = self.width / float(len(self.data))
+        if self.max == 0:
+            # Don't draw when there is no data to plot
+            return None 
         
-        bar_height = self.height / float(self.max)
+        # Keep 20% of free space
+        extra_space = 0.2 * self.max
+        
+        # Height and width for a unit bar
+        bar_width = self.width() / float(len(self.data))
+        bar_height = self.height() / float(self.max + extra_space)
 
         self.painter.setPen(QtGui.QColor(*self.color))
         
@@ -72,27 +85,58 @@ class Histogram(QtGui.QWidget):
             
             # Points of the rectangle
             position_x1 = position * bar_width
-            position_y1 = self.height
-            
-            position_x2 = position_x1 + bar_width
-            position_y2 = position_y1 - bar_height * bar_value
-            
-            self.painter.drawLine(position_x1, position_y1, position_x2, position_y2)
+            position_y1 = self.height()
+            self.painter.drawRect(position_x1, position_y1 - bar_height * bar_value, bar_width, position_y1)
         
-    def draw_scale(self):
+    def _draw_border(self):
+        """
+        Draws control border
+        """
+        
+        corners = [[0, 0], [self.width()-1, 0], [self.width()-1, self.height()-1], [0, self.height()-1]]
+        
+        self.painter.setPen(QtGui.QColor(*self.border_color))
+        
+        for num_corner in range(len(corners)):
+            self.painter.drawLine(corners[num_corner][0], corners[num_corner][1],
+                                  corners[(num_corner + 1) % len(corners)][0], corners[(num_corner+ 1) % len(corners)][1])
+        
+    def _draw_scale(self):
         """
         Draws a scale for the histogram
         """
         # TODO : this method
         pass 
         
+    def _draw_background(self):
+        """
+        Draws the control's background
+        """
+        
+        separation_width = 8
+        
+        bar_width = self.width() / float(len(self.data))
+        
+        offset = (self.timer * bar_width) % separation_width
+        num_lines = 1 + self.width() / separation_width
+        
+        self.painter.setPen(QtGui.QColor(*self.back_color))
+        
+        for i in range(num_lines):
+            x1 = x2 = self.width() - offset - i * separation_width
+            y1, y2 = 0, self.height()
+            
+            self.painter.drawLine(x1, y1, x2, y2)
+        
     def draw(self):
         """
         Draws the histogram, duh !
         """
         
-        self.draw_bars()
-        self.draw_scale()
+        self._draw_background()
+        self._draw_bars()
+        self._draw_scale()
+        self._draw_border()
         
     def paintEvent(self, event):
         """
@@ -419,6 +463,10 @@ class MainWindow(QtGui.QMainWindow):
         #   Scene
         self.scene = Scene(self)
         self.scene.setObjectName('scene')     
+        
+        # Histogram
+        self.histogram = Histogram(self)
+        self.histogram.setObjectName('histogram')
 
         #   Information box
         self.lbl_info = QtGui.QLabel('<i>Information</i>')
@@ -428,6 +476,7 @@ class MainWindow(QtGui.QMainWindow):
         
         lay_info = QtGui.QVBoxLayout()
         lay_info.addWidget(self.lbl_info)
+        lay_info.addWidget(self.histogram)
 
         self.box_info = QtGui.QGroupBox('Informations')
         self.box_info.setObjectName('box_info')
@@ -583,6 +632,7 @@ class MainWindow(QtGui.QMainWindow):
             # Update the simulation and informations
             self.update_simulation()
             self.update_information()
+            self.histogram.update()
             self.scene.update()
             
         else:
@@ -631,9 +681,11 @@ class MainWindow(QtGui.QMainWindow):
         information += '(waiting) : '           + str(cars_waiting)         + '<br/>'
         
         information += self.selected_roundabout_informations()
+        information += self.selected_car_informations()
         information += self.simulation_informations()         
         
         self.lbl_info.setText(information)
+        self.histogram.append(total_cars)
 
     def simulation_informations(self):
         """
@@ -663,15 +715,43 @@ class MainWindow(QtGui.QMainWindow):
             information += 'cars : ' + str(len(self.selected_roundabout.cars)) + '<br/>'
             information += 'load : ' + str(lib.round(self.selected_roundabout.global_load, 2)) + '<br/>'
             if self.selected_roundabout.spawning:
-                information += '<b>Spawning mode<b><br/>'
+                information += '<b>Spawning mode</b><br/>'
             if len(self.selected_roundabout.leaving_roads) == 0:
-                information += '<b>Destroying mode<b><br/>'
+                information += '<b>Destroying mode</b><br/>'
             if self.selected_roundabout.cars:
                 avg_waiting_time = 0
                 for car in self.selected_roundabout.cars:
                     avg_waiting_time += car.total_waiting_time / float(len(self.selected_roundabout.cars))
                 information += '<br/><b>Average waiting time</b> (s) : ' + str(lib.round(avg_waiting_time,2)) + '<br/>'        
         
+        return information
+        
+    def selected_car_informations(self):
+        """
+        """
+        information = ''
+        
+        if self.selected_car is not None:
+        
+            car = self.selected_car
+            
+            if car.dead:
+                self.selected_car = None
+                return information
+        
+            information += '<br/><b>Selected vehicle :</b><br/>'
+            if car.position is not None:
+                information += 'position : (' + str(lib.round(car.position.x, 2)) + ', ' + str(lib.round(car.position.y, 2)) + ') <br/>'
+            information += 'length, width : ' + str(car.length) + ', ' +  str(car.width) +'<br/>'
+            information += 'speed : ' + str(lib.round(car.speed, 2)) + '<br/>'
+            information += 'waiting time : ' + str(lib.round(car.total_waiting_time, 2)) + '<br/>'
+            
+            if car.destination is not None:
+                information += 'destination : ' + str(car.destination.name) + ' <br/>'
+                
+            if car.is_waiting:
+                information += '<b>Waiting or braking</b><br/>'
+                
         return information
 def main(args):
     """
