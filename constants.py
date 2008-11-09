@@ -5,7 +5,7 @@ Description :   defines the constants
 """
 
 #   Revision information
-REVISION_NUMBER = 137
+REVISION_NUMBER = 138
 REVISION_NAME   = 'Thereisnorush (testing)'
 
 #   Colors (R, G, B, [Alpha])
@@ -111,6 +111,11 @@ ENTRANCE = 0
 #   Resolution
 SCENE_RESOLUTION    = (SCENE_WIDTH, SCENE_HEIGHT)   = (800, 600)
 PANEL_RESOLUTION    = (PANEL_WIDTH, PANEL_HEIGHT)   = (200, 500)
+
+# Histograms
+HISTOGRAM_WIDTH  = 100
+HISTOGRAM_HEIGHT = 50
+HISTOGRAM_SPAN   = 100
 
 #   Others
 DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)

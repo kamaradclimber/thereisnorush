@@ -14,6 +14,99 @@ import track        as __track__
 from vector         import Vector
 from PyQt4          import QtCore, QtGui, Qt
 
+class Histogram(QtGui.QWidget):
+    """
+    Histogram handling & drawing 
+    """
+    
+    def __init__(self, new_window, parent = None, 
+                 span = HISTOGRAM_SPAN, color = RED, 
+                 width = HISTOGRAM_WIDTH, height = HISTOGRAM_HEIGHT):
+        """
+        Initializes histogram representation
+            span : the period of time to be taken into account
+            width, height : dimensions
+        """
+        QtGui.QWidget.__init__(self, parent)
+        
+        self.window  = new_window
+        self.painter = None
+        
+        # Prepare an array of empty data
+        self.data = [0.0 for instant in range(span)]
+        self.max  = 0.0
+        self.min  = 0.0
+        
+        self.color = color
+        
+        self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
+        self.setMinimumSize(width, height)
+        
+    def append(self, value):
+        """
+        Appends an event to the histogram
+        """
+        # Shift data and replace the first element
+        self.data = lib.shift_list(self.data)
+        self.data[0] = value
+        
+        # Keep track of the extremes
+        if value > self.max: self.max = value
+        if value < self.min: self.min = value
+
+    def draw_bars(self):
+        """
+        Draw the histobars
+        """
+        
+        # Height and width for a unit bar
+        bar_width = self.width / float(len(self.data))
+        
+        bar_height = self.height / float(self.max)
+
+        self.painter.setPen(QtGui.QColor(*self.color))
+        
+        for position in range(len(self.data)):
+            # Draw in reverse order
+            bar_value = self.data[ - 1 - position ]
+            
+            # Points of the rectangle
+            position_x1 = position * bar_width
+            position_y1 = self.height
+            
+            position_x2 = position_x1 + bar_width
+            position_y2 = position_y1 - bar_height * bar_value
+            
+            self.painter.drawLine(position_x1, position_y1, position_x2, position_y2)
+        
+    def draw_scale(self):
+        """
+        Draws a scale for the histogram
+        """
+        # TODO : this method
+        pass 
+        
+    def draw(self):
+        """
+        Draws the histogram, duh !
+        """
+        
+        self.draw_bars()
+        self.draw_scale()
+        
+    def paintEvent(self, event):
+        """
+        /!\ Qt specific (please don't rename) : is triggered each time the update() method is called.
+        Specifies how the control should draw itself.
+        """
+        self.painter = QtGui.QPainter(self)
+
+        # Set antialiasing and draw
+        self.painter.setRenderHint(QtGui.QPainter.Antialiasing, self.window.use_antialiasing.isChecked())
+        self.draw()
+        
+        self.painter.end()
+        
 class Scene(QtGui.QWidget):
     """
     Area where the scene will be drawn.
@@ -38,8 +131,11 @@ class Scene(QtGui.QWidget):
         """
         self.painter = QtGui.QPainter(self)
 
+        # Set antialiasing
         self.painter.setRenderHint(QtGui.QPainter.Antialiasing, self.window.use_antialiasing.isChecked())
-        self.painter.fillRect(QtCore.QRectF(QtCore.QPointF(0, 0), QtCore.QPointF(self.width(), self.height())), QtGui.QColor(0, 0, 0))
+        
+        # Draw background color and scene
+        self.painter.fillRect(QtCore.QRectF(QtCore.QPointF(0, 0), QtCore.QPointF(self.width(), self.height())), QtGui.QColor(*BLACK))
         self.draw()
         
         self.painter.end()
@@ -49,14 +145,18 @@ class Scene(QtGui.QWidget):
         Draws the complete scene on the screen.
         Dessine la scène entière à l'écran.
         """
-        #if __track__.track.picture:
-        #    self.screen.blit(__track__.track.picture, (0,0))
 
+        # Draw the roads
         for road in __track__.track.roads:
             self.draw_road(road)
+            
+        # Draw the roundabouts
         for roundabout in __track__.track.roundabouts:
             self.draw_roundabout(roundabout)
 
+        # Manage selections
+        self.draw_selected_path()
+        
     def draw_road(self, road):
         """
         Draws a given road on the screen and all the cars on it.
@@ -73,9 +173,18 @@ class Scene(QtGui.QWidget):
         if self.window.entrance_lights.isChecked():
             self.draw_traffic_light(start_position, road, ENTRANCE)
         
+        # Draw a line to represent the road
         self.painter.setPen(QtGui.QColor(*ROAD_COLOR))
         self.painter.drawLine(start_position.x, start_position.y, end_position.x, end_position.y)
         
+        # Draw lanes individually
+        for lane in road.lanes:
+            self.draw_lane(lane)
+
+    def draw_selected_path(self):
+        """
+        When a car is selected, draw its path
+        """
         selected_car = self.window.selected_car
         if selected_car is not None:
             if isinstance(selected_car.location, __road__.Lane):
@@ -83,8 +192,8 @@ class Scene(QtGui.QWidget):
                 car_position        = current_road.start.position + current_road.parallel * selected_car.length_covered
                 
                 self.painter.setPen(QtGui.QColor(*BLUE))
-                self.painter.drawLine(  car_position.x,                 car_position.y,
-                                        current_road.end.position.x,    current_road.end.position.y)
+                self.painter.drawLine(car_position.x,              car_position.y,
+                                      current_road.end.position.x, current_road.end.position.y)
             else:
                 current_road = selected_car.location.incoming_roads[0]
 
@@ -93,14 +202,12 @@ class Scene(QtGui.QWidget):
                     if not (next_way is None):
                         current_road = current_road.end.leaving_roads[next_way]
                             
-                        self.painter.drawLine(  current_road.start.position.x,  current_road.start.position.y,
-                                                    current_road.end.position.x,    current_road.end.position.y)
+                        self.painter.drawLine(current_road.start.position.x, current_road.start.position.y,
+                                              current_road.end.position.x,   current_road.end.position.y)
             
-        for lane in road.lanes:
-            self.draw_lane(lane)
-
     def draw_lane(self, lane):
         """
+        Draws a lane and all the cars on it
         """
         for car in lane.cars:
             self.draw_car(car)
@@ -124,6 +231,7 @@ class Scene(QtGui.QWidget):
         #   Coordinates for the center
         center_position = car.position
 
+        # The cars are rectangles whose sides are parallel and perpendicular to the road
         points = []
         points.append(center_position - parallel * r_length/2 - orthogonal * r_width/2)
         points.append(center_position + parallel * r_length/2 - orthogonal * r_width/2)
@@ -139,12 +247,11 @@ class Scene(QtGui.QWidget):
         self.painter.setPen(QtGui.QColor('black'))
         self.painter.drawPolygon(polygon[0], polygon[1], polygon[2], polygon[3])
         
-        #   Selected car
+        #   Selected car : draw selection circle
         if self.window.selected_car == car:
             self.painter.setPen(QtGui.QColor(*ROUNDABOUT_COLOR))
             self.painter.setBrush(QtGui.QColor(*TRANSPARENT))
             self.painter.drawEllipse(car.position.x - car.length, car.position.y - car.length, 2*car.length, 2*car.length)
-
 
     def draw_roundabout(self, roundabout):
         """
@@ -157,13 +264,14 @@ class Scene(QtGui.QWidget):
         # TODO :
         #       · (DN1) draw the cars on the roundabout
 
+        # Draw a red circle to represent a roundabout
         if not __track__.track.picture:
-            self.painter.setBrush(QtGui.QColor(255, 0, 0))
+            self.painter.setBrush(QtGui.QColor(*RED))
             self.painter.setPen(QtGui.QColor(*TRANSPARENT))
             self.painter.drawEllipse(roundabout.position.x - roundabout.radius/4, roundabout.position.y - roundabout.radius/4, roundabout.radius/2, roundabout.radius/2)
             pass
         
-        #   Selected roudabout
+        #   Selected roudabout : draw selection circle
         if self.window.selected_roundabout == roundabout:
             self.painter.setPen(QtGui.QColor(*ROUNDABOUT_COLOR))
             self.painter.setBrush(QtGui.QColor(*TRANSPARENT))
@@ -182,26 +290,24 @@ class Scene(QtGui.QWidget):
     def draw_traffic_light(self, position, road, gate):
         """
         Draws a traffic light...
-            x, y : coordinates
-            road : the road
-            gate : 1 or 0, the gate
+            gate : EXIT (1) or ENTRANCE (1)
         """
 
-        TF_RADIUS = 3
-        width     = 0
+        TF_RADIUS = 3 # Radius of a light bulb
         state     = road.traffic_lights[gate]
 
         (parallel, orthogonal)  = road.unit_vectors
         start_position          = position + orthogonal * 6 - parallel * 12
         d_position              = Vector(0, -1) * TF_RADIUS * 2
+        
+        colors = [BLACK for i in range(3)]
+        
+        if state:     colors[0] = GREEN
+        if not state: colors[2] = RED
+        # if ... : color[1] = ORANGE
 
         for i in range(3):
-            if (state) and (i == 0):
-                self.painter.setBrush(QtGui.QColor('green'))
-            elif (not state) and (i == 2):
-                self.painter.setBrush(QtGui.QColor('red'))
-            else:
-                self.painter.setBrush(QtGui.QColor('black'))
+            self.painter.setBrush(QtGui.QColor(*colors[i]))
 
             position = start_position + d_position * i
             self.painter.setPen(QtGui.QColor(*GREY))
@@ -213,12 +319,16 @@ class Scene(QtGui.QWidget):
         Manages what happens when a mouse button is pressed
         """
         # Experimental : select a roundabout or a car
+        #
+        # TODO : 
+        #   · (mPE.1) : avoid double selections (car + roundabout)
+        
         self.window.select_car(event.x(), event.y())
         self.window.select_roundabout(event.x(), event.y())
 
 class MainWindow(QtGui.QMainWindow):
     """
-    
+    The main window that encapsulates the scene and controls
     """
 
     def __init__(self, parent = None):
@@ -232,7 +342,6 @@ class MainWindow(QtGui.QMainWindow):
         self.last_update            = lib.clock()
         self.selected_car           = None
         self.selected_roundabout    = None
-#        self.is_playing             = True
         
         #   Set the interface
         self.setup_interface()
@@ -382,16 +491,14 @@ class MainWindow(QtGui.QMainWindow):
     #   If you find another way to implement the equivalent of the following 2 slots, please just change it ! -- Ch@hine
     def play_simulation(self):
         """
-
+        
         """
-#        self.is_playing = True
         lib.set_speed (1.0)
 
     def pause_simulation(self):
         """
 
         """
-#        self.is_playing = False
         lib.set_speed(0.0)
 
     def reset_simulation(self):
@@ -404,7 +511,6 @@ class MainWindow(QtGui.QMainWindow):
         """
         Plays the simulation at 2, 4 or 8×
         """
-        
         sim_speed = lib.get_speed()
         
         if sim_speed == 2:
@@ -451,7 +557,8 @@ class MainWindow(QtGui.QMainWindow):
         Selects the car placed on x, y.
         Deselects if there is none.
         """
-        click_position = Vector(x, y)
+        click_position   = Vector(x, y)
+        selection_radius = 20
 
         self.selected_car = None
 
@@ -459,7 +566,7 @@ class MainWindow(QtGui.QMainWindow):
             for lane in road.lanes:
                 for car in lane.cars:
                     car_position = road.start.position  + road.parallel * car.length_covered
-                    if abs(car_position - click_position) < 20:
+                    if abs(car_position - click_position) < selection_radius:
                         self.selected_car = car
                         break
 
@@ -469,9 +576,11 @@ class MainWindow(QtGui.QMainWindow):
         Passes or uses timer events to update the simulation
         """
         if event.timerId() == self.timer.timerId():
+            # Manage internal time events
             lib.delta_t = lib.clock() - self.last_update
             self.last_update = lib.clock()
             
+            # Update the simulation and informations
             self.update_simulation()
             self.update_information()
             self.scene.update()
@@ -483,12 +592,15 @@ class MainWindow(QtGui.QMainWindow):
         """
         Updates the simulation.
         """
-        #   Run the simulation for delta_t
+        # Update the roads (and the cars)
         for road in __track__.track.roads:
             road.update()
+            
+        # Get informations from the roundabouts (separate loop)
         for roundabout in __track__.track.roundabouts:
-            #oui deux boucles séparées sinon linfo est pas en temps réél (enfin ca serait pas un drame non plus vu l'échelle de delta_t ! )
             roundabout.get_local_load()
+            
+        # Update the roundabouts
         for roundabout in __track__.track.roundabouts:
             roundabout.update()
         
@@ -516,10 +628,36 @@ class MainWindow(QtGui.QMainWindow):
         information += '<b>Cars</b> (total) : ' + str(total_cars)           + '<br/>'
         information += '(on roads) : '          + str(cars_on_roads)        + '<br/>'
         information += '(on roundabouts) : '    + str(cars_on_roundabouts)  + '<br/>'
-        information += '(waiting) : '           + str(cars_waiting)
+        information += '(waiting) : '           + str(cars_waiting)         + '<br/>'
+        
+        information += self.selected_roundabout_informations()
+        information += self.simulation_informations()         
+        
+        self.lbl_info.setText(information)
+
+    def simulation_informations(self):
+        """
+        """
+        information = '<br/><b>Simulation</b><br/>'        
+        
+        hours, minutes, seconds = lib.get_simulation_time()
+        
+        information += 'Time elapsed : ' + str(hours) + '<sup>h</sup>&nbsp;' + str(minutes) + '<sup>m</sup>&nbsp;' + str(seconds) + '<sup>s</sup><br/>'
+        information += 'Speed : &times;' + str(lib.round(lib.get_speed(), 2))   + '<br/>'
+        
+        if lib.delta_t != 0:
+            information += 'FPS : ' + str(lib.round(lib.get_speed()/lib.delta_t, 2)) + '<br/>'
+            information += '&Delta;t (s) : ' + str(lib.round(lib.delta_t, 2)) + '<br/>'
+            
+        return information
+        
+    def selected_roundabout_informations(self):
+        """
+        """
+        information = ''
         
         if self.selected_roundabout is not None:
-            information += '<br/><br/><b>Selected roundabout :</b><br/>'
+            information += '<br/><b>Selected roundabout :</b><br/>'
             information += 'position : (' + str(self.selected_roundabout.position.x) + ',' + str(self.selected_roundabout.position.y) + ') <br/>'
             information += 'radius : ' + str(self.selected_roundabout.radius) + '<br/>'
             information += 'cars : ' + str(len(self.selected_roundabout.cars)) + '<br/>'
@@ -532,20 +670,13 @@ class MainWindow(QtGui.QMainWindow):
                 avg_waiting_time = 0
                 for car in self.selected_roundabout.cars:
                     avg_waiting_time += car.total_waiting_time / float(len(self.selected_roundabout.cars))
-                information += '<br/><b>Average waiting time</b> (s) : ' + str(lib.round(avg_waiting_time,2)) + '<br/>'
-
-        information += '<br/><b>Simulation</b><br/>'        
-        information += 'Speed : &times;' + str(lib.round(lib.get_speed(), 2))   + '<br/>'
+                information += '<br/><b>Average waiting time</b> (s) : ' + str(lib.round(avg_waiting_time,2)) + '<br/>'        
         
-        if lib.delta_t != 0:
-            information += 'FPS : ' + str(lib.round(lib.get_speed()/lib.delta_t, 2)) + '<br/>'
-            information += '&Delta;t (s) : ' + str(lib.round(lib.delta_t, 2)) + '<br/>'
-            
-        
-        self.lbl_info.setText(information)
-
+        return information
 def main(args):
-
+    """
+    Main procedure : prepares and launches the main loop
+    """
     lib.time_last_counter = 0.0
 
     app = QtGui.QApplication(args)

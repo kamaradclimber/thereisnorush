@@ -79,3 +79,16 @@ def get_speed():
     Please use this instead of directly addressing constants.simulation_speed
     """
     return constants.simulation_speed
+
+def get_simulation_time():
+    """
+    Returns the simulation time (h, m, s)
+    """
+    
+    timer = constants.time_static_counter
+    
+    hours   = int(timer / 3600.0) % 24
+    minutes = int(timer / 60.0)   % 60
+    seconds = int(timer)          % 60
+    
+    return hours, minutes, seconds
