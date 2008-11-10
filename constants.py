@@ -97,22 +97,19 @@ LANE_DEFAULT_WIDTH     = 5
 A_STAR      = 0
 DIJKSTRA    = 1
 
-PATH_INEXISTENT = 1
-PATH_FOUND      = 2
-
 #   Rules
 WAITING_CARS_LIMIT = 8
 WAITING_TIME_LIMIT = 10.000
 
 #   Traffic lights
-EXIT     = 1
 ENTRANCE = 0
+EXIT     = 1
 
 #   Resolution
 SCENE_RESOLUTION    = (SCENE_WIDTH, SCENE_HEIGHT)   = (800, 600)
 PANEL_RESOLUTION    = (PANEL_WIDTH, PANEL_HEIGHT)   = (200, 500)
 
-# Histograms
+#   Histograms
 HISTOGRAM_WIDTH  = 100
 HISTOGRAM_HEIGHT = 50
 HISTOGRAM_SPAN   = 200
@@ -122,7 +119,7 @@ HISTOGRAM_COLOR  = 255, 128, 0, 128
 DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
 SPAWN_TIME      = 2.0
 
-# Not really constants... but cannot be placed in lib.py
+#   Not really constants... but cannot be placed in lib.py
 simulation_speed = 1.0
 time_static_counter = 0.0
 time_last_counter = 0.0

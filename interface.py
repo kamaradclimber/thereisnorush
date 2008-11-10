@@ -203,13 +203,13 @@ class Scene(QtGui.QWidget):
         
     def draw_road(self, road):
         """
-        Draws a given road on the screen and all the cars on it.
+        Draws a given road on the screen and all the vehicles on it.
             road (Road) : the aforementioned road.
 
         Dessine une route donnée à l'écran et toutes les voitures dessus.
             road (Road) : la route sus-citée.
         """
-        (start_position, end_position) = (road.start.position.ceil(), road.end.position.ceil())
+        (start_position, end_position) = (road.roundabouts[0].position.ceil(), road.roundabouts[1].position.ceil())
         
         #   Draw traffic lights (or not)
         if self.window.exit_lights.isChecked():
@@ -227,55 +227,55 @@ class Scene(QtGui.QWidget):
 
     def draw_selected_path(self):
         """
-        When a car is selected, draw its path
+        When a vehicle is selected, draw its path
         """
-        selected_car = self.window.selected_car
-        if selected_car is not None:
-            if isinstance(selected_car.location, __road__.Lane):
-                current_road        = selected_car.road
-                car_position        = current_road.start.position + current_road.parallel * selected_car.length_covered
+        selected_vehicle = self.window.selected_vehicle
+        if selected_vehicle is not None:
+            if isinstance(selected_vehicle.location, __road__.Lane):
+                current_lane = selected_vehicle.lane
                 
                 self.painter.setPen(QtGui.QColor(*BLUE))
-                self.painter.drawLine(car_position.x,              car_position.y,
-                                      current_road.end.position.x, current_road.end.position.y)
+                #   TODO : draw the path from the center of the road, not from the center of the car !
+                self.painter.drawLine(selected_vehicle.position.x,  selected_vehicle.position.y,
+                                      current_lane.end.position.x,  current_lane.end.position.y)
             else:
-                current_road = selected_car.location.incoming_roads[0]
+                current_lane = selected_vehicle.location.incoming_lanes[0]
 
-            if not (selected_car.path is None):
-                for next_way in selected_car.path:
+            if not (selected_vehicle.path is None):
+                for next_way in selected_vehicle.path:
                     if not (next_way is None):
-                        current_road = current_road.end.leaving_roads[next_way]
+                        current_lane = current_lane.end.leaving_lanes[next_way]
                             
-                        self.painter.drawLine(current_road.start.position.x, current_road.start.position.y,
-                                              current_road.end.position.x,   current_road.end.position.y)
+                        self.painter.drawLine(current_lane.start.position.x, current_lane.start.position.y,
+                                              current_lane.end.position.x,   current_lane.end.position.y)
             
     def draw_lane(self, lane):
         """
-        Draws a lane and all the cars on it
+        Draws a lane and all the vehicles on it
         """
-        for car in lane.cars:
-            self.draw_car(car)
+        for vehicle in lane.vehicles:
+            self.draw_vehicle(vehicle)
             
-    def draw_car(self, car):
+    def draw_vehicle(self, vehicle):
         """
-        Draws a given car on the screen.
-            car (Car) : the aforementioned car.
+        Draws a given vehicle on the screen.
+            vehicle (Car) : the aforementioned vehicle.
 
         Dessine une voiture donnée à l'écran.
-            car (Car) : la voiture sus-citée.
+            vehicle (Car) : la voiture sus-citée.
         """
 
-        if car.road is None:
+        if vehicle.road is None:
             return None
 
         #   Get them once
-        (r_width, r_length)    = (car.width, car.length)
-        (parallel, orthogonal) = car.road.unit_vectors
+        (r_width, r_length)    = (vehicle.width, vehicle.length)
+        (parallel, orthogonal) = vehicle.lane.unit_vectors
 
         #   Coordinates for the center
-        center_position = car.position
+        center_position = vehicle.position
 
-        # The cars are rectangles whose sides are parallel and perpendicular to the road
+        # The vehicles are rectangles whose sides are parallel and perpendicular to the road
         points = []
         points.append(center_position - parallel * r_length/2 - orthogonal * r_width/2)
         points.append(center_position + parallel * r_length/2 - orthogonal * r_width/2)
@@ -286,27 +286,27 @@ class Scene(QtGui.QWidget):
         for i in range(len(points)):
             polygon.append(QtCore.QPointF(points[i].x, points[i].y))
 
-        #   Draw the car
-        self.painter.setBrush(QtGui.QColor(*car.color))
+        #   Draw the vehicle
+        self.painter.setBrush(QtGui.QColor(*vehicle.color))
         self.painter.setPen(QtGui.QColor('black'))
         self.painter.drawPolygon(polygon[0], polygon[1], polygon[2], polygon[3])
         
-        #   Selected car : draw selection circle
-        if self.window.selected_car == car:
+        #   Selected vehicle : draw selection circle
+        if self.window.selected_vehicle == vehicle:
             self.painter.setPen(QtGui.QColor(*ROUNDABOUT_COLOR))
             self.painter.setBrush(QtGui.QColor(*TRANSPARENT))
-            self.painter.drawEllipse(car.position.x - car.length, car.position.y - car.length, 2*car.length, 2*car.length)
+            self.painter.drawEllipse(vehicle.position.x - vehicle.length, vehicle.position.y - vehicle.length, 2*vehicle.length, 2*vehicle.length)
 
     def draw_roundabout(self, roundabout):
         """
         Draws a given roundabout on the screen.
             roundabout (Roundabout) : the aforementioned roundabout.
 
-        Dessine un carrefour donné à l'écran.
-            roundabout (Roundabout) : le carrefour sus-cité.
+        Dessine un rond-point donné à l'écran.
+            roundabout (Roundabout) : le vehiclerefour sus-cité.
         """
         # TODO :
-        #       · (DN1) draw the cars on the roundabout
+        #       · (DN1) draw the vehicles on the roundabout
 
         # Draw a red circle to represent a roundabout
         if not __track__.track.picture:
@@ -321,16 +321,17 @@ class Scene(QtGui.QWidget):
             self.painter.setBrush(QtGui.QColor(*TRANSPARENT))
             self.painter.drawEllipse(roundabout.position.x - roundabout.radius, roundabout.position.y - roundabout.radius, 2 * roundabout.radius, 2 * roundabout.radius)
 
-        if roundabout.cars:
-            # There are cars on the roundabout, we may want to draw them
-            # albeit we can't use draw_car here...
+        if roundabout.vehicles:
+            # There are vehicles on the roundabout, we may want to draw them
+            # albeit we can't use draw_vehicle here...
 
-            #TEMPORARY : the number of cars on the roundabout is written
+            #TEMPORARY : the number of vehicles on the roundabout is written
             position = Vector(roundabout.position.x + 10, roundabout.position.y + 10)
             self.painter.setPen(QtGui.QColor(*WHITE))
-            self.painter.drawText(position.x, position.y, str(len(roundabout.cars)))
+            self.painter.drawText(position.x, position.y, str(len(roundabout.vehicles)))
             pass        
-        
+    
+    #   This functions should be corrected because roads have no direction ; it should use lanes
     def draw_traffic_light(self, position, road, gate):
         """
         Draws a traffic light...
@@ -340,7 +341,7 @@ class Scene(QtGui.QWidget):
         TF_RADIUS = 3 # Radius of a light bulb
         state     = road.traffic_lights[gate]
 
-        (parallel, orthogonal)  = road.unit_vectors
+        (parallel, orthogonal)  = road.lanes[0].unit_vectors
         start_position          = position + orthogonal * 6 - parallel * 12
         d_position              = Vector(0, -1) * TF_RADIUS * 2
         
@@ -362,12 +363,12 @@ class Scene(QtGui.QWidget):
         /!\ Qt specific (please don't rename)
         Manages what happens when a mouse button is pressed
         """
-        # Experimental : select a roundabout or a car
+        # Experimental : select a roundabout or a vehicle
         #
         # TODO : 
-        #   · (mPE.1) : avoid double selections (car + roundabout)
+        #   · (mPE.1) : avoid double selections (vehicle + roundabout)
         
-        self.window.select_car(event.x(), event.y())
+        self.window.select_vehicle(event.x(), event.y())
         self.window.select_roundabout(event.x(), event.y())
 
 class MainWindow(QtGui.QMainWindow):
@@ -384,7 +385,7 @@ class MainWindow(QtGui.QMainWindow):
         #   Set parameters
         lib.delta_t                 = 0
         self.last_update            = lib.clock()
-        self.selected_car           = None
+        self.selected_vehicle           = None
         self.selected_roundabout    = None
         
         #   Set the interface
@@ -606,22 +607,22 @@ class MainWindow(QtGui.QMainWindow):
                 self.selected_roundabout = roundabout
                 break
     
-    def select_car(self, x, y):
+    def select_vehicle(self, x, y):
         """
-        Selects the car placed on x, y.
+        Selects the vehicle placed on x, y.
         Deselects if there is none.
         """
         click_position   = Vector(x, y)
         selection_radius = 20
 
-        self.selected_car = None
+        self.selected_vehicle = None
 
         for road in __track__.track.roads:
             for lane in road.lanes:
-                for car in lane.cars:
-                    car_position = road.start.position  + road.parallel * car.length_covered
-                    if abs(car_position - click_position) < selection_radius:
-                        self.selected_car = car
+                for vehicle in lane.vehicles:
+                    vehicle_position = lane.start.position  + lane.parallel * vehicle.length_covered
+                    if abs(vehicle_position - click_position) < selection_radius:
+                        self.selected_vehicle = vehicle
                         break
 
     def timerEvent(self, event):
@@ -647,7 +648,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         Updates the simulation.
         """
-        # Update the roads (and the cars)
+        # Update the roads (and the vehicles)
         for road in __track__.track.roads:
             road.update()
             
@@ -669,29 +670,29 @@ class MainWindow(QtGui.QMainWindow):
         information += '<b>Roads : </b>'        + str(len(__track__.track.roads))       + '<br/>'
         information += '<b>Roundabouts : </b>'  + str(len(__track__.track.roundabouts)) + '<br/>'
 
-        cars_on_roads = 0
-        cars_waiting  = 0
-        cars_on_roundabouts = 0
+        vehicles_on_roads = 0
+        vehicles_waiting  = 0
+        vehicles_on_roundabouts = 0
         
         for road in __track__.track.roads:
-            cars_on_roads += road.total_cars
-            cars_waiting  += road.total_waiting_cars
+            vehicles_on_roads += road.total_vehicles
+            vehicles_waiting  += road.total_waiting_vehicles
         for roundabout in __track__.track.roundabouts:
-            cars_on_roundabouts += len(roundabout.cars)
+            vehicles_on_roundabouts += len(roundabout.vehicles)
 
-        total_cars = cars_on_roads + cars_on_roundabouts
+        total_vehicles = vehicles_on_roads + vehicles_on_roundabouts
         
-        information += '<b>Cars</b> (total) : ' + str(total_cars)           + '<br/>'
-        information += '(on roads) : '          + str(cars_on_roads)        + '<br/>'
-        information += '(on roundabouts) : '    + str(cars_on_roundabouts)  + '<br/>'
-        information += '(waiting) : '           + str(cars_waiting)         + '<br/>'
+        information += '<b>Cars</b> (total) : ' + str(total_vehicles)           + '<br/>'
+        information += '(on roads) : '          + str(vehicles_on_roads)        + '<br/>'
+        information += '(on roundabouts) : '    + str(vehicles_on_roundabouts)  + '<br/>'
+        information += '(waiting) : '           + str(vehicles_waiting)         + '<br/>'
         
         information += self.selected_roundabout_informations()
-        information += self.selected_car_informations()
+        information += self.selected_vehicle_informations()
         information += self.simulation_informations()         
         
         self.lbl_info.setText(information)
-        self.histogram.append(total_cars)
+        self.histogram.append(total_vehicles)
 
     def simulation_informations(self):
         """
@@ -718,16 +719,16 @@ class MainWindow(QtGui.QMainWindow):
             information += '<br/><b>Selected roundabout :</b><br/>'
             information += 'position : (' + str(self.selected_roundabout.position.x) + ',' + str(self.selected_roundabout.position.y) + ') <br/>'
             information += 'radius : ' + str(self.selected_roundabout.radius) + '<br/>'
-            information += 'cars : ' + str(len(self.selected_roundabout.cars)) + '<br/>'
+            information += 'vehicles : ' + str(len(self.selected_roundabout.vehicles)) + '<br/>'
             information += 'load : ' + str(lib.round(self.selected_roundabout.global_load, 2)) + '<br/>'
             if self.selected_roundabout.spawning:
                 information += '<b>Spawning mode</b><br/>'
-            if len(self.selected_roundabout.leaving_roads) == 0:
+            if len(self.selected_roundabout.leaving_lanes) == 0:
                 information += '<b>Destroying mode</b><br/>'
-            if self.selected_roundabout.cars:
+            if self.selected_roundabout.vehicles:
                 avg_waiting_time = 0
-                for car in self.selected_roundabout.cars:
-                    avg_waiting_time += car.total_waiting_time / float(len(self.selected_roundabout.cars))
+                for vehicle in self.selected_roundabout.vehicles:
+                    avg_waiting_time += vehicle.total_waiting_time / float(len(self.selected_roundabout.vehicles))
                 information += '<br/><b>Average waiting time</b> (s) : ' + str(lib.round(avg_waiting_time,2)) + '<br/>'  
             if not self.is_spawning.isCheckable():
                 self.is_spawning.setCheckable(True)
@@ -739,30 +740,30 @@ class MainWindow(QtGui.QMainWindow):
             
         return information
         
-    def selected_car_informations(self):
+    def selected_vehicle_informations(self):
         """
         """
         information = ''
         
-        if self.selected_car is not None:
+        if self.selected_vehicle is not None:
         
-            car = self.selected_car
+            vehicle = self.selected_vehicle
             
-            if car.dead:
-                self.selected_car = None
+            if vehicle.dead:
+                self.selected_vehicle = None
                 return information
         
             information += '<br/><b>Selected vehicle :</b><br/>'
-            if car.position is not None:
-                information += 'position : (' + str(lib.round(car.position.x, 2)) + ', ' + str(lib.round(car.position.y, 2)) + ') <br/>'
-            information += 'length, width : ' + str(car.length) + ', ' +  str(car.width) +'<br/>'
-            information += 'speed : ' + str(lib.round(car.speed, 2)) + '<br/>'
-            information += 'waiting time : ' + str(lib.round(car.total_waiting_time, 2)) + '<br/>'
+            if vehicle.position is not None:
+                information += 'position : (' + str(lib.round(vehicle.position.x, 2)) + ', ' + str(lib.round(vehicle.position.y, 2)) + ') <br/>'
+            information += 'length, width : ' + str(vehicle.length) + ', ' +  str(vehicle.width) +'<br/>'
+            information += 'speed : ' + str(lib.round(vehicle.speed, 2)) + '<br/>'
+            information += 'waiting time : ' + str(lib.round(vehicle.total_waiting_time, 2)) + '<br/>'
             
-            if car.destination is not None:
-                information += 'destination : ' + str(car.destination.name) + ' <br/>'
+            if vehicle.destination is not None:
+                information += 'destination : ' + str(vehicle.destination.name) + ' <br/>'
                 
-            if car.is_waiting:
+            if vehicle.is_waiting:
                 information += '<b>Waiting or braking</b><br/>'
                 
         return information
