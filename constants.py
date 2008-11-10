@@ -5,7 +5,7 @@ Description :   defines the constants
 """
 
 #   Revision information
-REVISION_NUMBER = 139
+REVISION_NUMBER = 140
 REVISION_NAME   = 'Thereisnorush (testing)'
 
 #   Colors (R, G, B, [Alpha])

@@ -499,6 +499,10 @@ class MainWindow(QtGui.QMainWindow):
         self.display_density.setObjectName('display_density')
         self.display_density.setChecked(False)
 
+        self.is_spawning = QtGui.QCheckBox('Roundabout is spawning')
+        self.is_spawning.setObjectName('is_spawning')
+        self.is_spawning.setCheckable(False)
+        
         lbl_spawn_delay = QtGui.QLabel('Spawn delay')
         self.spawn_delay = QtGui.QSpinBox()
         self.spawn_delay.setSingleStep(100)
@@ -511,8 +515,9 @@ class MainWindow(QtGui.QMainWindow):
         lay_commands.addWidget(self.exit_lights, 1, 0, 1, 2)
         lay_commands.addWidget(self.use_antialiasing, 2, 0, 1, 2)
         lay_commands.addWidget(self.display_density, 3, 0, 1, 2)
-        lay_commands.addWidget(lbl_spawn_delay, 4, 0)
-        lay_commands.addWidget(self.spawn_delay, 4, 1)
+        lay_commands.addWidget(self.is_spawning, 4, 0, 1, 2)
+        lay_commands.addWidget(lbl_spawn_delay, 5, 0)
+        lay_commands.addWidget(self.spawn_delay, 5, 1)
         
         self.box_commands = QtGui.QGroupBox('Commands')
         self.box_commands.setObjectName('box_commands')
@@ -653,6 +658,7 @@ class MainWindow(QtGui.QMainWindow):
         # Update the roundabouts
         for roundabout in __track__.track.roundabouts:
             roundabout.update()
+            roundabout.spawn_time = self.spawn_delay.value() /1000.0
         
     def update_information(self):
         """
@@ -722,8 +728,15 @@ class MainWindow(QtGui.QMainWindow):
                 avg_waiting_time = 0
                 for car in self.selected_roundabout.cars:
                     avg_waiting_time += car.total_waiting_time / float(len(self.selected_roundabout.cars))
-                information += '<br/><b>Average waiting time</b> (s) : ' + str(lib.round(avg_waiting_time,2)) + '<br/>'        
-        
+                information += '<br/><b>Average waiting time</b> (s) : ' + str(lib.round(avg_waiting_time,2)) + '<br/>'  
+            if not self.is_spawning.isCheckable():
+                self.is_spawning.setCheckable(True)
+                self.is_spawning.setChecked(self.selected_roundabout.spawning)
+            else:
+                self.selected_roundabout.spawning = self.is_spawning.isChecked()
+        else:
+            self.is_spawning.setCheckable(False)
+            
         return information
         
     def selected_car_informations(self):

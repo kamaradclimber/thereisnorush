@@ -12,6 +12,7 @@ from vector         import Vector
 import car          as __car__
 from constants      import *
 
+
 class Roundabout:
     """
     Crossroads of our city ; may host several roads.
@@ -44,7 +45,7 @@ class Roundabout:
         self.spawning       = new_spawning
         self.spawn_timer    = lib.clock()
         self.last_shift     = lib.clock()
-        
+        self.spawn_time     = SPAWN_TIME
         self.slots_roads    = [None for i in range(self.max_cars)]
         self.local_load     = 0
         
@@ -85,16 +86,15 @@ class Roundabout:
         around_incoming_loads = []
         around_leaving_loads  = []
         
-        relative_tolerance = 0.05
                 
-        for road in self.leaving_roads:
-            around_leaving_loads.append(road.end.global_load)
-            delta_load = self.global_load - road.start.global_load
-            
-            if delta_load >= 0 : 
-                self.set_gate(road, True)
-            elif abs(delta_load/self.global_load) > relative_tolerance:
-                self.set_gate(road, False)
+        region_load = [road.start.global_load for road in self.incoming_roads]
+        if region_load:
+            the_chosen_one = self.incoming_roads[region_load.index(max(region_load))]
+            for road in self.incoming_roads:
+                if road == the_chosen_one:
+                    self.set_gate(road, True)
+                else:
+                    self.set_gate(road, False)
         
         #   Then, let's update each road, few rules because the general view overrules the local one.
        
@@ -135,13 +135,14 @@ class Roundabout:
         """
         Updates the roundabout : rotate the cars, dispatch them...
         """
+        #self.incoming_roads = sorted(self.incoming_roads, compa)
         #   Make the cars rotate
         if lib.clock() - self.last_shift > ROUNDABOUT_ROTATION_RATE:
             self.last_shift = lib.clock()
             self.slots_roads = lib.shift_list(self.slots_roads)
 
         #   Spawning mode
-        if self.spawning and len(self.leaving_roads) and (lib.clock() - self.spawn_timer > SPAWN_TIME):
+        if self.spawning and len(self.leaving_roads) and (lib.clock() - self.spawn_timer > self.spawn_time):
             self.spawn_timer = lib.clock() 
             num_possible_roads    = len(self.leaving_roads)
             # Possible ways out. NB : the "1000/ " thing ensures *integer* probabilities.
