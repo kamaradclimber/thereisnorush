@@ -8,19 +8,14 @@ import lib
 from vector         import Vector
 import vehicle      as __vehicle__
 from constants      import *
-
+from random         import choice
 
 class Roundabout:
     """
     Crossroads of our city ; may host several roads.
     """
 
-    def __init__(self,
-                 new_track,
-                 new_x, 
-                 new_y, 
-                 new_spawning   = False, 
-                 new_radius     = ROUNDABOUT_RADIUS_DEFAULT):
+    def __init__(self, new_track, new_x, new_y):
         """
         Constructor method : creates a new roundabout.
         """
@@ -28,20 +23,17 @@ class Roundabout:
         self.track          = new_track
         self.position       = Vector(TRACK_SCALE * new_x + TRACK_OFFSET_X, 
                                      TRACK_SCALE * new_y + TRACK_OFFSET_Y)
-        self.radius         = new_radius
-        
-        self.vehicles       = []
-        self.to_kill        = [] 
-        self.slots_vehicles = {}
-        
+        self.radius         = ROUNDABOUT_RADIUS_DEFAULT
         self.max_vehicles   = ROUNDABOUT_DEFAULT_MAX_CARS
         self.rotation_speed = ROUNDABOUT_DEFAULT_ROTATION_SPEED
-        
-        self.spawning       = new_spawning
-        self.spawn_timer    = lib.clock()
-        self.last_shift     = lib.clock()
-        self.spawn_time     = SPAWN_TIME
+        self.vehicles       = []
+        self.to_kill        = []
+        self.slots_vehicles = {}
         self.slots_roads    = [None for i in range(self.max_vehicles)]
+        self.spawning       = False
+        self.last_spawn     = lib.clock()
+        self.last_shift     = lib.clock()
+        self.spawn_delay    = SPAWN_TIME
         self.local_load     = 0
         
         self.name = id(self)
@@ -52,7 +44,7 @@ class Roundabout:
         """
         Connects a road to a slot, must be called during initialization.
         """
-
+        
         #   Error handling
         if new_road in self.slots_roads:
             return None
@@ -66,31 +58,33 @@ class Roundabout:
         else:
             raise Exception("ERROR (in Roundabout.host_road()) : there is no slot to host any further roads !")
             
-    def _update_traffic_lights(self):
+    def _update_lights(self):
         """
         Handles traffic lights.
         """
 
-        #   First, let's have a global view of situation 
-        around_incoming_loads = []
-        around_leaving_loads  = []
+        #   Get the most lested parent
+        if len(self.parents):
+            the_chosen_one = self.parents[0]
+            for parent in self.parents:
+                if parent.global_load > the_chosen_one.global_load:
+                    the_chosen_one = parent
         
-        #   TO FIX : if there are several lanes in a road, the same traffic light will be updated several times !
-        region_load = [lane.start.global_load for lane in self.incoming_lanes]
-        if region_load:
-            the_chosen_one = self.incoming_lanes[region_load.index(max(region_load))]
-            for lane in self.incoming_lanes:
-                if lane == the_chosen_one:
-                    self.set_gate(lane.road, True)
-                else:
-                    self.set_gate(lane.road, False)
+        #   Open the way FROM this one, and close ways FROM others
+        for parent in self.parents:
+            road = parent.get_road_to(self)
+
+            if parent == the_chosen_one:
+                road.set_light(self, EXIT, True)
+            else:
+                road.set_light(self, EXIT, False)
         
         #   Then, let's update each road, few rules because the general view overrules the local one.
-       
-        for lane in self.incoming_lanes:
+        for parent in self.parents:
+            road = parent.get_road_to(self)
             #   Too long waiting time : open the gate and not close others
-            if lane.last_gate_update(EXIT) > WAITING_TIME_LIMIT and lane.total_waiting_vehicles:
-                self.set_gate(lane.road, True)
+            if road.last_lights_update[self][EXIT] - lib.clock() > WAITING_TIME_LIMIT and road.total_waiting_vehicles:
+                road.set_light(self, EXIT, True)
 
     def update_vehicle(self, vehicle):
         """
@@ -102,7 +96,7 @@ class Roundabout:
             
         vehicle.total_waiting_time = self.vehicle_spiraling_time[vehicle][0] + lib.clock() - self.vehicle_spiraling_time[vehicle][1]
         
-        if not(vehicle.path is None) and self.leaving_lanes:
+        if vehicle.path is not None and len(self.children):
             next_way = vehicle.next_way(True) # Just read the next_way unless you really go there
             vehicle_slot = lib.find_key(self.slots_vehicles, vehicle)
 
@@ -111,10 +105,10 @@ class Roundabout:
                 raise Exception("ERROR (in Roundabout.update_vehicle()) : a vehicle has no slot !")
             
             #   The vehicle's slot is in front of a leaving road
-            if (self.slots_roads[vehicle_slot] is not None):            
-                if (self.leaving_roads[next_way].is_free) and self.slots_roads[vehicle_slot] == self.leaving_roads[next_way]:
+            if self.slots_roads[vehicle_slot] is not None:
+                if (self.slots_roads[vehicle_slot] == vehicle.next_way()) and (vehicle.next_way().is_free):
                 #la route sur laquelle on veut aller est vidée et surtout _en face_  du slot de la voiture
-                    vehicle.join(self.leaving_roads[vehicle.next_way(False) % len(self.leaving_roads)].get_free_lane()) # cette fois on fait une lecture destructive
+                    vehicle.join(vehicle.next_way(False)) # cette fois on fait une lecture destructive
 
         #la voiture n'a pas d'endroit où aller : on la met dans le couloir de la mort
         else:
@@ -124,29 +118,28 @@ class Roundabout:
         """
         Updates the roundabout : rotate the vehicles, dispatch them...
         """
+
         #   Make the cars rotate
         if lib.clock() - self.last_shift > ROUNDABOUT_ROTATION_RATE:
             self.last_shift = lib.clock()
             self.slots_roads = lib.shift_list(self.slots_roads)
 
         #   Spawning mode
-        if self.spawning and len(self.leaving_lanes) and (lib.clock() - self.spawn_timer > self.spawn_time):
-            self.spawn_timer    = lib.clock() 
-            num_possible_lanes  = len(self.leaving_lanes)
-            
-            # Possible ways out. NB : the "1000/ " thing ensures *integer* probabilities.
-            possible_lanes_events = [(self.leaving_lanes[i], 1000/num_possible_lanes) for i in range(num_possible_lanes)]
-        
-            chosen_lane = lib.proba_poll(possible_lanes_events)
-            if chosen_lane.is_free:
+        if self.spawning and len(self.children) and (lib.clock() - self.last_spawn > self.spawn_delay):
+            self.last_spawn = lib.clock() 
+            chosen_child    = choice(self.children)
+            chosen_road     = self.get_road_to(chosen_child)
+            chosen_lane     = chosen_road.get_lane_to(chosen_child)
+
+            if chosen_lane is not None:
                 vehicle_type_events = [(STANDARD_CAR, 80), 
                                    (TRUCK       , 15), 
                                    (SPEED_CAR   ,  5)]
-                                   
+                
                 new_vehicle = __vehicle__.Vehicle(chosen_lane, lib.proba_poll(vehicle_type_events))
 
         #   Update traffic lights
-        self._update_traffic_lights()
+        self._update_lights()
                 
         #   Update vehicles
         for vehicle in self.vehicles:
@@ -160,32 +153,35 @@ class Roundabout:
 
         self.to_kill = []
     
-    def set_gate(self, road, state):
-        """
-        Sets the state of the traffic lights on the road.
-            road    (Road)  :   the road whose traffic lights are affected
-            state   (bool)   :   the state (False = red, True = green) of the gate
-        """
-
-        #   Set which gate is to be updated
-        current_gate = road.roundabouts.index(self)
-        
-        #   Update if necessary
-        if road.traffic_lights[current_gate] != state:
-            road.traffic_lights_update[current_gate] = lib.clock()
-            road.traffic_lights[current_gate]        = state
-
     def get_local_load(self):
         """
         Computes in per cent a number called load (inspired by the load of a Linux station)
         """
         
-        if not len(self.incoming_lanes):
+        if self.parents is None:
             return 0
         
-        lanes_sum = sum([lane.total_waiting_vehicles * VEHICLE[STANDARD_CAR][DEFAULT_LENGTH] / lane.length for lane in self.incoming_lanes])
-        self.local_load = lanes_sum + len(self.vehicles) / float(self.max_vehicles)
+        roads_sum = 0
+        for parent in self.parents:
+            road = parent.get_road_to(self)
+            roads_sum += road.total_waiting_vehicles * VEHICLE[STANDARD_CAR][DEFAULT_LENGTH] / road.length
 
+        self.local_load = roads_sum + len(self.vehicles) / float(self.max_vehicles)
+
+    def get_road_to(self, roundabout):
+        """
+        Returns the first road found, if any, that can lead to the given roundabout.
+        Returns None if no road is found.
+        /!\ A road is returned only if it has a lane that leads to the given roundabout !
+        """
+
+        for road in self.hosted_roads:
+            for lane in road.lanes:
+                if lane.end == roundabout:
+                    return road
+
+        return None
+    
     @property
     def is_full(self):
         """
@@ -194,6 +190,62 @@ class Roundabout:
 
         return (len(self.vehicles) >= self.max_vehicles)
     
+    @property
+    def hosted_roads(self):
+        """
+        Returns the list of the roads connected to the roundabout.
+        The result is the list slots_roads from which None elements are removed.
+        """
+        
+        result = []
+        for road in self.slots_roads:
+            if road is not None:
+                result.append(road)
+
+        return result
+
+    @property
+    def children(self):
+        """
+        Returns the list of the nearby roundabouts for which it exists a lane from the roundabout to go to.
+        """
+        
+        result = []
+        for road in self.hosted_roads:
+            for lane in road.lanes:
+                if lane.end != self and not (lane.end in result):
+                    result.append(lane.end)
+
+        return result
+
+    @property
+    def parents(self):
+        """
+        Returns the list of the nearby roundabouts from which it exists a lane to go to the roundabout.
+        """
+        
+        result = []
+        for road in self.hosted_roads:
+            for lane in road.lanes:
+                if lane.start != self and not (lane.start in result):
+                    result.append(lane.start)
+
+        return result
+    
+    @property
+    def neighbours(self):
+        """
+        Returns the list of the nearby roundabouts.
+        /!\ This list is not the concatenation of the lists "parents" and "children", because those lists may have common elements !
+        """
+
+        result = []
+        for road in self.hosted_roads:
+            result.append(road.other_extremity(self))   # this suppose that there is at most 1 road between 2 roundabouts
+
+        return result
+
+    #   The two following properties are deprecated, other properties are enough to retrieve this piece of information -- Ch@hine
     @property
     def incoming_lanes(self):
         """
@@ -235,7 +287,7 @@ class Roundabout:
         """
 
         total = 0
-        for road in self.incoming_roads:
+        for road in self.hosted_roads:
             total += road.total_waiting_vehicles
 
         return total
@@ -246,16 +298,8 @@ class Roundabout:
         
         """
         result      = 1 + self.local_load * 10  # The "1 +" is only to avoid zero-division ;
-        closed_list = []
-
-        for lane in self.incoming_lanes:
-            if not lane.start in closed_list:
-                result += lane.start.local_load
-                closed_list.append(lane.start)
-
-        for lane in self.leaving_lanes:
-            if not lane.start in closed_list:
-                result += lane.end.local_load
-                closed_list.append(lane.end)
+        
+        for parent in self.parents:
+            result += parent.local_load
 
         return result

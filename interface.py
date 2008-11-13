@@ -157,9 +157,6 @@ class Scene(QtGui.QWidget):
     """
 
     def __init__(self, new_window, parent = None):
-        """
-        Builds the scene.
-        """
         QtGui.QWidget.__init__(self, parent)
 
         self.painter    = None
@@ -190,38 +187,33 @@ class Scene(QtGui.QWidget):
         Dessine la scène entière à l'écran.
         """
 
-        # Draw the roads
+        #   Draw the roads and roundabouts
         for road in __track__.track.roads:
             self.draw_road(road)
-            
-        # Draw the roundabouts
         for roundabout in __track__.track.roundabouts:
             self.draw_roundabout(roundabout)
 
-        # Manage selections
+        #   Manage selections
         self.draw_selected_path()
         
     def draw_road(self, road):
         """
         Draws a given road on the screen and all the vehicles on it.
             road (Road) : the aforementioned road.
-
-        Dessine une route donnée à l'écran et toutes les voitures dessus.
-            road (Road) : la route sus-citée.
         """
         (start_position, end_position) = (road.roundabouts[0].position.ceil(), road.roundabouts[1].position.ceil())
         
         #   Draw traffic lights (or not)
-        if self.window.exit_lights.isChecked():
-            self.draw_traffic_light(end_position, road, EXIT)
         if self.window.entrance_lights.isChecked():
-            self.draw_traffic_light(start_position, road, ENTRANCE)
+            self.draw_lights(road, ENTRANCE)
+        if self.window.exit_lights.isChecked():
+            self.draw_lights(road, EXIT)
         
-        # Draw a line to represent the road
+        #   Draw a line to represent the road
         self.painter.setPen(QtGui.QColor(*ROAD_COLOR))
         self.painter.drawLine(start_position.x, start_position.y, end_position.x, end_position.y)
         
-        # Draw lanes individually
+        #   Draw lanes individually
         for lane in road.lanes:
             self.draw_lane(lane)
 
@@ -229,30 +221,31 @@ class Scene(QtGui.QWidget):
         """
         When a vehicle is selected, draw its path
         """
-        selected_vehicle = self.window.selected_vehicle
-        if selected_vehicle is not None:
-            if isinstance(selected_vehicle.location, __road__.Lane):
-                current_lane = selected_vehicle.lane
-                
-                self.painter.setPen(QtGui.QColor(*BLUE))
-                #   TODO : draw the path from the center of the road, not from the center of the car !
-                self.painter.drawLine(selected_vehicle.position.x,  selected_vehicle.position.y,
-                                      current_lane.end.position.x,  current_lane.end.position.y)
-            else:
-                current_lane = selected_vehicle.location.incoming_lanes[0]
+        
+        vehicle = self.window.selected_vehicle
+        
+        if vehicle is None:
+            return None
+        
+        if vehicle.lane is not None:
+            start_point = vehicle.position - vehicle.lane.orthogonal * vehicle.width/2
+            end_point   = vehicle.lane.end.position
+            
+            self.painter.setPen(QtGui.QColor(*BLUE))
+            self.painter.drawLine(start_point.x, start_point.y, end_point.x, end_point.y)
 
-            if not (selected_vehicle.path is None):
-                for next_way in selected_vehicle.path:
-                    if not (next_way is None):
-                        current_lane = current_lane.end.leaving_lanes[next_way]
-                            
-                        self.painter.drawLine(current_lane.start.position.x, current_lane.start.position.y,
-                                              current_lane.end.position.x,   current_lane.end.position.y)
+        if not (vehicle.path is None):
+            for road in vehicle.path:
+                start_point = road.roundabouts[0].position
+                end_point   = road.roundabouts[1].position
+                
+                self.painter.drawLine(start_point.x, start_point.y, end_point.x, end_point.y)
             
     def draw_lane(self, lane):
         """
-        Draws a lane and all the vehicles on it
+        Draws a lane and all the vehicles on it.
         """
+
         for vehicle in lane.vehicles:
             self.draw_vehicle(vehicle)
             
@@ -260,9 +253,6 @@ class Scene(QtGui.QWidget):
         """
         Draws a given vehicle on the screen.
             vehicle (Car) : the aforementioned vehicle.
-
-        Dessine une voiture donnée à l'écran.
-            vehicle (Car) : la voiture sus-citée.
         """
 
         if vehicle.road is None:
@@ -272,15 +262,12 @@ class Scene(QtGui.QWidget):
         (r_width, r_length)    = (vehicle.width, vehicle.length)
         (parallel, orthogonal) = vehicle.lane.unit_vectors
 
-        #   Coordinates for the center
-        center_position = vehicle.position
-
-        # The vehicles are rectangles whose sides are parallel and perpendicular to the road
+        #   Vehicles are rectangles whose sides are parallel and perpendicular to the road
         points = []
-        points.append(center_position - parallel * r_length/2 - orthogonal * r_width/2)
-        points.append(center_position + parallel * r_length/2 - orthogonal * r_width/2)
-        points.append(center_position + parallel * r_length/2 + orthogonal * r_width/2)
-        points.append(center_position - parallel * r_length/2 + orthogonal * r_width/2)
+        points.append(vehicle.position - parallel * r_length/2 - orthogonal * r_width/2)
+        points.append(vehicle.position + parallel * r_length/2 - orthogonal * r_width/2)
+        points.append(vehicle.position + parallel * r_length/2 + orthogonal * r_width/2)
+        points.append(vehicle.position - parallel * r_length/2 + orthogonal * r_width/2)
         
         polygon = []
         for i in range(len(points)):
@@ -308,7 +295,7 @@ class Scene(QtGui.QWidget):
         # TODO :
         #       · (DN1) draw the vehicles on the roundabout
 
-        # Draw a red circle to represent a roundabout
+        #   Draw a red circle to represent a roundabout
         if not __track__.track.picture:
             self.painter.setBrush(QtGui.QColor(*RED))
             self.painter.setPen(QtGui.QColor(*TRANSPARENT))
@@ -331,32 +318,38 @@ class Scene(QtGui.QWidget):
             self.painter.drawText(position.x, position.y, str(len(roundabout.vehicles)))
             pass        
     
-    #   This functions should be corrected because roads have no direction ; it should use lanes
-    def draw_traffic_light(self, position, road, gate):
+    def draw_lights(self, road, gate):
         """
-        Draws a traffic light...
+        Draws traffic lights...
             gate : EXIT (1) or ENTRANCE (1)
         """
-
-        TF_RADIUS = 3 # Radius of a light bulb
-        state     = road.traffic_lights[gate]
-
-        (parallel, orthogonal)  = road.lanes[0].unit_vectors
-        start_position          = position + orthogonal * 6 - parallel * 12
-        d_position              = Vector(0, -1) * TF_RADIUS * 2
         
-        colors = [BLACK for i in range(3)]
-        
-        if state:     colors[0] = GREEN
-        if not state: colors[2] = RED
-        # if ... : color[1] = ORANGE
+        for roundabout in road.roundabouts:
+            other_roundabout        = road.other_extremity(roundabout)
+            state                   = road.lights[roundabout][gate]
+            (parallel, orthogonal)  = road.unit_vectors(roundabout)
+            colors                  = [BLACK for i in range(3)]
+            
+            if state:
+                colors[0] = GREEN
+            if not state:
+                colors[2] = RED
+            
+            if gate == EXIT and road.can_lead_to(roundabout):
+                start_position = roundabout.position + orthogonal * 6 - parallel * 12
 
-        for i in range(3):
-            self.painter.setBrush(QtGui.QColor(*colors[i]))
-
-            position = start_position + d_position * i
-            self.painter.setPen(QtGui.QColor(*GREY))
-            self.painter.drawEllipse(position.x - TF_RADIUS, position.y - TF_RADIUS, 2 * TF_RADIUS, 2*TF_RADIUS)
+            elif gate == ENTRANCE and road.can_lead_to(other_roundabout):
+                start_position = roundabout.position - orthogonal * 6 - parallel * 12
+            
+            else:
+                continue
+            
+            for i in range(3):
+                self.painter.setBrush(QtGui.QColor(*colors[i]))
+            
+                position = start_position + Vector(0, -1) * TF_RADIUS * 2 * i
+                self.painter.setPen(QtGui.QColor(*GREY))
+                self.painter.drawEllipse(position.x - TF_RADIUS, position.y - TF_RADIUS, 2*TF_RADIUS, 2*TF_RADIUS)
             
     def mousePressEvent(self, event):
         """
@@ -767,6 +760,7 @@ class MainWindow(QtGui.QMainWindow):
                 information += '<b>Waiting or braking</b><br/>'
                 
         return information
+
 def main(args):
     """
     Main procedure : prepares and launches the main loop

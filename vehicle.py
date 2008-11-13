@@ -36,13 +36,14 @@ class Vehicle:
         self.force              = VEHICLE[new_type][DEFAULT_FORCE]
         self.mass               = VEHICLE[new_type][DEFAULT_MASS]
         self.color              = VEHICLE[new_type][DEFAULT_COLOR]
-        self.acceleration       = 0
         self.sight_distance     = 5 * VEHICLE[STANDARD_CAR][DEFAULT_LENGTH]
+        self.acceleration       = 0
         self.total_waiting_time = 0
         self.last_waiting_time  = 0
-        
-        self.dead = False
-        
+        self.dead               = False
+        self.gps                = __gps__.Gps()
+        self.destination        = None
+
         #   Several sub-categories : truck, long truck, bus
         if new_type == TRUCK:
             possible_sizes = [(2, 25), 
@@ -54,11 +55,12 @@ class Vehicle:
         
         #   Cars must be created on a lane
         if isinstance(new_location, __road__.Lane):
-            self.location       = new_location
-            self.location.vehicles.insert(0, self)
-            self.length_covered = new_length_covered
+            self.location = new_location
         else:
             raise ValueError('ERROR (in vehicle.__init__()) : new vehicles must be created on a lane !')
+        
+        self.location.vehicles.insert(0, self)
+        self.length_covered = new_length_covered
         
         self.generate_path()        
     
@@ -68,28 +70,24 @@ class Vehicle:
         """
         
         #   Set the destination
-        if isinstance(new_destination, __roundabout__.Roundabout) and new_destination in __track__.track.roundabouts:
+        if isinstance(new_destination, __roundabout__.Roundabout) and new_destination in self.track.roundabouts:
             destination = new_destination
         else:
             # EXPERIMENTAL : leaving nodes only
-            destination = choice([roundabout for roundabout in self.track.roundabouts if len(roundabout.incoming_lanes)])
+            destination = choice([roundabout for roundabout in self.track.roundabouts if len(roundabout.parents)])
         
         #   Compute the path
-        
-        # Each vehicle needs its own gps instance to avoid collisions and clean pathfinding
-        self.gps  = __gps__.Gps()
+        #   Each vehicle needs its own gps instance to avoid collisions and clean pathfinding
         self.path = self.gps.find_path(self.lane.start, destination)
         
         self.destination = None 
-        if self.path:
-            if len(self.path) > 0:
-                self.destination = destination
+        if self.path and len(self.path):
+            self.destination = destination
     
     def join(self, new_location):
         """
         Allocate the vehicle to the given location. The concept of location makes it possible to use this code for either a lane or a roundabout.
             new_location    (road or lane or Roundabout)  :   lane or roundabout that will host, if possible, the vehicle
-            new_position    (list)          :   position in the lane or in the roundabout (note that the meaning of the position depends on the kind of location)
         """
         #   Leave the current location
         if (self.location is not None) and (self in self.location.vehicles):
@@ -97,21 +95,24 @@ class Vehicle:
         else:
             raise Exception("WARNING (in vehicle.join()) : a vehicle had no location !")
 
-        #   Roundabout -> Lane
-        if isinstance(self.location, __roundabout__.Roundabout) and isinstance(new_location, __road__.Lane):
-            vehicle_slot = lib.find_key(self.roundabout.slots_vehicles, self)
-            
+        #   Roundabout -> Road
+        if isinstance(self.location, __roundabout__.Roundabout) and isinstance(new_location, __road__.Road):
             #   Remove vehicle from its slot
-            if vehicle_slot is None:
+            if self.slot is None:
                 raise Exception("WARNING (in vehicle.join()) : a vehicle leaving from a roundabout had no slot !")
             else:
-                self.roundabout.slots_vehicles[vehicle_slot] = None
+                self.roundabout.slots_vehicles[self.slot] = None
 
-            self.acceleration = self.force/self.mass
+            self.acceleration   = self.force/self.mass
+            next_roundabout     = new_location.other_extremity(self.location)
+            self.location       = new_location.get_lane_to(next_roundabout)
+            if self.location is None:
+                raise Exception('problem')# TODO !
 
         #   Lane -> roundabout
         elif isinstance(new_location, __roundabout__.Roundabout) and isinstance(self.location, __road__.Lane):
             self.catch_slot(new_location)
+            self.location       = new_location
 
         #   Lane -> lane OR roundabout -> roundabout : ERROR
         else:
@@ -119,7 +120,6 @@ class Vehicle:
         
         #   Update data
         self.length_covered = 0
-        self.location       = new_location
         self.speed          = 0
         self.location.vehicles.insert(0, self)  # CONVENTION SENSITIVE
     
@@ -162,8 +162,8 @@ class Vehicle:
         Expresses the vehicles' wishes :P
         """
         #   End of path
-        print self.path
-        if self.path is None:
+        
+        if self.path is None or not len(self.path):
             return None
         else:
             next = self.path[0]
@@ -185,7 +185,7 @@ class Vehicle:
                 obstacle_is_light = True
     
                 #   Green light
-                if self.road.traffic_lights[EXIT]:
+                if self.lane.light(EXIT):
                     obstacle = self.road.length + self.headway
                 
                 #   Red light
@@ -225,7 +225,7 @@ class Vehicle:
             #   Set waiting attitude
             if not obstacle_is_light:
                 self.change_waiting_attitude(self.lane.vehicles[self.rank + 1].is_waiting)    # CONVENTION SENSITIVE
-            elif self.road.traffic_lights[EXIT]:
+            elif self.lane.light(EXIT):
                 self.change_waiting_attitude(False)
             else:
                 self.change_waiting_attitude(True)
@@ -250,7 +250,7 @@ class Vehicle:
         #   Arrival at a roundabout
         if self.length_covered >= self.road.length - self.length/2 - self.headway:
             #   Green light
-            if self.road.traffic_lights[EXIT] :
+            if self.lane.light(EXIT):
                 id_slot = self.lane.end.slots_roads.index(self.road)    #slot in front of the vehicle location
                 
                 #   The slot doesn't exist : creation of the slot
@@ -262,7 +262,6 @@ class Vehicle:
                     self.lane.end.slots_vehicles[id_slot] = self
                     self.change_waiting_attitude(False)
                     self.join(self.lane.end)
-                    
                     
                 #   The slot isn't free
                 else:
@@ -352,7 +351,19 @@ class Vehicle:
             return self.location
 
         return None
-    
+   
+    @property 
+    def slot(self):
+        """
+        Returns the slot where the wehicle is, if it is in a roundabout.
+        This property is provided for convenience.
+        """
+
+        if self.roundabout is None:
+            return None
+
+        return lib.find_key(self.roundabout.slots_vehicles, self)
+
     @property
     def track(self):
         """

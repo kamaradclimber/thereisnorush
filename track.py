@@ -30,11 +30,11 @@ class Track:
         self.roads          = new_roads
         self.picture        = None
     
-    def add_car(self, road_number, position):
+    def add_car(self, road_number):
         """
         Adds a car on the track
         """
-        new_car = __car__.Car(self.roads[road_number].get_free_lane(), position)
+        new_car = __car__.Car(self.roads[road_number])
 
 class Track_Parser:
     ROUNDABOUT  = "Roundabout"
@@ -43,7 +43,7 @@ class Track_Parser:
     def __init__(self, track):
         """
         """
-        self.track  = track
+        self.track = track
     
     def load_from_file(self, file_name, file_picture = ''):
         """
@@ -79,7 +79,14 @@ class Track_Parser:
         elements = line.replace(',', ' ').split()
         if elements[0] == self.ROUNDABOUT:
             args = [int(item) for item in elements[1:]]
-            self.track.roundabouts.append(__roundabout__.Roundabout(self.track, *args))
+            spawning = args[len(args) - 1]
+            del args[len(args) - 1]
+
+            new_roundabout = __roundabout__.Roundabout(self.track, *args)
+            new_roundabout.spawning = spawning
+
+            self.track.roundabouts.append(new_roundabout)
+            
         elif elements[0] == self.ROAD:
             args = [int(item) for item in elements[1:]]
             new_road = __road__.Road(self.track.roundabouts[args[0]], self.track.roundabouts[args[1]])
