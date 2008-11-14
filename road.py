@@ -79,9 +79,9 @@ class Road:
             return None
 
         free_lanes = [lane for lane in self.lanes if (lane.is_free) and (lane.end == roundabout)]
-        
+        possible_lanes = [lane for lane in self.lanes if (lane.end == roundabout)]
         if not len(free_lanes):
-            return None
+            return possible_lanes[0] #not free
             
         return free_lanes[0]
        
