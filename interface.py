@@ -669,7 +669,7 @@ class MainWindow(QtGui.QMainWindow):
         
         for road in __track__.track.roads:
             vehicles_on_roads += road.total_vehicles
-            vehicles_waiting  += road.total_waiting_vehicles
+            vehicles_waiting  += road.total_waiting_vehicles(road.roundabouts[0]) + road.total_waiting_vehicles(road.roundabouts[1])
         for roundabout in __track__.track.roundabouts:
             vehicles_on_roundabouts += len(roundabout.vehicles)
 

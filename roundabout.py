@@ -65,16 +65,16 @@ class Roundabout:
 
         #   Get the most lested parent
         if len(self.parents):
-            the_chosen_one = self.parents[0]
+            chosen_one = self.parents[0]
             for parent in self.parents:
-                if parent.global_load > the_chosen_one.global_load:
-                    the_chosen_one = parent
+                if parent.global_load > chosen_one.global_load:
+                    chosen_one = parent
         
         #   Open the way FROM this one, and close ways FROM others
         for parent in self.parents:
             road = parent.get_road_to(self)
 
-            if parent == the_chosen_one:
+            if parent == chosen_one:
                 road.set_light(self, EXIT, True)
             else:
                 road.set_light(self, EXIT, False)
@@ -82,8 +82,14 @@ class Roundabout:
         #   Then, let's update each road, few rules because the general view overrules the local one.
         for parent in self.parents:
             road = parent.get_road_to(self)
+            lane = road.get_lane_to(self)
+            
+            #   Too many cars waiting
+            if road.total_waiting_vehicles(self) > 5:
+                road.set_light(self, EXIT, True)
+
             #   Too long waiting time : open the gate and not close others
-            if road.last_lights_update[self][EXIT] - lib.clock() > WAITING_TIME_LIMIT and road.total_waiting_vehicles:
+            if (lane.last_light_update(EXIT) - lib.clock() > WAITING_TIME_LIMIT) and (road.total_waiting_vehicles(self)):
                 road.set_light(self, EXIT, True)
 
     def update_vehicle(self, vehicle):
@@ -96,19 +102,17 @@ class Roundabout:
             
         vehicle.total_waiting_time = self.vehicle_spiraling_time[vehicle][0] + lib.clock() - self.vehicle_spiraling_time[vehicle][1]
         
-        if vehicle.path is not None and len(self.children):
-            next_way = vehicle.next_way(True) # Just read the next_way unless you really go there
-            vehicle_slot = lib.find_key(self.slots_vehicles, vehicle)
+        if (vehicle.path is not None) and (len(vehicle.path)) and len(self.children):
+            next_way        = vehicle.next_way()
 
             #   The vehicle has lost its slot   
-            if vehicle_slot is None:
+            if vehicle.slot is None:
                 raise Exception("ERROR (in Roundabout.update_vehicle()) : a vehicle has no slot !")
             
             #   The vehicle's slot is in front of a leaving road
-            if self.slots_roads[vehicle_slot] is not None:
-                if (self.slots_roads[vehicle_slot] == vehicle.next_way()) and (vehicle.next_way().is_free):
+            if (self.slots_roads[vehicle.slot] is not None) and (self.slots_roads[vehicle.slot] == next_way) and (next_way.is_free(next_way.other_extremity(self))):
                 #la route sur laquelle on veut aller est vidée et surtout _en face_  du slot de la voiture
-                    vehicle.join(vehicle.next_way(False)) # cette fois on fait une lecture destructive
+                vehicle.join(vehicle.next_way(False)) # cette fois on fait une lecture destructive
 
         #la voiture n'a pas d'endroit où aller : on la met dans le couloir de la mort
         else:
@@ -121,8 +125,8 @@ class Roundabout:
 
         #   Make the cars rotate
         if lib.clock() - self.last_shift > ROUNDABOUT_ROTATION_RATE:
-            self.last_shift = lib.clock()
-            self.slots_roads = lib.shift_list(self.slots_roads)
+            self.last_shift     = lib.clock()
+            self.slots_roads    = lib.shift_list(self.slots_roads)
 
         #   Spawning mode
         if self.spawning and len(self.children) and (lib.clock() - self.last_spawn > self.spawn_delay):
@@ -131,12 +135,9 @@ class Roundabout:
             chosen_road     = self.get_road_to(chosen_child)
             chosen_lane     = chosen_road.get_lane_to(chosen_child)
 
-            if chosen_lane is not None:
-                vehicle_type_events = [(STANDARD_CAR, 80), 
-                                   (TRUCK       , 15), 
-                                   (SPEED_CAR   ,  5)]
-                
-                new_vehicle = __vehicle__.Vehicle(chosen_lane, lib.proba_poll(vehicle_type_events))
+            if (chosen_lane is not None) and (chosen_lane.is_free):
+                vehicle_type_events = [(STANDARD_CAR, 80), (TRUCK, 15), (SPEED_CAR, 5)]
+                new_vehicle         = __vehicle__.Vehicle(chosen_lane, lib.proba_poll(vehicle_type_events))
 
         #   Update traffic lights
         self._update_lights()
@@ -163,8 +164,8 @@ class Roundabout:
         
         roads_sum = 0
         for parent in self.parents:
-            road = parent.get_road_to(self)
-            roads_sum += road.total_waiting_vehicles * VEHICLE[STANDARD_CAR][DEFAULT_LENGTH] / road.length
+            road        =   parent.get_road_to(self)
+            roads_sum   +=  road.total_waiting_vehicles(self) * VEHICLE[STANDARD_CAR][DEFAULT_LENGTH] / road.length
 
         self.local_load = roads_sum + len(self.vehicles) / float(self.max_vehicles)
 

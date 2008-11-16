@@ -45,7 +45,6 @@ Road 35,36
 Road 36,37
 Road 37,38
 Road 1,22
-Road 23,0
 Road 2,3
 Road 3,4
 Road 4,5

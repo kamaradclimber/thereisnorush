@@ -105,13 +105,34 @@ class Road:
         if not (roundabout in self.roundabouts):
             raise Exception('ERROR in road.set_light() : the given roundabout is not an extremity of the road !')
 
-        #   Set which gate is to be updated
-        current_state = self.lights[roundabout][gate]
-        
         #   Update if necessary
-        if current_state != state:
+        if self.lights[roundabout][gate] != state:
             self.last_lights_update[roundabout][gate]   = lib.clock()
             self.lights[roundabout][gate]               = state
+
+    def is_free(self, roundabout):
+        """
+        Returns whether there is still room on the road.
+        The road is free if at least one of its lane is free.
+        """
+        
+        for lane in self.lanes:
+            if (lane.is_free) and (lane.end == roundabout):
+                return True
+    
+        return False
+    
+    def total_waiting_vehicles(self, roundabout):
+        """
+        Returns the total number of waiting vehicles on the road.
+        """
+
+        result = 0
+        for lane in self.lanes:
+            if lane.end == roundabout:
+                result += lane.total_waiting_vehicles
+        
+        return result
 
     @property
     def width(self):
@@ -124,19 +145,6 @@ class Road:
             result += lane.width
         
         return result
-
-    @property
-    def is_free(self):
-        """
-        Returns whether there is still room on the road.
-        The road is free if at least one of its lane is free.
-        """
-        
-        for lane in self.lanes:
-            if lane.is_free:
-                return True
-    
-        return False
 
     @property
     def length(self):
@@ -165,17 +173,6 @@ class Road:
 
         return True
 
-    @property
-    def total_waiting_vehicles(self):
-        """
-        Returns the total number of waiting vehicles on the road.
-        """
-
-        result = 0
-        for lane in self.lanes:
-            result += lane.total_waiting_vehicles
-        
-        return result
     
     @property
     def total_vehicles(self):
