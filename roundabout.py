@@ -63,12 +63,17 @@ class Roundabout:
         Handles traffic lights.
         """
 
-        #   Get the most lested parent
+        #   Get the most lested parent and lane
         if len(self.parents):
             chosen_one = self.parents[0]
+            most_lested_lane = chosen_one.get_road_to(self).get_lane_to(self)
             for parent in self.parents:
                 if parent.global_load > chosen_one.global_load:
                     chosen_one = parent
+                road = parent.get_road_to(self)
+                lane = road.get_lane_to(self)
+                if len(lane.vehicles) > len(most_lested_lane.vehicles):
+                    most_lested_lane = lane
         
         #   Open the way FROM this one, and close ways FROM others
         for parent in self.parents:
@@ -78,15 +83,15 @@ class Roundabout:
                 road.set_light(self, EXIT, True)
             else:
                 road.set_light(self, EXIT, False)
-        
+                
+        #Open the most lested lane (and do not close the others)
+        most_lested_lane.set_light(EXIT, True)
+
         #   Then, let's update each road, few rules because the general view overrules the local one.
         for parent in self.parents:
             road = parent.get_road_to(self)
             lane = road.get_lane_to(self)
             
-            #   Too many cars waiting
-            if road.total_waiting_vehicles(self) > 5:
-                road.set_light(self, EXIT, True)
 
             #   Too long waiting time : open the gate and not close others
             if (lane.last_light_update(EXIT) - lib.clock() > WAITING_TIME_LIMIT) and (road.total_waiting_vehicles(self)):

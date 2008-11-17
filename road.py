@@ -267,6 +267,21 @@ class Lane():
 
         return self.road.lights[self.end][gate]
 
+    def set_light(self, gate, state):
+        """
+        Sets the state of the traffic lights on the road.
+        """
+
+        #   Update if necessary
+        if gate ==  ENTRANCE:
+            if self.road.lights[self.start][gate] != state:
+                self.road.last_lights_update[self.start][gate]   = lib.clock()
+                self.road.lights[self.start][gate]               = state
+        else:
+            if self.road.lights[self.end][gate] != state:
+                self.road.last_lights_update[self.end][gate]   = lib.clock()
+                self.road.lights[self.end][gate]               = state
+            
     @property
     def total_waiting_vehicles(self):
         """

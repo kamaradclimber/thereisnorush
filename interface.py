@@ -459,8 +459,8 @@ class MainWindow(QtGui.QMainWindow):
         self.scene.setObjectName('scene')     
         
         # Histogram
-        self.histogram = Histogram(self)
-        self.histogram.setObjectName('histogram')
+        #self.histogram = Histogram(self)
+        #self.histogram.setObjectName('histogram')
 
         #   Information box
         self.lbl_info = QtGui.QLabel('<i>Information</i>')
@@ -470,7 +470,7 @@ class MainWindow(QtGui.QMainWindow):
         
         lay_info = QtGui.QVBoxLayout()
         lay_info.addWidget(self.lbl_info)
-        lay_info.addWidget(self.histogram)
+        #lay_info.addWidget(self.histogram)
 
         self.box_info = QtGui.QGroupBox('Informations')
         self.box_info.setObjectName('box_info')
@@ -631,7 +631,7 @@ class MainWindow(QtGui.QMainWindow):
             # Update the simulation and informations
             self.update_simulation()
             self.update_information()
-            self.histogram.update()
+            #self.histogram.update()
             self.scene.update()
             
         else:
@@ -685,7 +685,7 @@ class MainWindow(QtGui.QMainWindow):
         information += self.simulation_informations()         
         
         self.lbl_info.setText(information)
-        self.histogram.append(total_vehicles)
+        #self.histogram.append(total_vehicles)
 
     def simulation_informations(self):
         """
