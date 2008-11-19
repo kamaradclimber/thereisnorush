@@ -5,6 +5,8 @@ Description :   defines the class "Road"
 """
 
 import lib
+
+
 from constants  import *
 from math       import sqrt
 
@@ -12,55 +14,34 @@ class Road:
     """
     A road acts as a container for several lanes and connects two roundabouts
     """
-
-    def __init__(self, roundabout1 = None, roundabout2 = None):
+    def __init__(   self,
+                    new_start       = None,
+                    new_end         = None,
+                    new_max_speed   = ROAD_DEFAULT_MAX_SPEED):
         """
         Constructor method : creates a new road.
         """
 
-        self.roundabouts        = [roundabout1, roundabout2]
-        self.max_speed          = ROAD_DEFAULT_MAX_SPEED
-        self.lanes              = [Lane(self, roundabout1), Lane(self, roundabout2)]
-        self.last_lights_update = {}
-        self.lights             = {}
+        self.start      = new_start
+        self.end        = new_end
+        self.max_speed  = new_max_speed
+        
+        self.lanes      = [Lane(self, i) for i in range(ROAD_DEFAULT_LANES)]
+        
+        self.traffic_lights_update   = [lib.clock(), lib.clock()]
+        self.traffic_lights          = [True, False]    # [at the beginning, at the end]
        
-        for roundabout in self.roundabouts:
-            if roundabout is not None:
-                self.lights[roundabout]             = [True, True]                  # [ENTRANCE, EXIT]
-                self.last_lights_update[roundabout] = [lib.clock(), lib.clock()]    # Same
-
-                roundabout.host_road(self)
-    
-    def other_extremity(self, roundabout):
-        """
-        Given a roundabout, returns the other roundabout extremity of the road.
-        Returns None if the given roundabout is not an extremity of the road.
-        """
+        #   In order not to compute the unit vectors of the road several times, they are stored once they are computed
+        self.parallel   = None
+        self.orthogonal = None
         
-        #   The road is not even connected to the roundabout => no answer
-        if not (roundabout in self.roundabouts):
-            return None
-
-        if roundabout == self.roundabouts[0]:
-            return self.roundabouts[1]
-
-        return self.roundabouts[0]
-    
-    def can_lead_to(self, roundabout):
-        """
-        Returns True if the road has a lane that goes to the given roundabout, and False otherwise.
-        """
+        self.start.host_road(self)
+        self.end.host_road(self)
         
-        #   The road is not even connected to the roundabout => the answer is False
-        if not (roundabout in self.roundabouts):
-            return False
-        
-        #   Check lane per lane if exists one that ends to the roundabout
+        width = 0
         for lane in self.lanes:
-            if lane.end == roundabout:
-                return True
-
-        return False
+            width += lane.width
+        self.width = width
 
     def update(self):
         """
@@ -70,81 +51,37 @@ class Road:
         for lane in self.lanes:
             lane.update()
         
-    def get_lane_to(self, roundabout):
+    def last_gate_update(self, gate):
+        """
+        Return the time (in milliseconds) since the last update of a gate (0 or 1).
+        """
+
+        current_time = lib.clock()
+        return (current_time - self.traffic_lights_update[gate])
+
+    def get_free_lane(self):
         """
         Returns a free lane on the road, if any.
         """
+        free_lanes = [lane for lane in self.lanes if lane.is_free]
         
-        if not (roundabout in self.roundabouts):
-            return None
-
-        free_lanes = [lane for lane in self.lanes if (lane.is_free) and (lane.end == roundabout)]
-        possible_lanes = [lane for lane in self.lanes if (lane.end == roundabout)]
         if not len(free_lanes):
-            return possible_lanes[0] #not free
+            return None
             
         return free_lanes[0]
-       
-    def unit_vectors(self, roundabout):
-        """
-        Returns the unit parallel and perpendicular vectors to a the road, oriented towards the given roundabout.
-        """
         
-        if self.lanes[0].end == roundabout:
-            return self.lanes[0].unit_vectors
-
-        (parallel, orthogonal) = self.lanes[0].unit_vectors
-
-        return (-parallel, -orthogonal)
-   
-    def set_light(self, roundabout, gate, state):
-        """
-        Sets the state of the traffic lights on the road.
-        """
-        
-        if not (roundabout in self.roundabouts):
-            raise Exception('ERROR in road.set_light() : the given roundabout is not an extremity of the road !')
-
-        #   Update if necessary
-        if self.lights[roundabout][gate] != state:
-            self.last_lights_update[roundabout][gate]   = lib.clock()
-            self.lights[roundabout][gate]               = state
-
-    def is_free(self, roundabout):
+    @property
+    def is_free(self):
         """
         Returns whether there is still room on the road.
         The road is free if at least one of its lane is free.
         """
         
         for lane in self.lanes:
-            if (lane.is_free) and (lane.end == roundabout):
+            if lane.is_free:
                 return True
     
         return False
-    
-    def total_waiting_vehicles(self, roundabout):
-        """
-        Returns the total number of waiting vehicles on the road.
-        """
-
-        result = 0
-        for lane in self.lanes:
-            if lane.end == roundabout:
-                result += lane.total_waiting_vehicles
-        
-        return result
-
-    @property
-    def width(self):
-        """
-        Returns the width of the road, which is the sum of its lanes' width
-        """
-
-        result = 0
-        for lane in self.lanes:
-            result += lane.width
-        
-        return result
 
     @property
     def length(self):
@@ -152,37 +89,52 @@ class Road:
         Returns the calculated length of the road.
         """
 
-        if not (None in self.roundabouts):
-            return abs(self.roundabouts[0].position - self.roundabouts[1].position)
+        if (self.start is not None) and (self.end is not None):
+            return abs(self.end.position - self.start.position)
         
         return None
     
     @property
-    def is_one_way(self):
+    def unit_vectors(self):
         """
-        Returns True if the road is one-way, and False otherwise.
+        Returns the unit parallel and perpendicular vectors to a the road
         """
+        
+        #   Avoid recomputing them each time
+        if (self.parallel is not None) and (self.orthogonal is not None):
+            parallel = self.parallel
+            orthogonal = self.orthogonal
+        else:
+            #   Normalized parallel and orthogonal vectors
+            parallel = (self.end.position - self.start.position).normalize()
+            orthogonal = parallel.get_orthogonal()
+            
+            self.parallel = parallel
+            self.orthogonal = orthogonal
 
-        roundabouts = []
-        for lane in self.lanes:
-            if not (lane.start in roundabouts):
-                roundabouts.append(lane.start)
-
-            if len(roundabouts) > 1:
-                return False
-
-        return True
-
+        return (parallel, orthogonal)
     
     @property
-    def total_vehicles(self):
+    def total_waiting_cars(self):
         """
-        Returns the total number of vehicles on the road
+        Returns the total number of waiting cars on the road.
         """
 
         result = 0
         for lane in self.lanes:
-            result += len(lane.vehicles)
+            result += lane.total_waiting_cars
+        
+        return result
+    
+    @property
+    def total_cars(self):
+        """
+        Returns the total number of cars on the road
+        """
+
+        result = 0
+        for lane in self.lanes:
+            result += len(lane.cars)
             
         return result
     
@@ -192,106 +144,55 @@ class Road:
         Returns the weight associated to the road, for pathfinding computations.
         Here, the weight is the time needed to walk the road.
         """
-        result = self.length/self.max_speed
 
-        #for lane in self.lanes:
-        #    if len(lane.vehicles):
-        #        buffer = lane.vehicles[0].length_covered / 5 + (self.length - lane.vehicles[0].length_covered) / self.max_speed
-        #    else:
-        #        return self.length/self.max_speed
-        #
-        #    if buffer < result:
-        #        result = buffer
-
-        return result
+        return self.length/self.max_speed
     
     @property
     def track(self):
         """
         Returns the track to which the road belongs.
-        This property is provided for convenience.
         """
 
-        return self.roundabouts[0].track
+        return self.start.track
 
 class Lane():
     """
-    A lane is a one-way piece of road.
+    A lane is a one-way piece of road
     """
     
-    def __init__(self, new_road, new_start):
+    def __init__(self, new_road, new_index):
         """
         Creates a Lane on the parent new_road.
+        The higher the index, the farther the lane.
         """
 
-        self.vehicles   = []
-        self.width      = LANE_DEFAULT_WIDTH
-        self.road       = new_road
-        self.start      = new_start
-        
-        #   In order not to compute the unit vectors of the road several times, they are stored once they are computed
-        self.parallel   = None
-        self.orthogonal = None
+        self.cars   = []
+        self.width  = LANE_DEFAULT_WIDTH
+        self.index  = new_index
+        self.road   = new_road
         
     def update(self):
         """
-        Updates the lane, and all the vehicles on it.
+        Updates the lane, and all the cars on it
         """
 
-        if not len(self.vehicles):
+        if not len(self.cars):
             return None
             
-        queue_length = len(self.vehicles)
+        queue_length = len(self.cars)
         
-        #   Update the vehicles, from the first to the last
         for i in range(queue_length):
-            self.vehicles[queue_length - 1 - i].act()
+            self.cars[queue_length - 1 - i].act()
     
-    def last_light_update(self, gate):
-        """
-        Return the time (in milliseconds) since the last update of a gate (0 or 1).
-        """
-        
-        if gate == ENTRANCE:
-            return self.road.last_lights_update[self.start][gate]
-
-        return self.road.last_lights_update[self.end][gate]
-    
-    def light(self, gate):
-        """
-        Return the state of the given light.
-        """
-
-        if gate == ENTRANCE:
-            return self.road.lights[self.start][gate]
-
-        return self.road.lights[self.end][gate]
-
-    def set_light(self, gate, state):
-        """
-        Sets the state of the traffic lights on the road.
-        """
-
-        #   Update if necessary
-        if gate ==  ENTRANCE:
-            if self.road.lights[self.start][gate] != state:
-                self.road.last_lights_update[self.start][gate]   = lib.clock()
-                self.road.lights[self.start][gate]               = state
-        else:
-            if self.road.lights[self.end][gate] != state:
-                self.road.last_lights_update[self.end][gate]   = lib.clock()
-                self.road.lights[self.end][gate]               = state
-            
     @property
-    def total_waiting_vehicles(self):
+    def total_waiting_cars(self):
         """
-        Returns the number of waiting vehicles on the lane.
+        Returns the number of waiting cars on the lane.
         """
 
-        if not self.vehicles:
+        if not self.cars:
             return 0
-        
-        return len([0 for vehicle in self.vehicles if vehicle.is_waiting])
+        return len([0 for car in self.cars if car.is_waiting])
     
     @property
     def is_free(self):
@@ -299,51 +200,31 @@ class Lane():
         Returns whether there is still room on the road.
         """
 
-        #   I guess there is still room as long as the last vehicle engaged on the road if far enough from the start of the road
-        if not len(self.vehicles):
+        # I guess there is still room as long as the last car engaged on the road if far enough from the start of the road
+        if not len(self.cars):
             return True
         else:
             # CONVENTION SENSITIVE
-            return (self.vehicles[0].length_covered > self.vehicles[0].length + self.vehicles[0].headway)
+            return (self.cars[0].length_covered > self.cars[0].length + self.cars[0].headway)
+
+    @property
+    def start(self):
+        """
+        Returns the start node of the lane.
+        This property is provided for convenience.
+        """
+
+        return self.road.start
 
     @property
     def end(self):
         """
-        Returns the end roundabout of the lane.
-        This property is provided for convenience.
-        """
-        
-        return self.road.other_extremity(self.start)
-    
-    @property
-    def length(self):
-        """
-        Returns the length of the lane, which is exactly the same as the length of its road.
+        Returns the end node of the lane.
         This property is provided for convenience.
         """
 
-        return self.road.length
+        return self.road.end
 
-    @property
-    def unit_vectors(self):
-        """
-        Returns the unit parallel and perpendicular vectors to the lane, oriented towards the end of the lane.
-        """
-        
-        #   Avoid recomputing them each time
-        if (self.parallel is not None) and (self.orthogonal is not None):
-            parallel    = self.parallel
-            orthogonal  = self.orthogonal
-        else:
-            #   Normalized parallel and orthogonal vectors
-            parallel    = (self.end.position - self.start.position).normalize()
-            orthogonal  = parallel.get_orthogonal()
-            
-            self.parallel   = parallel
-            self.orthogonal = orthogonal
-
-        return (parallel, orthogonal)
-    
     @property
     def track(self):
         """

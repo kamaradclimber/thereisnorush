@@ -5,8 +5,8 @@ Description :   defines the constants
 """
 
 #   Revision information
-REVISION_NUMBER = 144
-REVISION_NAME   = 'Thereisnorush (final)'
+REVISION_NUMBER = 140
+REVISION_NAME   = 'Thereisnorush (testing)'
 
 #   Colors (R, G, B, [Alpha])
 BLACK       =   0,   0,   0
@@ -14,14 +14,14 @@ RED         = 255,   0,   0
 GREEN       =   0, 255,   0
 BLUE        =   0,   0, 255
 WHITE       = 255, 255, 255
-GREY        = 192, 192, 192
+GREY        = 190, 190, 190
 ORANGE      = 255, 128,   0
 
 LIGHT_RED   = 255,  64,  64
 LIGHT_GREEN =  64, 255,  64
 LIGHT_BLUE  =  64,  64, 255
 
-TRANSPARENT =   0,   0,   0,   0
+TRANSPARENT = 0, 0, 0, 0
 
 #   Available vehicle features
 DEFAULT_LENGTH      = 0
@@ -57,7 +57,7 @@ VEHICLE[SPEED_CAR][DEFAULT_LENGTH]  = VEHICLE[STANDARD_CAR][DEFAULT_LENGTH]
 VEHICLE[SPEED_CAR][DEFAULT_WIDTH]   = VEHICLE[STANDARD_CAR][DEFAULT_WIDTH]
 VEHICLE[SPEED_CAR][DEFAULT_HEADWAY] = VEHICLE[STANDARD_CAR][DEFAULT_HEADWAY]
 VEHICLE[SPEED_CAR][DEFAULT_SPEED]   = VEHICLE[STANDARD_CAR][DEFAULT_SPEED]
-VEHICLE[SPEED_CAR][DEFAULT_FORCE]   = VEHICLE[STANDARD_CAR][DEFAULT_FORCE] * 3
+VEHICLE[SPEED_CAR][DEFAULT_FORCE]   = VEHICLE[STANDARD_CAR][DEFAULT_FORCE] * 5
 VEHICLE[SPEED_CAR][DEFAULT_MASS]    = VEHICLE[STANDARD_CAR][DEFAULT_MASS] / 1.5
 VEHICLE[SPEED_CAR][DEFAULT_COLOR]   = LIGHT_RED
 
@@ -84,6 +84,7 @@ ROUNDABOUT_RADIUS_DEFAULT         = 10
 ROUNDABOUT_DEFAULT_ROTATION_SPEED = 10
 ROUNDABOUT_ROTATION_RATE          = 0.500
 ROUNDABOUT_DEFAULT_MAX_CARS       = 5
+ROUNDABOUT_DEFAULT_NUM_SLOTS      = 15
 
 #   Road
 ROAD_COLOR             = WHITE
@@ -97,31 +98,32 @@ LANE_DEFAULT_WIDTH     = 5
 A_STAR      = 0
 DIJKSTRA    = 1
 
+PATH_INEXISTENT = 1
+PATH_FOUND      = 2
+
 #   Rules
 WAITING_CARS_LIMIT = 8
 WAITING_TIME_LIMIT = 10.000
 
 #   Traffic lights
-ENTRANCE    = 0
-EXIT        = 1
-
-TF_RADIUS   = 3
+EXIT     = 1
+ENTRANCE = 0
 
 #   Resolution
-SCENE_RESOLUTION = (SCENE_WIDTH, SCENE_HEIGHT) = (800, 600)
-PANEL_RESOLUTION = (PANEL_WIDTH, PANEL_HEIGHT) = (200, 500)
+SCENE_RESOLUTION    = (SCENE_WIDTH, SCENE_HEIGHT)   = (800, 600)
+PANEL_RESOLUTION    = (PANEL_WIDTH, PANEL_HEIGHT)   = (200, 500)
 
-#   Histograms
+# Histograms
 HISTOGRAM_WIDTH  = 100
 HISTOGRAM_HEIGHT = 50
 HISTOGRAM_SPAN   = 200
 HISTOGRAM_COLOR  = 255, 128, 0, 128
 
 #   Others
-DISPLAY_DENSITY = False
+DISPLAY_DENSITY = False # You may de-activate per-density coloring (+ fps)
 SPAWN_TIME      = 2.0
 
-#   Not really constants... but cannot be placed in lib.py
+# Not really constants... but cannot be placed in lib.py
 simulation_speed = 1.0
 time_static_counter = 0.0
 time_last_counter = 0.0
