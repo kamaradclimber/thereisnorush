@@ -40,13 +40,14 @@ class Roundabout:
         self.slots_cars     = {}
         
         self.max_cars       = ROUNDABOUT_DEFAULT_MAX_CARS
+        self.num_slots      = ROUNDABOUT_DEFAULT_NUM_SLOTS
         self.rotation_speed = ROUNDABOUT_DEFAULT_ROTATION_SPEED
         
         self.spawning       = new_spawning
         self.spawn_timer    = lib.clock()
         self.last_shift     = lib.clock()
         self.spawn_time     = SPAWN_TIME
-        self.slots_roads    = [None for i in range(self.max_cars)]
+        self.slots_roads    = [None] * self.num_slots
         self.local_load     = 0
         
         self.name = id(self)
