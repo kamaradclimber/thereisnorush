@@ -9,7 +9,7 @@ import lib
 
 from vector         import Vector
 
-import vehicle          as __car__
+import car          as __car__
 from constants      import *
 
 
@@ -40,14 +40,13 @@ class Roundabout:
         self.slots_cars     = {}
         
         self.max_cars       = ROUNDABOUT_DEFAULT_MAX_CARS
-        self.num_slots      = ROUNDABOUT_DEFAULT_NUM_SLOTS
         self.rotation_speed = ROUNDABOUT_DEFAULT_ROTATION_SPEED
         
         self.spawning       = new_spawning
         self.spawn_timer    = lib.clock()
         self.last_shift     = lib.clock()
         self.spawn_time     = SPAWN_TIME
-        self.slots_roads    = [None] * self.num_slots
+        self.slots_roads    = [None for i in range(self.max_cars)]
         self.local_load     = 0
         
         self.name = id(self)
@@ -89,14 +88,20 @@ class Roundabout:
         
                 
         region_load = [road.start.global_load for road in self.incoming_roads]
-        if region_load:
+        if len(self.incoming_roads):
             the_chosen_one = self.incoming_roads[region_load.index(max(region_load))]
+            most_loaded_road = self.incoming_roads[0]
+            for road in self.incoming_roads: #recherche de la route la plus chargée
+                if road.total_cars> most_loaded_road.total_cars:
+                    most_loaded_road = road
             for road in self.incoming_roads:
                 if road == the_chosen_one:
                     self.set_gate(road, True)
                 else:
                     self.set_gate(road, False)
-        
+            self.set_gate(most_loaded_road, True) 
+            #on ouvre la route qui contient le plus de voitures, ca suffit à tordre le coup à la plupart des embouteillages
+
         #   Then, let's update each road, few rules because the general view overrules the local one.
        
         for road in self.incoming_roads:
