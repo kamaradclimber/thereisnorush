@@ -1,5 +1,5 @@
-#ifndef SLOT
-    #define SLOT
+#ifndef __SLOT__
+    #define __SLOT__
 
     class Road;
     class Roundabout;
@@ -16,9 +16,11 @@
         Slot(const Slot&);
         ~Slot();
 
-        Roundabout* get_roundabout()    const;
-        Road*       get_road()          const;
-        Vehicle*    get_vehicle()       const;
+        Roundabout* get_roundabout()            const;
+        Roundabout* other_side()                const;
+        Road*       get_road()                  const;
+        Vehicle*    get_vehicle()               const;
+        bool        is_connected()              const;
 
         void        connect_to(const Road*);
 

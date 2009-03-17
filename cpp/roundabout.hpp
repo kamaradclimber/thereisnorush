@@ -13,13 +13,13 @@
     class Roundabout
     {
         Map*                map;
-        std::complex<float> position;
-        std::vector<Slot*>  slots;
+        //std::complex<float> position;
+        std::vector<Slot*>  slotss;     // And not "slots" which is reserved by Qt ! (3 months to find out this bug...)
         bool                spawning;
         float
-            f_cost, // G-cost + H-cost
-            g_cost, // Minimal real cost found so far
-            h_cost, // Remaining heuristic cost
+            f_cost,     // G-cost + H-cost
+            g_cost,     // Minimal real cost found so far
+            h_cost,     // Remaining heuristic cost
             last_spawn,
             last_shift,
             local_load;
@@ -34,6 +34,8 @@
         Roundabout*         nearest_parent;
         
         public:
+        static Roundabout DEFAULT;
+        
         Roundabout();
         Roundabout(Map*, unsigned short, unsigned short);
         ~Roundabout();
@@ -44,6 +46,8 @@
         float               get_g_cost()                const;
         float               get_h_cost()                const;
         Roundabout*         get_nearest_parent()        const;
+        unsigned int        get_spawn_delay()           const;
+        bool                is_spawning()               const;
         Slot*               slot(unsigned short)        const;
         unsigned short      total_slots()               const;
         
@@ -54,22 +58,14 @@
         void                set_f_cost(float);
         void                set_g_cost(float);
         void                set_h_cost(float);
+        void                set_destination(Roundabout*);
         void                set_nearest_parent(Roundabout*);
+        void                set_spawn_delay(unsigned int);
+        void                set_spawning(bool);
         
         void                host(const Road*);
         void                update_semaphores();
         void                update();
     };
     
-    /*  TO INCLUDE IN A STATIC MEMBER
-    const Roundabout DEFAULT_ROUNDABOUT(EMPTY);
-        DEFAULT_ROUNDABOUT.set_color(QColor(Qt::red));
-        DEFAULT_ROUNDABOUT.set_height(3);
-        DEFAULT_ROUNDABOUT.set_max_slots(5);
-        DEFAULT_ROUNDABOUT.set_radius(10);
-        DEFAULT_ROUNDABOUT.set_rotation_speed(10);
-        DEFAULT_ROUNDABOUT.set_width(3);
-
-    float ROUNDABOUT_ROTATION_RATE = 0.5;*/
 #endif
-

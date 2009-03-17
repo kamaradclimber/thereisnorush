@@ -16,15 +16,18 @@
         std::vector<Vehicle*>   vehicles;
         unsigned short
             width,
-            direction;
+            direction;  // Index of the destination in Road::extremity
         
         public:
-        Lane(Initialization mode = DEFAULT);
+        static Lane DEFAULT;
+        
+        Lane();
         Lane(Road*, bool);
         ~Lane();
 
         unsigned short      total_waiting_vehicles()    const;
-        bool                free()                      const;
+        bool                is_free()                   const;
+        Roundabout*         origin()                    const;
         Roundabout*         destination()               const;
         float               length()                    const;
         std::vector<Vector> reference()                 const;
@@ -33,8 +36,4 @@
         void                update();
     };
 
-    //  Default features
-    const Lane DEFAULT_LANE(EMPTY);
-        DEFAULT_LANE.set_width(5);
 #endif
-

@@ -1,5 +1,6 @@
 #include "slot.hpp"
 
+
 //  Constructors & destructor
 Slot::Slot()
 {
@@ -17,10 +18,21 @@ Slot::~Slot()
 {
 }
 
+
 //  Accessors
 Roundabout* Slot::get_roundabout() const
 {
     return roundabout;
+}
+
+Roundabout* Slot::other_side() const
+{
+    if (is_connected())
+    {
+        return road->other_extremity(roundabout);
+    }
+
+    return Roundabout*();
 }
 
 Road* Slot::get_road() const
@@ -32,6 +44,17 @@ Vehicle* Slot::get_vehicle() const
 {
     return vehicle;
 }
+
+bool Slot::is_connected() const
+{
+    if (road != NULL)
+    {
+        return true;
+    }
+
+    return false;
+}
+
 
 //  Mutators
 void Slot::connect_to(const Road* new_road)

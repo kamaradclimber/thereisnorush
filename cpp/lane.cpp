@@ -2,20 +2,17 @@
 
 using namespace std;
 
-//  Creates a Lane on the parent new_road.
-Lane::Lane(Road* new_road, bool new_direction) : road(new_road), vehicles(), width(DEFAULT[LANE][WIDTH]), direction(new_direction)
+//  Default features
+Lane::DEFAULT.set_width(5);
+
+
+//  Constructor/destructor
+Lane::Lane() : width(Lane::DEFAULT.get_width())
 {
 }
 
-//  Updates the lane, and all the vehicles on it.
-void Lane::update()
+Lane::Lane(Road* new_road, bool new_direction) : road(new_road), vehicles(), width(Lane::DEFAULT.get_width()), direction(new_direction)
 {
-    unsigned short i = 0;
-    while (i < vehicles.size())
-    {
-        vehicles[vehicles.size() - 1 - i]->act();
-        i++;
-    }
 }
 
 
@@ -59,9 +56,7 @@ road.last_lights_update[end][gate]   = lib.clock()
 //  Returns the number of waiting vehicles on the lane.
 unsigned short Lane::total_waiting_vehicles() const
 {
-    unsigned short
-        result  = 0,
-        i       = 0;
+    unsigned short result(0), i(0);
     
     while (i < vehicles.size())
     {
@@ -76,8 +71,9 @@ unsigned short Lane::total_waiting_vehicles() const
     return result;
 }
 
-//  Returns whether there is still room on the road.
-bool Lane::free() const
+
+//  Returns whether there is still room on the road
+bool Lane::is_free() const
 {
     //   I guess there is still room as long as the last vehicle engaged on the road if far enough from the start of the road
     if (!(vehicles.size()))
@@ -85,28 +81,33 @@ bool Lane::free() const
         return true;
     }
     
-    return (vehicles.back()->length_covered() > vehicles->back()->length() + vehicles.back()->headway());
+    return (vehicles.back()->length_covered() > Vehicles::DEFAULT->length() + Vehicles::DEFAULT->headway());
 }
 
-//  Returns the end roundabout of the lane.
-//  This property is provided for convenience.
-Roundabout* Lane::destination() const
+
+//  Get the origin/destination of the lane (provided for convenience)
+Roundabout* Lane::origin() const
 {
     return road->extremity[1 - direction];
 }
 
+Roundabout* Lane::destination() const
+{
+    return road->extremity[direction];
+}
 
-//  Returns the length of the lane, which is exactly the same as the length of its road.
-//  This property is provided for convenience.
+
+//  Returns the length of the lane, which is exactly the same as the length of its road (provided for convenience)
 float Lane::length() const
 {
     return road->length();
 }
 
-//  Returns the unit parallel and perpendicular vectors to the lane, oriented towards the end of the lane.
+
+//  Returns the unit parallel and perpendicular vectors to the lane, oriented towards the end of the lane
 vector<Vector> Lane::reference() const
 {
-    if (!direction)
+    if (direction)
     {
         return road->reference();
     }
@@ -114,9 +115,21 @@ vector<Vector> Lane::reference() const
     return road->reference() * (-1);
 }
 
-//  Returns the track to which the lane belongs.
-//  This property is provided for convenience.
+
+//  Returns the track to which the lane belongs (provided for convenience)
 Map* Lane::map() const
 {
     return road->map();
+}
+
+
+//  Updates the lane, and all the vehicles on it.
+void Lane::update()
+{
+    unsigned short i(0);
+    while (i < vehicles.size())
+    {
+        vehicles[vehicles.size() - 1 - i]->act();
+        i++;
+    }
 }

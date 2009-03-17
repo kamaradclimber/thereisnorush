@@ -18,4 +18,3 @@
         std::vector<Roundabout*>    find_path(Roundabout*, Roundabout*)                     const;
     };
 #endif
-
