@@ -1,51 +1,50 @@
-#ifndef ROAD
-    #define ROAD
+#ifndef __ROAD__
+    #define __ROAD__
     
+    //#include <complex>
     #include <QColor>
     #include <vector>
-    
-    #include "constants.hpp"
-    
+
     class Lane;
     class Map;
+    class Road;
     class Roundabout;
-    class Vector;
+    class Vehicle;
 
-    //  A road acts as a container for several lanes and connects two roundabouts
-    class Road
-    {
-        std::vector<Roundabout*>            extremities;
-        std::vector< std::vector<Lane*> >   lanes;
-        unsigned short                      max_speed;
-        QColor                              color;
+    class Road {
+        QColor                  m_color;
+        Roundabout*             m_extremities[2];
+        unsigned short          m_max_speed;
+        std::vector<Lane*>      m_lanes[2];
+        std::vector<Vehicle*>   m_vehicles;
 
         public:
+        static Road DEFAULT;
+
+
         Road();
-        Road(const Roundabout*, const Roundabout*);
+        Road(Roundabout*, Roundabout*, unsigned short total_lanes1 = 1, unsigned short total_lanes2 = 1);
         ~Road();
+
+        QColor          color()                                 const;
+        unsigned short  max_speed()                             const;
+        unsigned short  total_lanes_to(unsigned short)          const;
+        Roundabout*     extremity(unsigned short);
+        Lane*           lane(unsigned short, unsigned short);
+        unsigned short  lanes_count()                           const;
+        unsigned short  lanes_count(unsigned short)             const;
+        Map*            map();
+        float           weight()                                const;
+
+        unsigned short  length()                                const;
+        unsigned short  vehicles_count()                        const;
+        unsigned short  waiting_vehicles_count()                const;
+
+        void            set_color(QColor);
+        void            set_max_speed(unsigned short);
+    
         
-        unsigned short      get_max_speed()                             const;
-
-        Roundabout*         other_extremity(const Roundabout*)          const;
-        bool                can_lead_to(const Roundabout*)              const;
-        Lane*               get_lane_to(const Roundabout*)              const;
-        std::vector<Vector> reference(const Roundabout*)                const;
-        bool                free(const Roundabout*)                     const;
-        unsigned short      total_waiting_vehicles(const Roundabout*)   const;
-        float               width()                                     const;
-        unsigned short      length()                                    const;
-        bool                is_one_way()                                const;
-        unsigned short      total_vehicles()                            const;
-        float               weight()                                    const;
-        Map*                map()                                       const;
-        
-        void                set_color(QColor);
-        void                set_max_speed(unsigned short);
-
-        void                update();
-        void                open(const Roundabout*, Extremity);
-
-        static Road         DEFAULT;
+        void            update(float);
     };
 #endif
 

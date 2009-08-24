@@ -1,30 +1,45 @@
 #ifndef __SLOT__
     #define __SLOT__
 
-    class Road;
+    #include "location.hpp"
+    #include "semaphore.hpp"
+
+    class Lane;
+    class Map;
     class Roundabout;
     class Vehicle;
 
-    class Slot
-    {
-        Roundabout* roundabout;
-        Road*       road;
-        Vehicle*    vehicle;
+    class Slot : public Location {
+        Lane*       m_lane;
+        Roundabout* m_roundabout;
+        Semaphore   m_semaphore;
+        Vehicle*    m_vehicle;
 
         public:
         Slot();
-        Slot(const Slot&);
+        Slot(Roundabout*, Lane*);
+        //Slot(const Slot&);
         ~Slot();
 
-        Roundabout* get_roundabout()            const;
-        Roundabout* other_side()                const;
-        Road*       get_road()                  const;
-        Vehicle*    get_vehicle()               const;
-        bool        is_connected()              const;
+        Class               get_class()             const;
+        Lane*               lane()                  const;
+        Roundabout*         roundabout()            const;
+        Semaphore*          semaphore();
+        //std::vector<Lane*>  lanes()                     const;
+        Vehicle*            vehicle()               const;
 
-        void        connect_to(const Road*);
+        bool                is_free()               const;
+        Map*                map()                   const;
+        unsigned short      waiting_vehicles_count()    const;
+        
+        //Roundabout*       other_side()                const;
+        //bool              is_connected()              const;
 
-        Slot&       operator=(const Slot&);
+        //void              connect_to(const Road*);
+        void                host(Vehicle*);
+        void                release(Vehicle* vehicle = 0);
+
+        //Slot&             operator=(const Slot&);
     };
 #endif
 

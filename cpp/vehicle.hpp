@@ -1,59 +1,78 @@
 #ifndef VEHICLE
     #define VEHICLE
 
+    #include <complex>
+    #include <ctime>
+    #include <QColor>
     #include <vector>
 
-    #include "constants.hpp"
+    #include "gps.hpp"
+
+    #define HEADWAY 5
     
+    class Lane;
+    class Location;
+    class Map;
     class Road;
+    class Roundabout;
+    class Slot;
 
-    //  Those which will crowd our city >_< .
-    class Vehicle
-    {
-        unsigned short
-            force,
-            headway,
-            length,
-            mass,
-            speed,
-            width;
-        QColor              color;
-        std::vector<Road*>  path;
-        bool                waiting;
+    enum VehicleModel   {CAR, SPEED_CAR, TRUCK};
 
+    //  Those which will crowd our city >_<
+    class Vehicle {
+        bool                        m_is_waiting;
+        clock_t 
+            m_start_waiting_delay,
+            m_total_waiting_delay;
+        float
+            m_length_covered,
+            m_mass;
+        GPS                         m_gps;
+        QColor                      m_color;
+        unsigned int
+            m_acceleration,
+            m_force,
+            m_length,
+            m_speed,
+            m_width;
+        std::vector<Roundabout*>    m_path;
+        Vehicle*                    m_previous_vehicle;
+        Location*                   m_location;
+        
         public:
-        Vehicle(Initialization mode = DEFAULT);
+        static Vehicle              DEFAULT_CAR;
+        static Vehicle              DEFAULT_SPEED_CAR;
+        static Vehicle              DEFAULT_TRUCK;
+        
+        Vehicle(VehicleModel model = CAR);
         ~Vehicle();
+
+        QColor              color()                 const;
+        bool                is_waiting()            const;
+        Lane*               lane();
+        unsigned int        length()                const;
+        unsigned int        length_covered()        const;
+        Roundabout*         path(unsigned int);
+        unsigned int        path_length()           const;
+        unsigned int        speed()                 const;
+        unsigned int        width()                 const;
+
+        float               next_obstacle();
+        std::complex<float> position();
+        Road*               road();
+        Slot*               slot();
+        Roundabout*         roundabout();
+        Map*                map();
+        
+        void                set_waiting_state(bool);
+        //void              set_location(void*);
+        void                set_destination(Roundabout*);
+
+        bool                join(Location*);
+        void                update(float delta_t);
+        void                update_on_slot(float delta_t);
+        void                update_on_lane(float delta_t);
     };
-    
-    //   Standard car
-    const Vehicle DEFAULT_CAR(EMPTY);
-        DEFAULT_CAR.set_length(5);
-        DEFAULT_CAR.set_width(4);
-        DEFAULT_CAR.set_headway(DEFAULT_CAR.length());
-        DEFAULT_CAR.set_speed(0);
-        DEFAULT_CAR.set_force(10);
-        DEFAULT_CAR.set_mass(1);
-        DEFAULT_CAR.set_color(QColor(Qt::white));
-
-    //   Speed car
-    const Vehicle DEFAULT_SPEED_CAR(EMPTY);
-        DEFAULT_SPEED_CAR.set_length(5);
-        DEFAULT_SPEED_CAR.set_width(4);
-        DEFAULT_SPEED_CAR.set_headway(DEFAULT_CAR.length());
-        DEFAULT_SPEED_CAR.set_speed(0);
-        DEFAULT_SPEED_CAR.set_force(30);
-        DEFAULT_SPEED_CAR.set_mass(1/1.5);
-        DEFAULT_SPEED_CAR.set_color(QColor(Qt::red));
-
-    //   Truck
-    const Vehicle DEFAULT_TRUCK(EMPTY);
-        DEFAULT_TRUCK.set_color(QColor(Qt::lightblue));
-        DEFAULT_TRUCK.set_force(50);
-        DEFAULT_TRUCK.set_headway(DEFAULT_CAR.length());
-        DEFAULT_TRUCK.set_length(5);
-        DEFAULT_TRUCK.set_mass(5);
-        DEFAULT_TRUCK.set_speed(0);
-        DEFAULT_TRUCK.set_width(4);
 #endif
     

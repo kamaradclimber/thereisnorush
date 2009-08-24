@@ -1,13 +1,9 @@
-#ifndef MAIN
-    #define MAIN
+#ifndef __MAIN__
+    #define __MAIN__
 
     #include <QtGui>
 
-    #include "lib.hpp"
-    #include "constants.hpp"
     #include "road.hpp"
     #include "map.hpp"
-    #include "vector.hpp"
-
-    
+    #include "window.hpp"
 #endif

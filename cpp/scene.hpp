@@ -1,27 +1,42 @@
-#ifndef SCENE
-    #define SCENE
+#ifndef __SCENE__
+    #define __SCENE__
+
+    #include <QtGui>
+
+    #include "map.hpp"
+
+    #define SCENE_WIDTH     800
+    #define SCENE_HEIGHT    600
+    #define TF_RADIUS       3
+
+    class Lane;
+    class Road;
+    class Roundabout;
+    class Vehicle;
+    class MainWindow;
 
     //  Area where the scene will be drawn.
-    class Scene : public QWidget
-    {
+    class Scene : public QWidget {
         Q_OBJECT
 
-        QWidget*    window;
-        QPainter*   painter;
+        MainWindow*     m_window;
+        QPainter*       m_painter;
 
-        Map*        map;
+        Map             m_map;
         
         public:
-        Scene(const QWidget*);
+        Scene(MainWindow*);
         ~Scene();
+
+        Map* map();
 
         void paintEvent(QPaintEvent*);
         void draw();
-        void draw(const Road&);
-        void draw(const Lane&);
-        void draw(const Vehicle&);
-        void draw(const Roundabout&);
-        void draw(const Road&, Extremity);
+        void draw(Road*);
+        void draw(Lane*);
+        void draw(Vehicle*);
+        void draw(Roundabout*);
+        void draw_semaphore(Lane*);
         void draw_selected_path();
 
         void mousePressEvent(QMouseEvent*);

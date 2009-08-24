@@ -1,18 +1,26 @@
+#include <iostream>
+
+#include "lane.hpp"
+#include "roundabout.hpp"
 #include "slot.hpp"
+
+using namespace std;
 
 
 //  Constructors & destructor
-Slot::Slot()
-{
-
+Slot::Slot() {
 }
 
-Slot::Slot(const Slot& new_slot)
+Slot::Slot(Roundabout* roundabout, Lane* lane) :
+        m_lane(lane),
+        m_roundabout(roundabout),
+        m_vehicle(0) {}
+/*Slot::Slot(const Slot& new_slot)
 {
-    roundabout  = new_slot.get_roundabout();
-    road        = new_slot.get_road();
-    vehicle     = new_slot.get_vehicle();
-}
+    roundabout  = new_slot._roundabout();
+    road        = new_slot._road();
+    vehicle     = new_slot._vehicle();
+}*/
 
 Slot::~Slot()
 {
@@ -20,32 +28,38 @@ Slot::~Slot()
 
 
 //  Accessors
-Roundabout* Slot::get_roundabout() const
-{
-    return roundabout;
+Class Slot::get_class() const {
+    return SLOT;
 }
 
-Roundabout* Slot::other_side() const
-{
-    if (is_connected())
-    {
-        return road->other_extremity(roundabout);
-    }
-
-    return Roundabout*();
+Lane* Slot::lane() const {
+    return m_lane;
 }
 
-Road* Slot::get_road() const
-{
-    return road;
+Map* Slot::map() const {
+    return m_roundabout->map();
 }
 
-Vehicle* Slot::get_vehicle() const
-{
-    return vehicle;
+Roundabout* Slot::roundabout() const {
+    return m_roundabout;
 }
 
-bool Slot::is_connected() const
+Semaphore* Slot::semaphore() {
+    return &m_semaphore;
+}
+
+Vehicle* Slot::vehicle() const {
+    return m_vehicle;
+}
+
+bool Slot::is_free() const {
+    if (!m_vehicle)
+        return true;
+
+    return false;
+}
+
+/*bool Slot::is_connected() const
 {
     if (road != NULL)
     {
@@ -53,21 +67,47 @@ bool Slot::is_connected() const
     }
 
     return false;
+}*/
+
+/*Roundabout* Slot::other_side() const {
+    if (is_connected())
+        return road->other_extremity(roundabout);
+
+    return Roundabout*();
+}*/
+
+unsigned short Slot::waiting_vehicles_count() const {
+    return m_lane->waiting_vehicles_count();
 }
+
 
 
 //  Mutators
-void Slot::connect_to(const Road* new_road)
-{
+/*void Slot::connect_to(const Road* new_road) {
     road = new_road;
+}*/
+
+
+void Slot::host(Vehicle* vehicle) {
+    if (!m_vehicle)
+        m_vehicle = vehicle;
+}
+
+void Slot::release(Vehicle* vehicle) {
+    if (!vehicle) {
+        m_vehicle = 0;
+        return void();
+    }
+
+    if (m_vehicle == vehicle)
+        m_vehicle = 0;
 }
 
 //  Operators
-Slot& Slot::operator=(const Slot& slot)
-{
-    roundabout  = slot.get_roundabout();
-    road        = slot.get_road();
-    vehicle     = slot.get_vehicle();
+/*Slot& Slot::operator=(const Slot& slot) {
+    roundabout  = slot.roundabout();
+    road        = slot.road();
+    vehicle     = slot.vehicle();
     
     return *this;
-}
+}*/

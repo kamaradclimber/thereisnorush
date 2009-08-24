@@ -1,145 +1,235 @@
-﻿#include "constants.hpp"
-#include "lib.hpp"
+#include <algorithm>
+#include <iostream>
+
+#include "lane.hpp"
+#include "map.hpp"
+#include "road.hpp"
 #include "roundabout.hpp"
+#include "slot.hpp"
 #include "vehicle.hpp"
 
 using namespace std;
 
+Roundabout Roundabout::DEFAULT = Roundabout();
+    
+
 //  Default features
-Roundabout::DEFAULT.set_color(QColor(Qt::red));
-Roundabout::DEFAULT.set_height(3);
-Roundabout::DEFAULT.set_max_slots(5);
-Roundabout::DEFAULT.set_radius(10);
-Roundabout::DEFAULT.set_rotation_speed(10);
-Roundabout::DEFAULT.set_spawn_delay(2000);
-Roundabout::DEFAULT.set_spawning(false);
-Roundabout::DEFAULT.set_width(3);
+Roundabout::Roundabout() :
+    complex<float>(),
+    m_is_spawning(false), 
+    m_g_cost(0),
+    m_h_cost(0),
+    m_last_spawn(0),
+    m_last_shift(0),
+    m_local_load(0),
+    m_shift_delay(10),
+    m_spawn_delay(2),
+    m_map(0),
+    m_color(QColor(Qt::red)),
+    m_destination(0),
+    m_nearest_parent(0),
+    m_roads(),
+    m_slots() {}
 
-//float ROUNDABOUT_ROTATION_RATE = 0.5;
-
-
-//  Constructor/destructor
-Roundabout::Roundabout() : radius(Roundabout::DEFAULT.get_radius()), max_slots(Roundabout::DEFAULT.get_max_slots()), rotation_speed(Roundabout::DEFAULT.get_rotation_speed()), spawning(Roundabout::DEFAULT.is_spawning()), spawn_delay(Roundabout::DEFAULT.get_spawn_delay())
-{
-}
 
 Roundabout::Roundabout(Map* new_map, unsigned short new_x, unsigned short new_y) :
-    map(new_map),
-    position(new_x, new_y),
-    radius(Roundabout::DEFAULT.get_radius()),
-    max_slots(Roundabout::DEFAULT.get_max_slots()),
-    rotation_speed(Roundabout::DEFAULT.get_rotation_speed()),
-    slotss(),
-    spawning(Roundabout::DEFAULT.is_spawning()),
-    last_spawn(clock()),
-    last_shift(clock()),
-    spawn_delay(Roundabout::DEFAULT.get_spawn_delay()),
-    local_load(0)
-{
-    //vehicle_spiraling_time = {}
+    complex<float>((float)new_x, (float)new_y),
+    m_is_spawning(false), 
+    m_g_cost(0.),
+    m_h_cost(0),
+    m_last_spawn(0),
+    m_last_shift(0),
+    m_local_load(0),
+    m_shift_delay(10),
+    m_spawn_delay(2),
+    m_map(new_map),
+    m_color(QColor(Qt::red)),
+    m_destination(0),
+    m_nearest_parent(0),
+    m_roads(),
+    m_slots() {
+        //vehicle_spiraling_time = {}
 }
 
-Roundabout::~Roundabout()
-{
-}
+Roundabout::~Roundabout() {}
 
 
 //  Accessors
-Slot* Roundabout::slot(unsigned short i) const
-{
-    return slotss[i];
+QColor Roundabout::color() const {
+    return m_color;
 }
 
-unsigned short Roundabout::total_slots() const
-{
-    return slotss.size();
+float Roundabout::f_cost() const {
+    return m_g_cost + m_h_cost;
 }
 
-//  Connects a road to a slot, must be called during initialization.
-void Roundabout::host(const Road* new_road)
-{
-    srand(time(NULL));
+float Roundabout::g_cost() const {
+    return m_g_cost;
+}
 
-    //  Choose a random free slot, if any, to allocate for the road
-    //  TODO : prevent from infinite loop !
-    Slot* slot = slotss[rand() % slotss.size()]
-    while (slot->road() != NULL)
-    {
-        slot = slotss[rand() % slotss.size()]
-    }
+float Roundabout::h_cost() const {
+    return m_h_cost;
+}
+
+bool Roundabout::is_spawning() const {
+    return m_is_spawning;
+}
+
+Map* Roundabout::map() {
+    return m_map;
+}
+
+Roundabout* Roundabout::nearest_parent() {
+    return m_nearest_parent;
+}
+
+Slot* Roundabout::slot(unsigned short i) {
+    if (i < m_slots.size())     return m_slots.at(i);
     
-    slot->connect_to(new_road);
+    return 0;
 }
+
+float Roundabout::shift_delay() const {
+    return m_shift_delay;
+}
+
+float Roundabout::spawn_delay() const {
+    return m_spawn_delay;
+}
+
+unsigned short Roundabout::slots_count() const {
+    return m_slots.size();
+}
+
+Slot* Roundabout::free_slot() {
+    unsigned short i(0);
+    while (i < m_slots.size()) {
+        if (m_slots[i]->is_free())  return m_slots[i];
+        
+        i++;
+    }
+
+    return 0;
+}
+
+
+//  Mutators
+Slot* Roundabout::book_slot(Lane* lane) {
+    Slot* new_slot = new Slot(this, lane);
+    m_slots.push_back(new_slot);
+    
+    return new_slot;
+}
+
+/*void Roundabout::set_f_cost(float value) {
+    m_f_cost = value;
+}*/
+
+void Roundabout::set_g_cost(float value) {
+    m_g_cost = value;
+}
+
+void Roundabout::set_h_cost(float value) {
+    m_h_cost = value;
+    //m_f_cost = m_g_cost + m_h_cost;
+}
+
+void Roundabout::set_destination(Roundabout* destination) {
+    m_destination = destination;
+}
+
+void Roundabout::set_nearest_parent(Roundabout* parent) {
+    m_nearest_parent = parent;
+}
+
+void Roundabout::set_spawn_delay(float delay) {
+    m_spawn_delay = delay;
+}
+
+void Roundabout::set_spawning(bool state) {
+    m_is_spawning = state;
+}
+
+
+// TODO
+/*  Connects a road to a slot, must be called during initialization.
+void Roundabout::host(const Road* new_road) {
+    //  Already hosted => nothing to do
+    if (binary_search(m_roads.begin(), m_roads.end(), new_road))
+        return void();
+    
+    
+    unsigned short i(0), j(0);
+    while (j < 2) {
+        while (i < new_road.total_lanes_to(j)) {
+            Slot* slot = new Slot(this, new_road.lane(j, i));
+            i++;
+        }
+
+        i = 0;
+        j++;
+    }
+
+    slot->connect_to(new_road);
+}*/
+
+//  Build a road between current roundabout and the given one
+//  CONVENTION SENSITIVE : lanes_to deals with the count of lanes going from the current roundabout to the given one
+void Roundabout::connect_to(Roundabout* roundabout, unsigned short lanes_from, unsigned short lanes_to) {
+    //  TODO : check if already connected
+    Road* new_road = new Road(this, roundabout, lanes_from, lanes_to);
+    m_roads.push_back(new_road);
+}
+
 
 //  Handles traffic lights.
-void Roundabout::update_semaphores()
-{
+void Roundabout::update_semaphores() {
+    // TODO : update every X seconds, and not permanently
     //   Get the most loaded parent and lane
-    Roundabout*     most_loaded_parent  = parents[0];
-    Lane*           most_lested_lane    = chosen_one->get_lane_to(this);
-    unsigned short  i                   = 0;
+    Roundabout*     most_loaded_parent(0);
+    Lane*           most_loaded_lane(0);
+    
+    Roundabout* parent(0);
+    unsigned short  i(0);
 
-    while (i < slotss.size())
-    {
-        //  The road hasn't got any lane leading to this roundabout => go to next slot
-        if (!slotss[i]->road()->can_lead_to(this))
-        {
-            continue;
-        }
+    while (i < m_slots.size()) {
+        //  The lane doesn't lead to this roundabout => go to next slot
+        if (m_slots[i]->lane()->from() == this)   {i++; continue;}
         
-        Roundabout* parent = slotss[i]->other_extremity();
+        parent = m_slots[i]->lane()->from();
 
-        if (parent->global_load() > most_loaded_parent->global_load())
-        {
-            most_loaded_parent  = parent;
-            Lane* lane          = parent->get_lane_to(this);
-
-            if (lane->total_vehicles() > most_loaded_lane->total_vehicles())
-            {
-                most_loaded_lane = lane;
-            }
-        }
+        if (!most_loaded_parent || parent->global_load() > most_loaded_parent->global_load())   most_loaded_parent  = parent;
+        if (!most_loaded_lane || m_slots[i]->lane()->load() > most_loaded_lane->load())         most_loaded_lane = m_slots[i]->lane();
 
         i++;
     }
 
     //   Open the way FROM this one, and close ways FROM others
     i = 0;
-    while (i < slotss.size())
-    {
-        if (slotss[i]->other_extremity() == chosen_one)
-        {
-            slotss[i]->set_semaphore(ENTRANCE, true);
-        }
-        else
-        {
-            slotss[i]->set_semaphore(ENTRANCE, false);
-        }
+    while (i < m_slots.size()) {
+        if (m_slots[i]->lane()->from() == most_loaded_parent)   m_slots[i]->lane()->open();
+        else                                                    m_slots[i]->lane()->close();
 
-        i++;
+        i++; 
     }
 
     //  Open the most lested lane (and do not close the others)
-    most_loaded_lane->slot(this)->set_semaphore(ENTRANCE, true);
+    most_loaded_lane->open();
 
     //   Then, let's update each road, few rules because the general view overrules the local one.
     i = 0;
-    while (i < slotss.size())
-    {
-        if (slotss[i]->road() != NULL
-        &&  slotss[i]->road()->can_lead_to(this)
-        &&  slotss[i]->semaphore(ENTRANCE)->last_update() - clock() > WAITING_TIME_LIMIT
-        &&  slotss[i]->total_waiting_vehicles())
-        {
-            slotss[i]->set_semaphore(ENTRANCE, true);
-        }
+    while (i < m_slots.size()) {
+        if (m_slots[i]->lane()->to() == this
+        &&  m_slots[i]->lane()->semaphore().last_update() - clock() > 100000
+        &&  m_slots[i]->waiting_vehicles_count())
+            m_slots[i]->lane()->open();
 
         i++;
     }
 }
 
 //  Updates a given vehicle on the roundabout 
-void Roundabout::update(Vehicle* vehicle)
+/*void Roundabout::update(Vehicle* vehicle)
 {
     if not (vehicle in vehicle_spiraling_time)
     vehicle_spiraling_time[vehicle] = [vehicle.total_waiting_time, lib.clock()]
@@ -163,52 +253,44 @@ vehicle.join(vehicle.next_way(False)) // cette fois on fait une lecture destruct
 to_kill.append(vehicle)*/
 
 //  Updates the roundabout : rotate the vehicles, dispatch them...
-void Roundabout::update()
-{
-    unsigned short i = 0;
-    //   Make the cars rotate
-    if (clock() - last_shift > ROUNDABOUT_ROTATION_RATE)
-    {
-        Vehicle* temp = slotss.back()->vehicle();
+void Roundabout::update(float delta_t) {
+    unsigned short i(0);
 
-        i = total_slots();
-        while (i > 0)
-        {
-            slotss[i]->set_vehicle(slotss[i - 1]->vehicle());
+    //   Make the cars rotate
+    if (clock() - m_last_shift > DEFAULT.shift_delay() && slots_count()) {
+        Vehicle* temp = m_slots.back()->vehicle();
+        if (temp)   temp->join(0);
+
+        i = slots_count() - 1;
+        while (i) {
+            if (m_slots[i-1]->vehicle())    m_slots[i-1]->vehicle()->join(m_slots[i]);
             i--;
         }
-        slotss[i]->set_vehicle(temp);
+        
+        if (temp)   temp->join(m_slots[i]);
 
-        last_shift = clock();
+        m_last_shift = clock();
     } 
     
     //   Spawning mode
-    if (spawning && (clock() - last_spawn > spawn_delay))
-    {
-        srand(time(NULL));
+    if (m_is_spawning && (clock() - m_last_spawn > m_spawn_delay)) {
+        srand(time(0));
 
-        Slot* slot = slotss[rand() % total_slots()];
-        //  TODO : prevent from infinite loop !
-        while (slot->vehicle() != NULL)
-        {
-            slot = slotss[rand() % total_slots()];
-        }
+        Slot* slot = free_slot();
+        if (slot) {
+            unsigned short  random(rand() % 100);
+            VehicleModel    model(CAR);
+            
+            if (80 <= random && random < 95)            model = TRUCK;
+            else if (95 <= random && random < 100)      model = SPEED_CAR;
+    
+            Vehicle* new_vehicle = new Vehicle(model);
+            new_vehicle->join(slot);
+            new_vehicle->set_destination(map()->roundabout(rand() % map()->roundabouts_count()));
 
-        unsigned short  random  = rand() % 100;
-        VehicleType     type    = STANDARD_CAR;
-        
-        if (80 <= random < 95)
-        {
-           type = TRUCK;
+            
+            m_last_spawn = clock();
         }
-        else if (95 <= random < 100)
-        {
-            type = SPEED_CAR;
-        }
-
-        Vehicle new_vehicle(slot, type);
-        
-        last_spawn = clock();
     }
 
     //   Update traffic lights
@@ -216,9 +298,8 @@ void Roundabout::update()
 
     //   Update vehicles
     i = 0;
-    while (i < total_slots())
-    {
-        update(slotss[i]->vehicle());
+    while (i < slots_count()) {
+        if (!m_slots[i]->is_free())     m_slots[i]->vehicle()->update(delta_t);
         i++;
     }
 
@@ -229,32 +310,27 @@ void Roundabout::update()
                     vehicle.die()
 
                     to_kill = []*/
+}
 
 //  Computes in per cent a number called load (inspired by the load of a Linux station)
-float Roundabout::get_local_load() const
-{
-    unsigned float roads_sum    = 0;
-    unsigned short i            = 0;
+float Roundabout::local_load() const {
+    float           result(0);
+    unsigned short  i(0);
 
-    while (i < total_slots())
-    {
-        if (!(slotss[i]->road()->can_lead_to(this)))
-        {
-            continue;
-        }
-        
-        roads_sum += slotss[i]->total_waiting_vehicles() * VEHICLE[STANDARD_CAR][DEFAULT_LENGTH] / slotss[i]->road()->length();
-        
+    while (i < slots_count()) {
+        if (m_slots[i]->lane()->to() != this)   {i++; continue;}
+
+        result += m_slots[i]->lane()->load();
         i++;
     }
     
-    return (roads_sum + total_vehicles()) / (float)(max_slots);
+    return (result + vehicles_count()) / (2*m_slots.size());
 }
 
 /*  Returns the first road found, if any, that can lead to the given roundabout.
 //  Returns None if no road is found.
 //  /!\ A road is returned only if it has a lane that leads to the given roundabout !
-Road* Roundabout::get_road_to(const Roundabout* roundabout) const
+Road* Roundabout::_road_to(const Roundabout* roundabout) const
 {
     for road in hosted_roads:
         for lane in road.lanes:
@@ -264,16 +340,11 @@ Road* Roundabout::get_road_to(const Roundabout* roundabout) const
                     return None*/
 
 //  Returns whether there is no place left on the roundabout.
-bool Roundabout::is_full() const
-{
-    unsigned short i = 0;
+bool Roundabout::is_full() const {
+    unsigned short i(0);
 
-    while (i < total_slots())
-    {
-        if (slotss[i]->vehicle() == NULL)
-        {
-            return false;
-        }
+    while (i < slots_count()) {
+        if (m_slots[i]->vehicle() == 0)     return false;
 
         i++;
     }
@@ -372,36 +443,45 @@ result.append(lane)
 
     @property*/
 
+unsigned short Roundabout::vehicles_count() const {
+    unsigned short result(0), i(0);
+
+    while (i < m_slots.size()) {
+        if (m_slots[i]->vehicle() != 0)
+            result++;
+
+        i++;
+    }
+
+    return result;
+}
+
 //  Returns the number of vehicles waiting on all the incoming roads connected to this roudabout.
-unsigned short Roundabout::total_waiting_vehicles() const
+unsigned short Roundabout::waiting_vehicles_count() const
 {
     unsigned short
         result  = 0,
         i       = 0;
 
-    while (i < total_slots())
-    {
-        result += slotss[i]->total_waiting_vehicles();
+    while (i < slots_count()) {
+        if (m_slots[i]->lane()->from() == this)     {i++; continue;}
+
+        result += m_slots[i]->lane()->waiting_vehicles_count();
         i++;
     }
     
     return result;
 }
 
-float Roundabout::global_load() const
-{
-    unsigned float result   = 1 + local_load() * 10  // The "1 +" is only to avoid zero-division ;
-    unsigned short i        = 0;
+float Roundabout::global_load() const {
+    float result(local_load());  // The "1 +" is only to avoid zero-division ;
+    unsigned short i(0);
 
-    while (i < total_slots())
-    {
-        if (slotss[i]->road()->can_lead_to(this))
-        {
-            result += slotss[i]->other_extremity()->local_load();
-        }
+    while (i < slots_count()) {
+        if (m_slots[i]->lane()->to() == this)   result += m_slots[i]->lane()->from()->local_load();
         
         i++;
     }
 
-    return result;
+    return result/(m_slots.size() + 1);
 }

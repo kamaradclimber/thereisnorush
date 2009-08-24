@@ -1,59 +1,107 @@
-#include "constants.hpp"
-#include "hpp"
+#include <complex>
+#include <iostream>
+
+#include "lane.hpp"
+#include "map.hpp"
+#include "road.hpp"
+#include "roundabout.hpp"
+#include "scene.hpp"
+#include "vehicle.hpp"
+#include "window.hpp"
+
+using namespace std;
 
 //  Builds the main window.
-MainWindow::MainWindow() : delta_t(0), last_update(clock()), selected_vehicle(NULL), selected_roundabout(NULL), timer()
-{
+MainWindow::MainWindow() : m_delta_t(0), m_last_update(clock()), m_selected_vehicle(0), m_selected_roundabout(0), m_timer() {
     //   Set the interface
     setup_interface();
 
     //   Start the timer
-    timer.start(10, this);
+    m_timer.start(100, this);
 }
 
+MainWindow::~MainWindow() {
+    /*delete m_entrance_lights;
+    delete m_exit_lights;*/
+    delete m_antialiasing;
+    delete m_density;
+    delete m_is_spawning;
+    delete lbl_info;
+    delete m_spawn_delay;
+    delete m_scene;
+}
+
+
+//  Accessors
+bool MainWindow::antialiasing() const {
+    return (m_antialiasing->checkState() == Qt::Checked);
+}
+
+bool MainWindow::display_semaphores() const {
+    return (m_display_semaphores->checkState() == Qt::Checked);
+}
+
+bool MainWindow::display_vehicles() const {
+    return (m_display_vehicles->checkState() == Qt::Checked);
+}
+
+
+Map* MainWindow::map() const {
+    return m_scene->map();
+}
+
+Roundabout* MainWindow::selected_roundabout() const {
+    return m_selected_roundabout;
+}
+
+Vehicle* MainWindow::selected_vehicle() const {
+    return m_selected_vehicle;
+}
+
+
 //  Sets up the Qt interface, layout, slots & properties
-void MainWindow::setup_interface()
-{
+void MainWindow::setup_interface() {
     //   Window settings
     setObjectName("MainWindow");
 
     QRect screen = QDesktopWidget().screenGeometry();
     resize(screen.width(), screen.height());
 
-    setWindowTitle(TITLE);
-    setWindowIcon(QIcon("icons/tinr_logo.png"));
-    statusBar().showMessage("Ready");
+    setWindowTitle(QString("There Is No Rush -- C++ reborn"));
+    setWindowIcon(QIcon("icons/logo.png"));
+    statusBar()->showMessage(QString("Ready"));
 
-    setCentralWidget(QWidget());
+    m_central_widget = new QWidget;
+    setCentralWidget(m_central_widget);
 
     //   Exit action
     QAction* act_exit = new QAction(QIcon("icons/exit.png"), "Exit", this);
-        act_exit->setShortcut("Ctrl+Q");
+        //act_exit->setShortcut("Ctrl+Q");
         act_exit->setStatusTip("Exit application");
-        connect(act_exit, SIGNAL("triggered()"), SLOT("close()"));
+        connect(act_exit, SIGNAL(triggered()), SLOT(close()));
 
     //   Play action
-    QAction act_play = new QAction(QIcon("icons/play.png"), "Play", this);
+    QAction* act_play = new QAction(QIcon("icons/play.png"), "Play", this);
         //act_play->setShortcut("Ctrl+P");
         act_play->setStatusTip("Play simulation");
-        connect(act_play, SIGNAL("triggered()"), play);
+        connect(act_play, SIGNAL(triggered()), SLOT(play()));
 
     //   Pause action
     QAction* act_pause = new QAction(QIcon("icons/pause.png"), "Pause", this);
         //act_pause->setShortcut("Ctrl+P");
         act_pause->setStatusTip("Pause simulation");
-        connect(act_pause, SIGNAL("triggered()"), pause);
+        connect(act_pause, SIGNAL(triggered()), SLOT(pause()));
 
     //   Fast forward action
     QAction* act_fastforward = new QAction(QIcon("icons/forward.png"), "Fast forward", this);
         act_fastforward->setStatusTip("Fast forward simulation (x2 - x4 - x8)");
-        connect(act_fastforward, SIGNAL("triggered()"), fastforward);
+        connect(act_fastforward, SIGNAL(triggered()), SLOT(fastforward()));
 
     //   Reset action
     QAction* act_reset = new QAction(QIcon("icons/reset.png"), "Reset", this);
         //act_reset->setShortcut("Ctrl+R");
         act_reset->setStatusTip("Reset simulation");
-        connect(act_reset, SIGNAL("triggered()"), reset);
+        connect(act_reset, SIGNAL(triggered()), SLOT(reset()));
 
     //   File menu
     QMenu* file = menuBar()->addMenu("&File");
@@ -74,16 +122,16 @@ void MainWindow::setup_interface()
         main_toolbar->addAction(act_reset);
 
     //   Scene
-    scene = new Scene(this);
-        scene->setObjectName("scene");
+    m_scene = new Scene(this);
+        m_scene->setObjectName("scene");
 
     // Histogram
     //histogram = Histogram(this)
     //histogram.setObjectName("histogram")
 
     //   Information box
-    QLabel* lbl_info = new QLabel("<i>Information</i>", this);
-        lbl_info->setAlignment(Qt::AlignLeading|Qt::AlignLeft|Qt::.AlignTop);
+    lbl_info = new QLabel("<i>Loading...</i>", this);
+        lbl_info->setAlignment(Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop);
         lbl_info->setWordWrap(true);
         lbl_info->setObjectName("lbl_info");
 
@@ -91,55 +139,86 @@ void MainWindow::setup_interface()
         lay_info->addWidget(lbl_info);
         //lay_info->addWidget(histogram);
 
-    QGroupBox* box_info = new QGroupBox("Informations", this);
+    QGroupBox* box_info = new QGroupBox("Statistics", this);
         box_info->setObjectName("box_info");
         box_info->setLayout(lay_info);
 
+    //  Selection information
+    lbl_selection = new QLabel("<i>No selection.</i>", this);
+        lbl_info->setAlignment(Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop);
+        lbl_info->setWordWrap(true);
+        lbl_info->setObjectName("lbl_selection");
+
+    QVBoxLayout* lay_selection = new QVBoxLayout(this);
+        lay_selection->addWidget(lbl_selection);
+
+    QGroupBox* box_selection = new QGroupBox("Selection", this);
+        box_selection->setObjectName("box_selection");
+        box_selection->setLayout(lay_selection);
+
+
     //   Commands box
-    entrance_lights = new QCheckBox("Display entrance traffic lights", this);
-        entrance_lights->setObjectName("entrance_lights");
-        entrance_lights->setChecked(false);
-
-    exit_lights = new QCheckBox("Display exit traffic lights", this);
-        exit_lights->setObjectName("exit_lights");
-        exit_lights->setChecked(true);
-
-    antialiasing = new QCheckBox("Use antialiasing", this);
-        antialiasing->setObjectName("antialiasing");
-        antialiasing->setChecked(false);
-
-    display_density = new QCheckBox("Display density", this);
-        display_density->setObjectName("display_density");
-        display_density->setChecked(false);
-
-    spawning = new QCheckBox("Roundabout is spawning", this);
-        spawning->setObjectName("is_spawning");
-        spawning->setCheckable(false);
+    m_is_spawning = new QCheckBox("Roundabout is spawning", this);
+        m_is_spawning->setObjectName("is_spawning");
+        m_is_spawning->setCheckable(false);
 
     QLabel* lbl_spawn_delay = new QLabel("Spawn delay", this);
-    spawn_delay = new QSpinBox(this);
-        spawn_delay->setSingleStep(100);
-        spawn_delay->setRange(1000, 30000);
-        spawn_delay->setSuffix("ms");
-        spawn_delay->setValue(SPAWN_DELAY * 1000.0);
+    m_spawn_delay = new QSpinBox(this);
+        m_spawn_delay->setSingleStep(100);
+        m_spawn_delay->setRange(1000, 30000);
+        m_spawn_delay->setSuffix(" ms");
+        m_spawn_delay->setValue(SPAWN_DELAY * 1000.0);
+
+    QLabel* lbl_simulation_speed = new QLabel("Simulation speed", this);
+    m_simulation_speed = new QSpinBox(this);
+        m_simulation_speed->setSingleStep(1);
+        m_simulation_speed->setRange(0, 10);
+        m_simulation_speed->setSuffix(" x");
+        m_simulation_speed->setValue(1);
 
     QGridLayout* lay_commands = new QGridLayout(this);
-        lay_commands->addWidget(entrance_lights, 0, 0, 1, 2);
-        lay_commands->addWidget(exit_lights, 1, 0, 1, 2);
-        lay_commands->addWidget(antialiasing, 2, 0, 1, 2);
-        lay_commands->addWidget(display_density, 3, 0, 1, 2);
-        lay_commands->addWidget(spawning, 4, 0, 1, 2);
-        lay_commands->addWidget(lbl_spawn_delay, 5, 0);
-        lay_commands->addWidget(spawn_delay, 5, 1);
+        lay_commands->addWidget(m_is_spawning, 0, 0, 1, 2);
+        lay_commands->addWidget(lbl_spawn_delay, 1, 0);
+        lay_commands->addWidget(m_spawn_delay, 1, 1);
+        lay_commands->addWidget(lbl_simulation_speed, 2, 0);
+        lay_commands->addWidget(m_simulation_speed, 2, 1);
 
     QGroupBox* box_commands = new QGroupBox("Commands", this);
         box_commands->setObjectName("box_commands");
         box_commands->setLayout(lay_commands);
 
+
+    //  Display options
+    m_display_semaphores = new QCheckBox("Display traffic lights", this);
+        m_display_semaphores->setChecked(true);
+
+    m_display_vehicles = new QCheckBox("Display vehicles", this);
+        m_display_vehicles->setChecked(true);
+
+    m_antialiasing = new QCheckBox("Use antialiasing", this);
+        m_antialiasing->setObjectName("antialiasing");
+        m_antialiasing->setChecked(false);
+
+    /*m_display_density = new QCheckBox("Display density", this);
+        m_display_density->setObjectName("display_density");
+        m_display_density->setChecked(false);*/
+
+    QGridLayout* lay_display = new QGridLayout(this);
+        lay_display->addWidget(m_display_semaphores, 0, 0);
+        lay_display->addWidget(m_display_vehicles, 1, 0);
+        lay_display->addWidget(m_antialiasing, 2, 0);
+        //lay_commands->addWidget(m_display_density, 3, 0, 1, 2);
+
+    QGroupBox* box_display = new QGroupBox("Display options", this);
+        box_display->setLayout(lay_display);
+    
+        
     //   Control panel
-    QVBoxLayout* lay_panel = QVBoxLayout(this);
+    QVBoxLayout* lay_panel = new QVBoxLayout(this);
         lay_panel->addWidget(box_info);
+        lay_panel->addWidget(box_selection);
         lay_panel->addStretch(1);
+        lay_panel->addWidget(box_display);
         lay_panel->addWidget(box_commands);
 
     QFrame* panel = new QFrame(this);
@@ -149,75 +228,56 @@ void MainWindow::setup_interface()
     QMetaObject::connectSlotsByName(this);
 
     //   Display
-    QGridLayout* lay_window = QGridLayout(this);
-        lay_window->addWidget(scene, 0, 0);
+    QGridLayout* lay_window = new QGridLayout(m_central_widget);
+        lay_window->addWidget(m_scene, 0, 0);
         lay_window->addWidget(panel, 0, 1);
 
-        centralWidget()->setLayout(lay_window);
+    centralWidget()->setLayout(lay_window);
 }
 
 //   If you find another way to implement the equivalent of the following 2 slots, please just change it ! -- Ch@hine
-void MainWindow::play()
-{
-    set_speed(1.0);
+void MainWindow::play() {
+    m_simulation_speed->setValue(1);
 }
 
-void MainWindow::pause()
-{
-    set_speed(0.0);
+void MainWindow::pause() {
+    m_simulation_speed->setValue(0);
 }
 
-void MainWindow::reset()
-{
+//  TODO
+void MainWindow::reset() {
 }
 
 //  Plays the simulation at 2, 4 or 8×
-void MainWindow::fastforward()
-{
-    sim_speed = get_speed();
-
-    if (sim_speed == 8)
-    {
-        set_speed(1);
-    }
-    else
-    {
-        set_speed(2*sim_speed);
-    }
+void MainWindow::fastforward() {
+    /*if (m_simulation_speed == 8)    m_simulation_speed = 1;
+    else                            m_simulation_speed *= 2;*/
 }
 
 //  /!\ Qt specific (please don"t rename)
 //  Specifies what has to be done when exiting the application.
-void MainWindow::closeEvent(QCloseEvent* event)
-{
+void MainWindow::closeEvent(QCloseEvent* event) {
     event->accept();
-    exit();
+    exit(EXIT_SUCCESS);
 }
 
 //  /!\ Qt specific (please don"t rename)
 //  Manages keyboard events
-void MainWindow::keyPressEvent(QKeyEvent* event)
-{
-    if (event->key() == Qt::Key_Escape)
-    {
-        exit();
-    }
+void MainWindow::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape)     exit(EXIT_SUCCESS);
 }
 
 //  Selects the roundabout placed on x, y
 //  Deselects if there is none
-void MainWindow::select_roundabout(unsigned short x, unsigned short y)
-{
-    Vector pos_click(x, y);
+void MainWindow::select_roundabout(unsigned short x, unsigned short y) {
+    complex<float> pos_click(x, y);
 
-    selected_roundabout = NULL;
+    m_selected_roundabout = 0;
     
-    unsigned short i = 0;
-    while (i < map->roundabouts.size())
-    {
-        if ((map->roundabouts(i).position - pos_click).norm() < map->roundabouts(i)->radius)
-        {
-            selected_roundabout = map->roundabouts(i);
+    unsigned short i(0);
+    while (i < map()->roundabouts_count()) {
+        if (abs(*(map()->roundabout(i)) - pos_click) < 5) {
+            m_selected_roundabout = map()->roundabout(i);
             break;
         }
         
@@ -227,34 +287,36 @@ void MainWindow::select_roundabout(unsigned short x, unsigned short y)
 
 //  Selects the vehicle placed on x, y.
 //  Deselects if there is none.
-void MainWindow::select_vehicle(unsigned short x, unsigned short y)
-{
-    Vector pos_click(x, y);
-    unsigned short
-        selection_radius    = 20,
-        i                   = 0,
-        j                   = 0,
-        k                   = 0;
+//  TODO : optimize this function !
+void MainWindow::select_vehicle(unsigned short x, unsigned short y) {
+    complex<float> pos_click(x, y);
+    unsigned short selection_radius(20);
+    unsigned short i(0);
+    unsigned short j(0);
+    unsigned short k(0);
+    unsigned short l(0);
 
-    selected_vehicle = NULL;
+    m_selected_vehicle = 0;
 
-    while (i < map->roads().size())
-    {
-        while (j < map->roads(i)->lanes().size())
-        {
-            while (k < map->roads(i)->lanes(j)->vehicles().size())
-            {
-                Vector pos_vehicle(map->roads(i)->lanes(j)->start->position + map->roads(i)->lanes(j)->parallel() * map->roads(i)->lanes(j)->vehicles(k)->length_covered());
-
-                if ((pos_vehicle - pos_click).norm() < selection_radius)
-                {
-                    selected_vehicle = map->roads(i)->lanes(j)->vehicles(k);
-                    break;
+    while (i < map()->roads_count()) {
+        while (j < map()->road(i)->lanes_count()) {
+            while (l < 2) {
+                while (k < map()->road(i)->lane(l, j)->vehicles_count()) {
+                    Vehicle* vehicle = map()->road(i)->lane(l, j)->vehicle(k);
+    
+                    if (abs(vehicle->position() - pos_click) < selection_radius) {
+                        m_selected_vehicle = vehicle;
+                        break;
+                    }
+    
+                    k++;
                 }
 
-                k++;
+                k = 0;
+                l++;
             }
-            k = 0;
+            
+            l = 0;
             j++;
         }
 
@@ -265,185 +327,175 @@ void MainWindow::select_vehicle(unsigned short x, unsigned short y)
 
 //  /!\ Qt specific (please don"t rename)
 //  Passes or uses timer events to update the simulation
-void MainWindow::timerEvent(QTimerEvent* event)
-{
-    if (event->timerId() == timer->timerId())
-    {
+void MainWindow::timerEvent(QTimerEvent* event) {
+    if (event->timerId() == m_timer.timerId()) {
         // Manage internal time events
-        delta_t = clock() - last_update;
-        last_update = clock();
+        // TODO: use real value instead of 1000000 (clock per second)
+        m_delta_t = (clock() - m_last_update) / 1000000.;
+        m_last_update = clock();
 
         // Update the simulation and informations
-        update_simulation();
-        update_stats();
+        update_simulation(m_delta_t*m_simulation_speed->value());
+        update_panel();
         //histogram.update();
-        scene->update();
+        m_scene->update();
     }
 
-    else
-    {
-        QFrame::timerEvent(event);
-    }
+    //else
+        //QFrame::timerEvent(event);
+}
+
+void MainWindow::update() {
+    // Manage internal time events
+    // TODO: use real value instead of 100000 (clock per second)
+    m_delta_t = (clock() - m_last_update) / 100000.;
+    if (m_delta_t < 0.10) return;
+    
+
+    m_last_update = clock();
+
+    // Update the simulation and informations
+    update_simulation(m_delta_t);
+    //update_panel();
+    //histogram.update();
+    m_scene->update();
 }
 
 //  Updates the simulation
-void MainWindow::update_simulation()
-{
-    //  Update the roads (and the vehicles)
-    unsigned short i = 0;
-    while (i < map->roads().size())
-    {
-        map->roads(i)->update();
+void MainWindow::update_simulation(float delta_t) {
+    //  Update the roads
+    unsigned short i(0);
+    while (i < map()->roads_count()) {
+        map()->road(i)->update(delta_t);
         i++;
     }
 
     //  Get informations from the roundabouts (separate loop)
-    i = 0;
-    while (i < map->roundabouts().size())
-    {
-        map->roundabouts(i)->local_load();
+    /*i = 0;
+    while (i < map()->roundabouts_count()) {
+        map()->roundabout(i)->local_load();
         i++
-    }
+    }*/
     
     //  Update the roundabouts
     i = 0;
-    while (i < map->roundabouts().size())
-    {
-        map->roundabouts(i)->update();
-        map->roundabouts(i)->set_spawn_time(spawn_delay->value() /1000.0);
+    while (i < map()->roundabouts_count()) {
+        map()->roundabout(i)->update(delta_t);
+        map()->roundabout(i)->set_spawn_delay(m_spawn_delay->value() /1000.0);
         
         i++;
     }
 }
 
 //  Displays informations on the simulation and selected objects
-void MainWindow::update_stats()
-{
+void MainWindow::update_panel() {
     QString information("");
-        information += "<b>Roads : </b>"        + QString::number(map->roads().size())          + "<br/>";
-        information += "<b>Roundabouts : </b>"  + QString::number(map->roundabouts().size())    + "<br/>";
+        information += "<strong>" + QString::number(map()->roads_count()) + "</strong> road(s)<br/>";
+        information += "<strong>" + QString::number(map()->roundabouts_count()) + "</strong> roundabout(s)<br/>";
 
-    unsigned short
-        vehicles_on_roads       = 0,
-        vehicles_waiting        = 0,
-        vehicles_on_roundabouts = 0;
+    unsigned short vehicles_on_roads(0);
+    unsigned short vehicles_waiting(0);
+    unsigned short vehicles_on_roundabouts(0);
 
-    unsigned short i = 0;
-    while (i < map->roads().size())
-    {
-        vehicles_on_roads += map->roads(i)->total_vehicles();
-        vehicles_waiting  += map->roads(i)->total_waiting_vehicles(map->roads(i)->roundabouts[0]) + map->roads(i)->total_waiting_vehicles(map->roads(i)->roundabouts[1]);
+    unsigned short i(0);
+    while (i < map()->roads_count()) {
+        vehicles_on_roads += map()->road(i)->vehicles_count();
+        vehicles_waiting  += map()->road(i)->waiting_vehicles_count();
 
         i++;
     }
 
     i = 0;
-    while (i < map->roundabouts().size())
-    {
-        vehicles_on_roundabouts += map->roundabouts(i)->vehicles();
+    while (i < map()->roundabouts_count()) {
+        vehicles_on_roundabouts += map()->roundabout(i)->vehicles_count();
         i++;
     }
     
-    unsigned short total_vehicles = vehicles_on_roads + vehicles_on_roundabouts;
+    unsigned short total_vehicles(vehicles_on_roads + vehicles_on_roundabouts);
 
-    information += "<b>Cars</b> (total) : " + QString::number(total_vehicles)           + "<br/>";
-    information += "(on roads) : "          + QString::number(vehicles_on_roads)        + "<br/>";
-    information += "(on roundabouts) : "    + QString::number(vehicles_on_roundabouts)  + "<br/>";
-    information += "(waiting) : "           + QString::number(vehicles_waiting)         + "<br/>";
-
-    information += selected_roundabout_informations();
-    information += selected_vehicle_informations();
+    information += "<strong>" + QString::number(total_vehicles) + "</strong> vehicles<br/>";
+    information += "(<strong>" + QString::number(vehicles_on_roads) + "</strong> on roads)<br/>";
+    information += "(<strong>" + QString::number(vehicles_on_roundabouts) + "</strong> on roundabouts)<br/>";
+    information += "(<strong>" + QString::number(vehicles_waiting) + "</strong> waiting)<br/>";
                                                    
     information += simulation_informations();
   
     lbl_info->setText(information);
+    
+
+    //  Update selection information
+    lbl_selection->setText(selection_report());
+    //information += selected_vehicle_informations();
+    
     //histogram->append(total_vehicles);
 }
 
-QString MainWindow::simulation_informations()
-{
-    QString information("<br/><b>Simulation</b><br/>");    
+QString MainWindow::selection_report() const {
+    if (m_selected_roundabout)  return report(m_selected_roundabout);
+    if (m_selected_vehicle)     return report(m_selected_vehicle);
 
-    hours   = (get_simulation_time())[0]; 
-    minutes = (get_simulation_time())[1];
-    seconds = (get_simulation_time())[2];
+    return QString("No selection.");
+}
 
-    information += "Time elapsed : " + QString::number(hours) + "<sup>h</sup>&nbsp;" + QString::number(minutes) + "<sup>m</sup>&nbsp;" + QString::number(seconds) + "<sup>s</sup><br/>";
-    information += "Speed : &times;" + QString::number(round(get_speed(), 2))   + "<br/>";
+QString MainWindow::simulation_informations() {
+    QString information("<br/><b>Simulation</b><br/>"); 
+
+    /*unsigned short
+        hours   = (get_simulation_time())[0],
+        minutes = (get_simulation_time())[1],
+        seconds = (get_simulation_time())[2];
+
+    information += "Time elapsed : " + QString::number(hours) + "<sup>h</sup>&nbsp;" + QString::number(minutes) + "<sup>m</sup>&nbsp;" + QString::number(seconds) + "<sup>s</sup><br/>";*/
     
-    if (!delta_t)
-    {
-        information += "FPS : " + QString::number(round(get_speed()/delta_t, 2)) + "<br/>";
-        information += "&Delta;t (s) : " + QString::number(round(delta_t, 2)) + "<br/>";
+    if (!m_delta_t) {
+        //information += "FPS : " + QString::number(round(m_simulation_speed/m_delta_t)) + "<br/>";
+        information += "&Delta;t (s) : " + QString::number(round(m_delta_t)) + "<br/>";
     }
     
     return information;
 }
 
-QString MainWindow::selected_roundabout_informations()
-{
-    QString information("");
-
-    if (selected_roundabout != NULL)
-    {
-        information += "<br/><b>Selected roundabout :</b><br/>";
-        information += "position : ("   + QString::number(selected_roundabout->x()) + "," + QString::number(selected_roundabout->y()) + ") <br/>";
-        information += "radius : "      + QString::number(selected_roundabout->radius()) + "<br/>";
-        information += "vehicles : "    + QString::number(selected_roundabout->vehicles().size()) + "<br/>";
-        information += "load : "        + QString::number(round(selected_roundabout->global_load(), 2)) + "<br/>";
+QString MainWindow::selected_roundabout_informations() {
+    if (!m_selected_roundabout)     {m_is_spawning->setCheckable(false); return QString("No selection.");}
+        
     
-        if (selected_roundabout->spawning())
-        {
-            information += "<b>Spawning mode</b><br/>";
-        }
-        if (!selected_roundabout->leaving_lanes().size())
-        {
-            information += "<b>Destroying mode</b><br/>";
-        }
-        if (selected_roundabout->vehicles().size())
-        {
-            unsigned short
-                avg_waiting_time    = 0,
-                i                   = 0;
+    QString information("");
+    //information += "position : ("   + QString::number(m_selected_roundabout->x()) + "," + QString::number(m_selected_roundabout->y()) + ") <br/>";
+    //information += "radius : "      + QString::number(m_selected_roundabout->radius()) + "<br/>";
+    information += "vehicles : "    + QString::number(m_selected_roundabout->vehicles_count()) + "<br/>";
+    information += "load : "        + QString::number(round(m_selected_roundabout->global_load())) + "<br/>";
 
-            while (i < selected_roundabout->vehicles().size())
-            {
-                avg_waiting_time += selected_roundabout->vehicles(i)->total_waiting_time() / float(selected_roundabout->vehicles().size());
-                i++;
-            }
-            
-            information += "<br/><b>Average waiting time</b> (s) : " + QString::number(round(avg_waiting_time, 2)) + "<br/>";
+    if (m_selected_roundabout->is_spawning())   information += "<b>Spawning mode</b><br/>";
+    if (m_selected_roundabout->vehicles_count()) {
+        unsigned short
+            avg_waiting_time    = 0,
+            i                   = 0;
+
+        /*while (i < m_selected_roundabout->vehicles_count()) {
+            avg_waiting_time += m_selected_roundabout->vehicle(i)->waiting_time_count() / (float)(m_selected_roundabout->vehicles_count());
+            i++;
         }
         
-        if (!spawning->isCheckable())
-        {
-            spawning.setCheckable(true);
-            spawning.setChecked(selected_roundabout->spawning());
-        }
-        else
-        {
-            selected_roundabout->spawning = spawning.isChecked();
-        }
+        information += "<br/><b>Average waiting time</b> (s) : " + QString::number(round(avg_waiting_time)) + "<br/>";*/
     }
-    else
-    {
-        spawning.setCheckable(false);
+    
+    if (!m_is_spawning->isCheckable()) {
+        m_is_spawning->setCheckable(true);
+        m_is_spawning->setChecked(m_selected_roundabout->is_spawning());
     }
+    else    m_selected_roundabout->set_spawning(m_is_spawning->isChecked());
 
     return information;
 }
 
-QString MainWindow::selected_vehicle_informations()
-{
+/*QString MainWindow::selected_vehicle_informations() {
     QString information("");
 
-    if (selected_vehicle != NULL)
-    {
-        Vehicle* vehicle = selected_vehicle;
+    if (m_selected_vehicle != NULL) {
+        Vehicle* vehicle = m_selected_vehicle;
 
-        if (vehicle->dead())
-        {
-            selected_vehicle = NULL;
+        if (vehicle->is_dead()) {
+            m_selected_vehicle = 0;
             return information;
         }
 
@@ -458,24 +510,18 @@ QString MainWindow::selected_vehicle_informations()
         }
 
         if (vehicle->destination() != NULL)
-        {
             information += "destination : " + QString::number(vehicle->destination()->name()) + " <br/>";
-        }
 
         if (vehicle->waiting())
-        {
             information += "<b>Waiting or braking</b><br/>";
-        }
     }
 
     return information;
-}
+}*/
 
 //  Returns the time multiplied by the simulation speed
-unsigned float MainWindow::clock() const
-{
+/*float MainWindow::clock() const {
     if (!time_last_counter)
-    {
         time_last_counter = time.clock()
 
     time_interval = time.clock() - time_last_counter
@@ -484,31 +530,15 @@ unsigned float MainWindow::clock() const
     time_last_counter = time.clock()
     
     return time_static_counter
+}
     
-void set_speed(new_speed)
-    //
-    Sets the simulation speed
-    Please use this instead of directly addressing simulation_speed
-    //
+//  Returns the simulation time (h, m, s)
+void MainWindow::simulation_time() {
+    m_timer = time_static_counter;
     
-    simulation_speed = new_speed
-    
-void get_speed()
-    //
-    Returns the simulation speed
-    Please use this instead of directly addressing simulation_speed
-    //
-    return simulation_speed
-
-void get_simulation_time()
-    //
-    Returns the simulation time (h, m, s)
-    //
-    
-    timer = time_static_counter
-    
-    hours   = int(timer / 3600.0) % 24
-    minutes = int(timer / 60.0)   % 60
-    seconds = int(timer)          % 60
+    hours   = int(m_timer / 3600.0) % 24
+    minutes = int(m_timer / 60.0)   % 60
+    seconds = int(m_timer)          % 60
     
     return hours, minutes, seconds
+}*/

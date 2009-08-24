@@ -1,36 +1,80 @@
-﻿#include <fstream>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
+#include <iostream>
 
-#include "constants.hpp"
-#include "lib.hpp"
 #include "map.hpp"
+#include "road.hpp"
+#include "roundabout.hpp"
+#include "slot.hpp"
     
 using namespace std;
 
 //  Constructor method : creates a track given the roundabouts and roads, if any.
 //      new_roundabouts   (list)  :   a list of the roundabouts
 //      new_roads   (list)  :   a list of the roads
-Map::Map() : roundabouts(), roads()//, picture(NULL)
-{
+Map::Map() : m_roads(), m_roundabouts()//, picture(NULL)
+{}
+
+Map::~Map() {
+    unsigned short i(0);
+
+    while (i < m_roads.size()) {
+        delete m_roads[i];
+        i++;
+    }
+
+    i = 0;
+    while (i < m_roundabouts.size()) {
+        delete m_roundabouts[i];
+        i++;
+    }
 }
 
-//  Adds a vehicle on the track
-void Map::add_vehicle(unsigned short road_number)
-{
-    Vehicle new_car(roads[road_number]);
+//  Accessors
+Roundabout* Map::random_roundabout() {
+    if (!m_roundabouts.size())      return 0;
+
+    srand(time(0));
+
+    return m_roundabouts[rand() % m_roundabouts.size()];
 }
+
+Road* Map::road(unsigned int i) {
+    return m_roads[i];
+}
+
+Roundabout* Map::roundabout(unsigned int i) {
+    return m_roundabouts[i];
+}
+
+unsigned int Map::roads_count() const {
+    return m_roads.size();
+}
+ 
+unsigned int Map::roundabouts_count() const {
+    return m_roundabouts.size();
+}
+
+
+//  Adds a vehicle on the track
+/*void Map::add_vehicle(unsigned short roundabout_number) {
+    Slot* slot = m_roundabouts[roundabout_number]->free_slot();
+    
+    Vehicle* new_car = new Vehicle;
+    new_car->join(slot);
+}*/
 
 
 //  Loads a track from a textfile, checks its validity, parses it
 //  and loads it in the simulation.
 //      file_name    (string)    :   the name of the file to load.
-void Map::load(string file_name, string picture)
-{
-    ifstream file(file_name, ios::in);
+void Map::load(string file_name, string picture) {
+    ifstream file(file_name.c_str(), ios::in);
      
-    if (!file)
-    {
-        cerr << "Error";
-        return void;        
+    if (!file) {
+        cerr << "[Error (Map::load)] Cannot open map file !" << endl;
+        return;
     }
 
     //        if len(file_picture) > 0:
@@ -40,17 +84,14 @@ void Map::load(string file_name, string picture)
     //            except IOError:
     //                raise Exception("%s cannot be loaded (current directory is : %s)" % (file_picture, getcwd()))                 
 
-    QString line;
-    while(getline(file, line))
-    {
-        QString line = line.trimmed();
 
-        if (line.startsWith('#') || line == "")
-        {
-            continue;
-        }
+    string line;
+    while (getline(file, line)) {
+        QString new_line = ((QString)(line.c_str())).trimmed();
+
+        if (new_line.startsWith('#') || new_line == "")     continue;
         
-        parse(line);
+        parse(new_line);
     }
     
     file.close();
@@ -58,32 +99,25 @@ void Map::load(string file_name, string picture)
 
 //  Parses a line in a track description file.
 //      line    (string)    :   the line of text to be parsed
-void Map::parse(QString line)
-{
+void Map::parse(QString line) {
     //parse_errors = []
-    elements = line.replace(",", " ").split(" ");
+    QStringList elements = line.replace(",", " ").split(" ");
     
-    if (elements[0] == ROUNDABOUT)
-    {
-        unsigned short spawning = elements[3].toUShort();
+    if (elements[0] == ROUNDABOUT) {
         Roundabout* new_roundabout = new Roundabout(this, elements[1].toUShort(), elements[2].toUShort());
-            new_roundabout->set_spawning(spawning);
+        if (elements[3].toUShort())      new_roundabout->set_spawning(true);
 
-        roundabouts.push_back(new_roundabout);
+        m_roundabouts.push_back(new_roundabout);
     }
-    else if (elements[0] == ROAD)
-    {
-        Road* new_road = new Road(roundabouts[elements[1].toUShort()], roundabouts[elements[2].toUShort()]);
-        roads.push_back(new_road);
+    else if (elements[0] == ROAD) {
+        Road* new_road = new Road(m_roundabouts[elements[1].toUShort()], m_roundabouts[elements[2].toUShort()]);
+        m_roads.push_back(new_road);
     }
     else
-    {
-        //cerr << "ERROR : unknown element type '" + elements[0] + "' !";
-    }
+        cerr << "[ERROR] Unknown element type '" << elements[0].toStdString() << "' !";
 }
 
-void Map::load_demo_map()
-{
+void Map::load_demo_map() {
     // Temporary testing zone
-    load("demo_track.txt", "demo_track.png");
+    load("demo_map", "demo_track.png");
 }

@@ -2,12 +2,12 @@
     #define __GPS__
 
     #include <vector>
-    
-    class Road;
-    class Roundabout;    
 
-    class GPS
-    {
+    class Roundabout;    
+    
+    enum Pathfinder {A_STAR, DIJKSTRA};
+
+    class GPS {
         Pathfinder algorithm;
         
         public:
